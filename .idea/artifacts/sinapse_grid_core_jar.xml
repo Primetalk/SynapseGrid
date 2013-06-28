@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact name="sinapse-grid-core:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/sinapse_grid_core_jar</output-path>
+    <root id="root">
+      <element id="archive" name="sinapse-grid-core.jar">
+        <element id="module-output" name="sinapse-grid-core" />
+      </element>
+    </root>
+  </artifact>
+</component>
