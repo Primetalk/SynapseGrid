@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/SinapseGrid.iml" filepath="$PROJECT_DIR$/SinapseGrid.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sinapse-grid-core/sinapse-grid-core.iml" filepath="$PROJECT_DIR$/sinapse-grid-core/sinapse-grid-core.iml" />
+    </modules>
+  </component>
+</project>
+
