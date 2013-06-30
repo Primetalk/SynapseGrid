@@ -17,4 +17,4 @@ See also
 
 1. [README.md in Russian](docs/README.RU.md) until the complete translation appear here.
 2. [Motivation for SinapseGrid](docs/SpeechPortalMotivation.RU.md)
-
+3. [License (BSD-like)](LICENSE)

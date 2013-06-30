@@ -85,7 +85,9 @@ object SimpleExamples {
     val myContact = new Contact[String]("myContact")
     val counterS = state[Int]("counterS", 0)
     val helloCount = contact[Int]("helloCount")
-    (myContact.withState(counterS) -> helloCount).stateMap({(counter: Int, any:String) => (counter + 1, counter + 1)},"inc "+counterS)
+    (myContact.withState(counterS) -> helloCount).stateMap({
+      (counter: Int, any:String) => (counter + 1, counter + 1)
+    },"inc "+counterS)
 //    (myContact -> helloCount ).stateMap (counterS, "inc "+counterS)
 //      {(counter: Int, any:String) => (counter + 1, counter + 1)}
 
