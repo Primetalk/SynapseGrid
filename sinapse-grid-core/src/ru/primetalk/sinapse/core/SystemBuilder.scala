@@ -172,14 +172,25 @@ trait SystemBuilder extends BasicSystemBuilder {
   }
 
   implicit class ImplStateLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) {
-    def stateFlatMap[S](f: (S, T1) ⇒ (S, Seq[T2]), stateHandle: StateHandle[S], name: String = "") =
+    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, Seq[T2])) =
       addLink(c._1, c._2, new StatefulFlatMapLink(f, stateHandle, nextLabel(name, "sfm")))
 
-    def stateMap[S](f: (S, T1) ⇒ (S, T2), stateHandle: StateHandle[S], name: String = "") =
+    def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, T2)) =
       addLink(c._1, c._2, new StatefulMapLink(f, stateHandle,
         nextLabel(name, "sm")))
   }
 
+  class ContactWithState[T1, S](val c1:Contact[T1], val stateHandle:StateHandle[S]) {
+    def stateMap[T2](f: (S, T1) ⇒ (S, T2), name:String ="") =
+      addLink(c1, auxContact[T2], new StatefulMapLink(f, stateHandle,
+        nextLabel(name, "sm")))
+  }
+
+  implicit class ImplStateLinkBuilder2[T1, T2, S](p:(ContactWithState[T1, S], Contact[T2])) {
+    def stateMap(f: (S, T1) ⇒ (S, T2), name:String ="") =
+      addLink(p._1.c1, p._2, new StatefulMapLink(f, p._1.stateHandle,
+        nextLabel(name, "sm")))
+  }
   implicit class ImplRichContact[T](val c: Contact[T]) {
     require(c != null, "Contact is null")
 
@@ -278,9 +289,11 @@ trait SystemBuilder extends BasicSystemBuilder {
 
     /** Update state in state handle. */
 
-    def updateState[S](stateHolder: StateHandle[S], name: String = "")(fun: (S, T) ⇒ S) {
-      addComponent(new StateUpdate[S, T](c, stateHolder, nextLabel(name, "update(" + fun + "," + stateHolder + ")"), fun))
+    def updateState[S](stateHandle: StateHandle[S], name: String = "")(fun: (S, T) ⇒ S) {
+      addComponent(new StateUpdate[S, T](c, stateHandle, nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
     }
+
+    def withState[S](stateHandle: StateHandle[S]) = new ContactWithState[T, S](c, stateHandle)
 
     def saveTo[S >: T](stateHolder: StateHandle[S], name: String = "") {
       addComponent(new StateUpdate[S, T](c, stateHolder, nextLabel(name, "saveTo(" + stateHolder + ")"), (s, t) ⇒ t))
@@ -294,10 +307,10 @@ trait SystemBuilder extends BasicSystemBuilder {
       updateState(stateHolder, nextLabel(name, "clearList(" + stateHolder + ")"))((list, item) ⇒ Nil)
     }
 
-    def setState[S](stateHolder: StateHandle[S], name: String = "")(fun: T ⇒ S) = {
+    def setState[S](stateHandle: StateHandle[S], name: String = "")(fun: T ⇒ S) = {
       new ImplStateLinkBuilder(c, devNull).stateFlatMap(
-        (s: S, t: T) ⇒ (fun(t), Seq()),
-        stateHolder, nextLabel(name, "" + stateHolder + " := setState(" + fun + ")"))
+        stateHandle, nextLabel(name, "" + stateHandle + " := setState(" + fun + ")"))
+      {(s: S, t: T) ⇒ (fun(t), Seq())}
     }
 
     /**
@@ -310,9 +323,9 @@ trait SystemBuilder extends BasicSystemBuilder {
 
     /** Sets latch value it it was not set yet */
     def latchValue[S >: T](stateHolder: StateHandle[Option[S]], f: T ⇒ S = identity[T](_)) = {
-      new ImplStateLinkBuilder(c, devNull).stateFlatMap(
-        (s: Option[S], t: T) ⇒ (if (s.isEmpty) Some(f(t)) else s, Seq()),
-        stateHolder, nextLabel("", "" + stateHolder + "<?=Some"))
+      new ImplStateLinkBuilder(c, devNull).stateFlatMap(stateHolder, nextLabel("", "" + stateHolder + "<?=Some"))
+      {(s: Option[S], t: T) ⇒ (if (s.isEmpty) Some(f(t)) else s, Seq())}
+
     }
 
     /** Converts data to pair with current state value. */

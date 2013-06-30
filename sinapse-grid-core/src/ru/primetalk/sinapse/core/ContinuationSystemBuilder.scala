@@ -3,7 +3,7 @@
 // Все права принадлежат компании ООО «Праймтолк».           //
 ///////////////////////////////////////////////////////////////
 /**
- * ${PROJECT_NAME}
+ * SinapseGrid
  * © Primetalk Ltd., 2013.
  * All rights reserved.
  * Authors: A.Zhizhelev, A.Nehaev, P. Popov
@@ -54,7 +54,7 @@ trait ContinuationSystemBuilder extends SystemBuilder {
 	implicit class ImplContLinkBuilder[T1, T2](c : (Contact[T1], Contact[T2])){
 		def expectingFlatMap(function : Continuation[T1, T2], name : String = "") = {
 			val stateHolder = state[Continuation[T1, T2]](name, function)
-			new ImplStateLinkBuilder(c).stateFlatMap[Continuation[T1, T2]](
+			new ImplStateLinkBuilder(c).stateFlatMap[Continuation[T1, T2]](stateHolder, nextLabel(name, "expect")){
 				(s0 : Continuation[T1, T2], d : T1) ⇒
 					s0 match {
 						case Done(result) ⇒ (s0, result)
@@ -62,8 +62,9 @@ trait ContinuationSystemBuilder extends SystemBuilder {
 							val cont = f(d)
 							(cont, cont.result)
 						//						case ContinuationCalcNoResult(f) => (f(d), Seq())
-					},
-				stateHolder, nextLabel(name, "expect"))
+					}
+      }
+
 		}
 		def expectingNext(f : T1 ⇒ Continuation[T1, T2],
 				name : String = "") =

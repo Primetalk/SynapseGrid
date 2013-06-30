@@ -54,7 +54,7 @@ case class DynamicSystem(
                           inputContacts: Set[Contact[_]],
                           outputContacts: Set[Contact[_]],
                           name: String,
-                          receive: (List[Signal[_]]) => List[Signal[_]]) extends Named with OuterSystem
+                          receive: Signal[_] => List[Signal[_]]) extends Named with OuterSystem
 
 /** The system can be embedded into some other static system. It has state. */
 case class InnerSystem[S](

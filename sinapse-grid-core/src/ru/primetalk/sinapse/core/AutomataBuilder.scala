@@ -3,7 +3,7 @@
 // Все права принадлежат компании ООО «Праймтолк».           //
 ///////////////////////////////////////////////////////////////
 /**
- * ${PROJECT_NAME}
+ * SinapseGrid
  * © Primetalk Ltd., 2013.
  * All rights reserved.
  * Authors: A.Zhizhelev, A.Nehaev, P. Popov

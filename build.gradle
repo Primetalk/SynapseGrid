@@ -3,31 +3,32 @@ ext {
     scalaFullVersion = "${scalaMajorVersion}.2"
     akkaVersion = '2.1.4'
     slf4jVersion = '1.7.2'
+    slf4j = "org.slf4j:slf4j-api:$slf4jVersion"
 }
 
 allprojects {
+    apply plugin: 'idea'
     repositories {
         maven {
             url "~/.m2/repository"
         }
         mavenCentral()
     }
+}
 
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.useAnt = false
 }
 
 subprojects {
-
     apply plugin: 'scala'
-    apply plugin: 'maven'
+    //apply plugin: 'maven'
 
     group = 'ru.primetalk'
     version = '1.0.0-SNAPSHOT'
 
-
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
-
-
 
     dependencies {
         compile "org.scala-lang:scala-library:${scalaFullVersion}"
@@ -35,19 +36,18 @@ subprojects {
         testCompile "junit:junit:4.11"
         testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
     }
-
 }
 
 project(':sinapse-grid-core') {
     dependencies {
-        testCompile "org.slf4j:slf4j-api:$slf4jVersion"
+//        testCompile slf4j
     }
 }
 
 project(':sinapse-grid-slf4j') {
     dependencies {
         compile project(':sinapse-grid-core')
-        compile "org.slf4j:slf4j-api:$slf4jVersion"
+        compile slf4j
     }
 }
 
@@ -57,6 +57,13 @@ project(':sinapse-grid-akka') {
         compile "com.typesafe.akka:akka-actor_$scalaMajorVersion:$akkaVersion"
         compile "com.typesafe.akka:akka-remote_$scalaMajorVersion:$akkaVersion"
         compile "com.typesafe.akka:akka-slf4j_$scalaMajorVersion:$akkaVersion"
+    }
+}
+
+project(':sinapse-grid-examples') {
+    dependencies {
+        compile project(':sinapse-grid-core')
+//        compile project(':sinapse-grid-akka')
     }
 }
 
