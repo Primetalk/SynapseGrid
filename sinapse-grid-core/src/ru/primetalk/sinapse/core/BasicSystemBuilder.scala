@@ -11,13 +11,13 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.sinapse
+package ru.primetalk.sinapse.core
 
 import scala.annotation.tailrec
 
 /**
  * This builder supports step-by-step creation of contact system. At the end
- * one must convert it to [[ru.primetalk.sinapse.StaticSystem]].
+ * one must convert it to [[StaticSystem]].
  */
 trait BasicSystemBuilder {
   private var name = getClass.getSimpleName.
@@ -120,9 +120,9 @@ trait BasicSystemBuilder {
 
   /** returns one step successors from the given contact */
   def successors(c:Contact[_]):List[Contact[_]] = {
-    val linkSucceccors = links.toList.filter(_.from == c).map(_.to)
-    val compSucceccors = components.toList.filter(_.inputContacts.contains(c)).flatMap(_.outputContacts)
-    (linkSucceccors ++ compSucceccors).distinct
+    val linkSuccessors = links.toList.filter(_.from == c).map(_.to)
+    val compSuccessors = components.toList.filter(_.inputContacts.contains(c)).flatMap(_.outputContacts)
+    (linkSuccessors ++ compSuccessors).distinct
   }
   /** Calculates the number of transitions from c1 to that contact. If the contact is not reachable
     *  then the distance is equals = -1*/

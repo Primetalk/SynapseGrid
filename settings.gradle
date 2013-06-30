@@ -1,1 +1,1 @@
-include 'sinapse-grid-core'
+include 'sinapse-grid-core', 'sinapse-grid-slf4j', 'sinapse-grid-akka'

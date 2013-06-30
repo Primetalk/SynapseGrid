@@ -11,7 +11,7 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.sinapse
+package ru.primetalk.sinapse.core
 
 /**
  * The Link is represented with a triple of two contacts and a linkInfo

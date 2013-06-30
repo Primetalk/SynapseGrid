@@ -11,7 +11,7 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.sinapse
+package ru.primetalk.sinapse.core
 
 import scala.reflect.ClassTag
 import scala.collection.mutable
@@ -77,6 +77,17 @@ trait SystemBuilder extends BasicSystemBuilder {
     }
   }
 
+  /** Declares the first contact as input and creates link to the second*/
+  def mappedInput[T, T2 >: T](c1:Contact[T], c2:Contact[T2]) = {
+    inputs(c1)
+    c1 >> c2
+    c2
+  }
+  /** Declares the second contact as output and creates link from the first*/
+  def mappedOutput[T, T2 >: T](c1:Contact[T], c2:Contact[T2]){
+    outputs(c2)
+    c1 >> c2
+  }
   /**
    * Doesn't work because T2 is unknown when it is called implicitly.
    * <pre>
@@ -170,7 +181,6 @@ trait SystemBuilder extends BasicSystemBuilder {
   }
 
   implicit class ImplRichContact[T](val c: Contact[T]) {
-    //extends RichContact[T] {
     require(c != null, "Contact is null")
 
     def labelNext(label: String*) = {
@@ -178,15 +188,24 @@ trait SystemBuilder extends BasicSystemBuilder {
       c
     }
 
-    def output: Contact[T] = {
+    def output() {
       outputs(c)
-      c
     }
 
     def input: Contact[T] = {
-      assertWritable()
-      inputContacts += c //.asInstanceOf[Contact[Any]]
+      inputs(c)
       c
+    }
+    /** Declares the first contact as input and creates link to the second*/
+    def inputMappedTo[T2 >: T](c2:Contact[T2]) = {
+      inputs(c)
+      c >> c2
+      c2
+    }
+    /** Declares the second contact as output and creates link from the first*/
+    def mapToOutput[T2 >: T](c2:Contact[T2]){
+      outputs(c2)
+      c >> c2
     }
 
     def stock(f: T ⇒ Any, name: String = "") {
@@ -203,8 +222,8 @@ trait SystemBuilder extends BasicSystemBuilder {
     /**
      * Filters the data from this contact. Returns another contact that will get filtered data
      */
-    def withFilter(pred: T ⇒ Boolean): Contact[T] =
-      filter(pred)
+    def withFilter(predicate: T ⇒ Boolean): Contact[T] =
+      filter(predicate)
 
 
 

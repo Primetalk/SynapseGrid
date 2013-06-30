@@ -1,28 +1,36 @@
 ext {
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.2"
+    akkaVersion = '2.1.4'
+    slf4jVersion = '1.7.2'
 }
-allprojects {
-    apply plugin: 'scala'
 
-    group = 'ru.primetalk'
-    version = '1.0.0-SNAPSHOT'
+allprojects {
+    repositories {
+        maven {
+            url "~/.m2/repository"
+        }
+        mavenCentral()
+    }
+
 }
 
 subprojects {
+
+    apply plugin: 'scala'
+    apply plugin: 'maven'
+
+    group = 'ru.primetalk'
+    version = '1.0.0-SNAPSHOT'
 
 
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
 
-    repositories {
-        mavenCentral()
-    }
 
 
     dependencies {
         compile "org.scala-lang:scala-library:${scalaFullVersion}"
-        compile "org.slf4j:slf4j:1.7.4"
 
         testCompile "junit:junit:4.11"
         testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
@@ -32,6 +40,23 @@ subprojects {
 
 project(':sinapse-grid-core') {
     dependencies {
-        compile "org.slf4j:slf4j:1.7.4"
+        testCompile "org.slf4j:slf4j-api:$slf4jVersion"
     }
 }
+
+project(':sinapse-grid-slf4j') {
+    dependencies {
+        compile project(':sinapse-grid-core')
+        compile "org.slf4j:slf4j-api:$slf4jVersion"
+    }
+}
+
+project(':sinapse-grid-akka') {
+    dependencies {
+        compile project(':sinapse-grid-slf4j')
+        compile "com.typesafe.akka:akka-actor_$scalaMajorVersion:$akkaVersion"
+        compile "com.typesafe.akka:akka-remote_$scalaMajorVersion:$akkaVersion"
+        compile "com.typesafe.akka:akka-slf4j_$scalaMajorVersion:$akkaVersion"
+    }
+}
+

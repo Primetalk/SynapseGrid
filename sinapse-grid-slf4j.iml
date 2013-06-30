@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/sinapse-grid-slf4j">
+      <sourceFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/src/main/resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/src/test/scala" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/src/test/resources" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/sinapse-grid-slf4j/build" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="TEST" name="scalatest_2.10-1.9.1" level="project" />
+    <orderEntry type="library" scope="TEST" name="hamcrest-core-1.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="junit-4.11" level="project" />
+    <orderEntry type="library" scope="TEST" name="scala-reflect-2.10.0" level="project" />
+    <orderEntry type="library" exported="" name="scala-library-2.10.2" level="project" />
+    <orderEntry type="library" scope="TEST" name="scala-actors-2.10.0" level="project" />
+    <orderEntry type="module" module-name="sinapse-grid-core" exported="" />
+    <orderEntry type="library" exported="" name="slf4j-api-1.7.2" level="project" />
+  </component>
+</module>
+

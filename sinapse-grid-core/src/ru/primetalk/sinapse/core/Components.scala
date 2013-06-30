@@ -11,20 +11,22 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.sinapse
+package ru.primetalk.sinapse.core
 
 /** An outer description of a system. */
 trait OuterSystem extends Named {
   val inputContacts: Set[Contact[_]]
   val outputContacts: Set[Contact[_]]
 }
-
+object StaticSystem {
+  type State = Map[Contact[_], Any]
+}
 case class StaticSystem(
                           //		contacts: Seq[Contact[_]],
                           /** A subset of contacts */
                           inputs: List[Contact[_]],
                           outputs: List[Contact[_]],
-                          privateStateHolders: List[StateHandle[_]],
+                          privateStateHandles: List[StateHandle[_]],
                           components: List[OuterSystem],
                           name: String) extends Named with OuterSystem with Stateful[Map[Contact[_], Any]] {
   lazy val inputContacts = inputs.toSet
@@ -35,9 +37,16 @@ case class StaticSystem(
   def isOutputContact(c: Contact[_]) = outputContacts.contains(c)
 
   lazy val s0 = (for {
-    stateHolder ← privateStateHolders
-  } yield (stateHolder, stateHolder.s0)).toMap[Contact[_], Any]
+    stateHandle ← privateStateHandles
+  } yield (stateHandle, stateHandle.s0)).toMap[Contact[_], Any]
 }
+//case class MappedSystem(system:StaticSystem,
+//                        inputMappings : Map[Contact[_], Contact[_]],
+//                        outputMappings : Map[Contact[_], Contact[_]],
+//                        name: String) extends Named with OuterSystem {
+//  lazy val inputContacts = system.inputContacts -- inputMappings.values ++ inputMappings.keys
+//  lazy val outputContacts = system.outputContacts -- outputMappings.keys ++ outputMappings.values
+//}
 
 /** Dynamic system. The state is kept inside the system. All complex logic
   * is implemented within receive function. */

@@ -1,0 +1,90 @@
+package ru.primetalk.sinapse.akka
+
+import akka.event.{LoggingReceive, Logging}
+import akka.actor.{Actor, ActorRef, Props}
+import scala.collection.mutable
+import ru.primetalk.sinapse.core._
+import org.slf4j.MDC
+import ru.primetalk.sinapse.akka.Signals
+import ru.primetalk.sinapse.core.Signal
+import ru.primetalk.sinapse.akka.Signals
+import ru.primetalk.sinapse.core.DynamicSystem
+
+/** Inner systems should register themselves via ready signal.*/
+class StaticSuperSystemActor(superSystem : StaticSuperSystem) extends EscalatingActor {
+
+   val log = Logging(context.system, this)
+   val actorFactory = context
+
+   val actors =
+     superSystem.subsystems.map(system ⇒ (system,
+       actorFactory.actorOf(Props(
+         new DynamicSystemActor(
+             StaticSuperSystemActor.systemToDynamicSystem(system))),
+         system.name))).toMap
+   val notStartedChildren = mutable.Set[ActorRef](actors.values.toSeq : _ *)
+   val inputsToActors =
+     superSystem.inputsToSystems.
+       map(p ⇒ (p._1, p._2.map(actors(_)))).
+       toMap[Contact[_], List[ActorRef]].
+       withDefault(c ⇒ List())
+
+   def processSignalsList(signals : List[Signal[_]]) = {
+     MDC.put("akkaSource", ""+self.path)
+     signals foreach (processSingleSignal(_))
+   }
+
+   def processSingleSignal[T](s : Signal[T]) {
+     val actors = inputsToActors(s.contact : Contact[_])
+     actors.foreach(actor ⇒ actor forward s)
+   }
+   def receive = LoggingReceive {
+     case Signals(Nil) ⇒
+       log.warning("Empty signals sent to SuperSystem")
+     case Signals(l) ⇒
+       processSignalsList(l)
+     case s @ Signal(c, d) ⇒
+       processSignalsList(s::Nil)
+     case InitCompleted(child) ⇒
+       if (notStartedChildren.contains(child))
+         notStartedChildren -= child
+       else
+         throw new IllegalArgumentException(s"The actor $sender sent InitCompleted to $self but is absent in notStartedChildren (either foreigh or already completed).")
+       if(notStartedChildren.isEmpty){
+         context.parent ! InitCompleted(self)
+         log.info(s"Init completed in $self sent to ${context.parent}")
+       }
+     case InitFailed(child, cause) =>
+       log.error(cause, s"Child $child init failed.")
+       context.parent ! InitFailed(self, cause)
+     case nonSignalMessage ⇒
+       val s = Signal(NonSignalWithSenderInput, (sender, nonSignalMessage))
+       processSignalsList(s :: Nil)
+   }
+ }
+/**
+ * Actors that exchange signals.
+ *
+ * Inner processing is done with system signal processing.
+ *
+ * Integration of actors is based on an actor that has the system itself
+ * and composes child actors.
+ *
+ * Children actors send all their output to parent.
+ *
+ * For productive work different actors should have some shared contacts.
+ * In producers these contacts should be marked as output.
+ * @author А.Жижелев
+ */
+object StaticSuperSystemActor {
+  def systemToDynamicSystem(system : OuterSystem) : DynamicSystem = system match {
+    case ds : DynamicSystem ⇒
+      ds
+    case s2 : StaticSystem ⇒
+      SignalProcessing.toDynamicSystem(s2)
+    case _ ⇒ throw new IllegalArgumentException(s"Cannot convert system to DynamicSystem: $system")
+  }
+  def systemToActor(system : OuterSystem) : Actor =
+    new DynamicSystemActor(systemToDynamicSystem(system))
+
+}

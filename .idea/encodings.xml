@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
-    <file url="file://$PROJECT_DIR$/sinapse-grid-core/src/ru/primetalk/sinapse/Contacts.scala" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/sinapse-grid-core/src/ru/primetalk/sinapse/Links.scala" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/sinapse-grid-core/src/ru/primetalk/sinapse/SignalProcessing.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/sinapse-grid-akka/src/main/scala/ru/primetalk/sinapse/akka/ActorSystemBuilding.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/sinapse-grid-akka/src/main/scala/ru/primetalk/sinapse/akka/SignalProcessingInActors.scala" charset="UTF-8" />
   </component>
 </project>
 

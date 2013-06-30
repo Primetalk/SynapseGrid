@@ -11,7 +11,7 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.sinapse
+package ru.primetalk.sinapse.core
 
 /** The builder creates a state machine with `State` type of state.*/
 trait AutomataBuilder[State] extends SystemBuilder {
