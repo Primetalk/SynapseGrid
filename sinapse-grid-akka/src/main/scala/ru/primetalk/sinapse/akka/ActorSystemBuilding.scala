@@ -28,6 +28,11 @@ case class ActorInnerSubsystem(subsystem:StaticSystem) extends Component {
   val inputContacts = subsystem.inputContacts
   val outputContacts = subsystem.outputContacts
 }
+trait AkkaSystemBuilder extends SystemBuilder {
+	def addActorSubsystem(subsystem:StaticSystem) {
+		addComponent(new ActorInnerSubsystem(subsystem))
+	}
+}
 /** Basic builder that defines a few helpers for constructing actor-held systems. */
 class ActorSystemBuilder extends SystemBuilder {
   inputs(SenderInput, ContextInput)
