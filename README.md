@@ -1,9 +1,9 @@
 SinapseGrid
 ===========
 
-![example1 system picture](images/example1.png)
-![example2 system picture](images/example2.png)
-![example3 system picture](images/example3.png)
+![example1 system picture](docs/images/example1.png)
+![example2 system picture](docs/images/example2.png)
+![example3 system picture](docs/images/example3.png)
 
 Feature highlights
 ------------------
