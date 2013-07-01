@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SinapseGrid.iml" filepath="$PROJECT_DIR$/SinapseGrid.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sinapse-grid-slf4j/src/main/main.iml" filepath="$PROJECT_DIR$/sinapse-grid-slf4j/src/main/main.iml" />
       <module fileurl="file://$PROJECT_DIR$/sinapse-grid-akka.iml" filepath="$PROJECT_DIR$/sinapse-grid-akka.iml" />
       <module fileurl="file://$PROJECT_DIR$/sinapse-grid-core/sinapse-grid-core.iml" filepath="$PROJECT_DIR$/sinapse-grid-core/sinapse-grid-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/sinapse-grid-examples/sinapse-grid-examples.iml" filepath="$PROJECT_DIR$/sinapse-grid-examples/sinapse-grid-examples.iml" />

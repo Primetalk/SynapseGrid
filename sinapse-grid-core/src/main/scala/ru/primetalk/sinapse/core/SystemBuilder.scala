@@ -18,6 +18,8 @@ import scala.collection.mutable
 
 /** DSL for constructing systems */
 trait SystemBuilder extends BasicSystemBuilder {
+  // TODO: сделать макросы вида: state counterS:Int = 0 contact myContact:String
+
   private var auxContactNumber = 0
 
   def nextContactName = {

@@ -14,6 +14,7 @@
 package ru.primetalk.sinapse
 
 import java.io.{File, PrintWriter}
+import scala.language.implicitConversions
 
 package object core {
 

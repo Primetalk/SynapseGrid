@@ -1,13 +1,13 @@
-///////////////////////////////////////////////////////////////
-// Речевой портал                                            //
-// © ООО «Праймтолк», 2011-2013                              //
-// Авторы: Жижелев А.А., Нехаев А.Р., Пешков И.В., Попов П.А.//
-// Все права принадлежат компании ООО «Праймтолк».           //
-///////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+// Речевой портал                                  //
+// © ООО «Праймтолк», 2011-2013                    //
+// Авторы: Жижелев А.А., Нехаев А.Р., Попов П.А.   //
+// Все права принадлежат компании ООО «Праймтолк». //
+/////////////////////////////////////////////////////
 /**
  * Speech portal
  * © Primetalk Ltd., 2011-2013.
- * Authors: Zhizhelev A., Nehaev A., Peshkov I., Popov P.
+ * Authors: Zhizhelev A., Nehaev A., Popov P.
  * All rights reserved.
  * Created: 13.02.2013
  */
@@ -23,7 +23,7 @@ import ru.primetalk.sinapse.core.DynamicSystem
 import akka.actor.AllForOneStrategy
 import org.slf4j.MDC
 import scala.concurrent.duration._
-
+import scala.language.postfixOps
 ///** Signals from out*/
 //case class Signals(list: List[Signal[_]])
 /** signals from subsystems.*/

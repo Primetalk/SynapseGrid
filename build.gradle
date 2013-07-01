@@ -2,8 +2,7 @@ ext {
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.2"
     akkaVersion = '2.1.4'
-    slf4jVersion = '1.7.2'
-    slf4j = "org.slf4j:slf4j-api:$slf4jVersion"
+    slf4j = "org.slf4j:slf4j-api:1.7.2"
 }
 
 allprojects {
@@ -19,6 +18,7 @@ allprojects {
 
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.useAnt = false
+    scalaCompileOptions.feature = true
 }
 
 
@@ -31,8 +31,6 @@ subprojects {
 
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
-
-    scalaCompileOptions = '-feature'
 
     dependencies {
         compile "org.scala-lang:scala-library:${scalaFullVersion}"

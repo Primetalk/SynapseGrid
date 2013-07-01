@@ -4,7 +4,10 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Global" />
-        <option name="compilerLibraryName" value="scala-compiler" />
+        <option name="compilerLibraryName" value="org.scala-lang:scala-compiler:2.10.2" />
+        <option name="compilerOptions" value="-feature" />
+        <option name="deprecationWarnings" value="true" />
+        <option name="uncheckedWarnings" value="true" />
       </configuration>
     </facet>
   </component>
@@ -22,7 +25,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="TEST" name="hamcrest-core-1.3" level="project" />
     <orderEntry type="library" scope="TEST" name="junit-4.11" level="project" />
-    <orderEntry type="library" scope="TEST" name="scala-actors-2.10.0" level="project" />
     <orderEntry type="library" scope="TEST" name="scalatest_2.10-1.9.1" level="project" />
     <orderEntry type="library" scope="TEST" name="scala-reflect-2.10.0" level="project" />
     <orderEntry type="library" exported="" name="scala-library-2.10.2" level="project" />

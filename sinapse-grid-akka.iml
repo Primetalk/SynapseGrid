@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="scala" name="Scala">
+      <configuration>
+        <option name="compilerLibraryLevel" value="Global" />
+        <option name="compilerLibraryName" value="org.scala-lang:scala-compiler:2.10.2" />
+        <option name="compilerOptions" value="-feature" />
+        <option name="deprecationWarnings" value="true" />
+        <option name="uncheckedWarnings" value="true" />
+      </configuration>
+    </facet>
+  </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$/sinapse-grid-akka">
@@ -19,7 +30,6 @@
     <orderEntry type="library" scope="TEST" name="scala-reflect-2.10.0" level="project" />
     <orderEntry type="library" scope="TEST" name="scalatest_2.10-1.9.1" level="project" />
     <orderEntry type="library" exported="" name="akka-remote_2.10-2.1.4" level="project" />
-    <orderEntry type="library" scope="TEST" name="scala-actors-2.10.0" level="project" />
     <orderEntry type="library" exported="" name="config-1.0.0" level="project" />
     <orderEntry type="library" exported="" name="netty-3.5.8.Final" level="project" />
     <orderEntry type="library" exported="" name="akka-actor_2.10-2.1.4" level="project" />
