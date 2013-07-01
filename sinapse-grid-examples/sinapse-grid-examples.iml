@@ -29,6 +29,7 @@
     <orderEntry type="library" scope="TEST" name="scala-reflect-2.10.0" level="project" />
     <orderEntry type="library" exported="" name="scala-library-2.10.2" level="project" />
     <orderEntry type="module" module-name="sinapse-grid-core" exported="" />
+    <orderEntry type="library" scope="TEST" name="scala-actors-2.10.0" level="project" />
   </component>
 </module>
 
