@@ -17,7 +17,7 @@ import scala.annotation.tailrec
 
 /**
  * This builder supports step-by-step creation of contact system. At the end
- * one must convert it to [[StaticSystem]].
+ * one must convert it to [[ru.primetalk.sinapse.core.StaticSystem]].
  */
 trait BasicSystemBuilder {
   private var name = getClass.getSimpleName.

@@ -8,6 +8,7 @@ ext {
 
 allprojects {
     apply plugin: 'idea'
+
     repositories {
         maven {
             url "~/.m2/repository"
@@ -20,9 +21,10 @@ tasks.withType(ScalaCompile) {
     scalaCompileOptions.useAnt = false
 }
 
+
 subprojects {
     apply plugin: 'scala'
-    //apply plugin: 'maven'
+    apply plugin: 'maven'
 
     group = 'ru.primetalk'
     version = '1.0.0-SNAPSHOT'
@@ -30,11 +32,20 @@ subprojects {
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
 
+    scalaCompileOptions = '-feature'
+
     dependencies {
         compile "org.scala-lang:scala-library:${scalaFullVersion}"
 
         testCompile "junit:junit:4.11"
         testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
+    }
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                repository(url: "~/.m2/repository")
+            }
+        }
     }
 }
 
