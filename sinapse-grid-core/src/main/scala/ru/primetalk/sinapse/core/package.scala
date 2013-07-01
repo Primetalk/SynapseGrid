@@ -61,4 +61,15 @@ package object core {
 
   implicit def filenameToFile(filename: String): File = new File(filename)
 
+  //	implicit class RichContext(val permanentSignals : List[Signal[_]]) {
+  //		lazy val byContact = permanentSignals.groupBy(_._1).withDefault(c ⇒ List())
+  //	}
+  type Context = Map[Contact[_], _]
+
+  /** The most general processing element.
+    * Is very similar to StateFlatMap */
+  type SingleSignalProcessor = (Context, Signal[_]) => (Context, List[Signal[_]])
+	type TrellisElement = (Context, List[Signal[_]])
+	/** A function that makes single(?) step over time. */
+	type TrellisProducer = TrellisElement => TrellisElement
 }

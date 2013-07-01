@@ -41,7 +41,7 @@ trait SystemRenderer {
 			s"$id [label=${"\""+linkInfo.name+"\""}, shape=none]"
 		case (StateUpdate(_, st, name, _), _) ⇒
 			s"$id [label=${"\""+name+"\""}, $stateModification]"
-		case (os : OuterSystem, _) ⇒
+		case (os : Component, _) ⇒
 			s"$id [label=${"\""+os.name+"\""}, shape=component]"
 		case (Contact(_, DevNullContact), InnerContact) ⇒
 			s"$id [label=${"\"\""}, shape=point, color=red]"

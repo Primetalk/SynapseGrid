@@ -14,7 +14,7 @@
 package ru.primetalk.sinapse.core
 
 /** An outer description of a system. */
-trait OuterSystem extends Named {
+trait Component extends Named {
   val inputContacts: Set[Contact[_]]
   val outputContacts: Set[Contact[_]]
 }
@@ -27,8 +27,8 @@ case class StaticSystem(
                           inputs: List[Contact[_]],
                           outputs: List[Contact[_]],
                           privateStateHandles: List[StateHandle[_]],
-                          components: List[OuterSystem],
-                          name: String) extends Named with OuterSystem with Stateful[Map[Contact[_], Any]] {
+                          components: List[Component],
+                          name: String) extends Named with Component with Stateful[Map[Contact[_], Any]] {
   lazy val inputContacts = inputs.toSet
   lazy val outputContacts = outputs.toSet
   /** Contacts that should be processed by SignalsProcessor. */
@@ -43,7 +43,7 @@ case class StaticSystem(
 //case class MappedSystem(system:StaticSystem,
 //                        inputMappings : Map[Contact[_], Contact[_]],
 //                        outputMappings : Map[Contact[_], Contact[_]],
-//                        name: String) extends Named with OuterSystem {
+//                        name: String) extends Named with Component {
 //  lazy val inputContacts = system.inputContacts -- inputMappings.values ++ inputMappings.keys
 //  lazy val outputContacts = system.outputContacts -- outputMappings.keys ++ outputMappings.values
 //}
@@ -54,7 +54,7 @@ case class DynamicSystem(
                           inputContacts: Set[Contact[_]],
                           outputContacts: Set[Contact[_]],
                           name: String,
-                          receive: Signal[_] => List[Signal[_]]) extends Named with OuterSystem
+                          receive: Signal[_] => List[Signal[_]]) extends Named with Component
 
 /** The system can be embedded into some other static system. It has state. */
 case class InnerSystem[S](
@@ -62,7 +62,7 @@ case class InnerSystem[S](
                             /** main state handle that will hold private state of the subsystem. */
                            stateHandle:StateHandle[Map[Contact[_], Any]],
                            /** State handles to be shared with parent */
-                           sharedStateHandles: List[StateHandle[_]] = Nil) extends OuterSystem {
+                           sharedStateHandles: List[StateHandle[_]] = Nil) extends Component {
   val inputContacts = s.inputContacts
   val outputContacts = s.outputContacts
   def name = s.name
@@ -73,7 +73,7 @@ case class StateUpdate[S, T2](
                                stateHandle : StateHandle[S],
                                override val name : String,
                                f : (S, T2) ⇒ S)// = (s : S, t : T2) ⇒ t)
-  extends OuterSystem {
+  extends Component {
   lazy val inputContacts = Set(from) : Set[Contact[_]]
   lazy val outputContacts = Set[Contact[_]]() //stateHolder)
 }

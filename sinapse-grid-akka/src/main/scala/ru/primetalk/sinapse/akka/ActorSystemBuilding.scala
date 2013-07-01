@@ -13,15 +13,21 @@
   */
 package ru.primetalk.sinapse.akka
 
-import ru.primetalk.sinapse.core.{StaticSystem, StateHandle, SystemBuilder, Contact}
+import ru.primetalk.sinapse.core.{StaticSystem, StateHandle, SystemBuilder, Contact, Component}
 import akka.actor.{Props, Actor, ActorContext, ActorRef}
 import ru.primetalk.sinapse.akka.SpecialActorContacts.{NonSignalWithSenderInput, ContextInput, SenderInput}
 import ru.primetalk.sinapse.slf4j.SystemBuilderWithLogging
 
 /**
+  * For an ActorInnerSubsystem an actor will be constructed. The state will reside in that actor.
   * @author А.Жижелев
   *
   */
+case class ActorInnerSubsystem(subsystem:StaticSystem) extends Component {
+  def name = subsystem.name
+  val inputContacts = subsystem.inputContacts
+  val outputContacts = subsystem.outputContacts
+}
 /** Basic builder that defines a few helpers for constructing actor-held systems. */
 class ActorSystemBuilder extends SystemBuilder {
   inputs(SenderInput, ContextInput)

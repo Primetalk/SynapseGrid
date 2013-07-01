@@ -88,3 +88,68 @@ object StaticSuperSystemActor {
     new DynamicSystemActor(systemToDynamicSystem(system))
 
 }
+
+
+///** Sends raw data from input signals to the actor. All input contacts are treated equivalently.*/
+//case class SimpleActorAdapter(
+//		inputContacts: Set[Contact[_]],
+//		name: String,
+//		/** This actor can send signals to sender (reply). However they are not restricted by output contacts.*/
+//		simpleActorRef:ActorRef) extends Component {
+//	val outputContacts = Set[Contact[_]]()
+//}
+///** An actor that converts any raw data to signal and forwards it to contactsActor */
+//class ActorSendingToContact[T](contactsActor : ActorRef, contact : Contact[T]) extends Actor {
+//	def receive = {
+//		case s @ Signal(c, d) if c == contact ⇒
+//			contactsActor forward Signal(contact, d.asInstanceOf[T])
+//		case msg ⇒
+//			contactsActor forward Signal(contact, msg.asInstanceOf[T])
+//	}
+//}
+//case class MultiOutputAdapter(
+//		inputContacts: Set[Contact[_]],
+//		outputContacts: Set[Contact[_]],
+//		name: String)(
+//		/** the function from some single signal on input contact to any number of output contacts.*/
+//		val multiOutputAlgorithm:PartialFunction[Any,List[Signal[_]]]) extends Component
+//case class ActorBuilder(
+//	inputContacts : Set[Contact[_]],
+//	outputContacts : Set[Contact[_]],
+//	name : String)
+//	(val actorFactory : (List[Signal[_]] ⇒ Any) ⇒ Actor) extends Component
+//case class ArbitraryChildActorAdapter(
+//	inputContacts : Set[Contact[_]],
+//	outputContacts : Set[Contact[_]],
+//	name : String,
+//	/** the factory gets the ActorRef to parent (event hub).
+//	 *   The Actor behind ActorRef only handles Signals. Thus a converter may be necessary. */
+//	actorFactory : (ActorRef) ⇒ Actor) extends Component
+///**
+//  * This declarations leads to creation of intermediate actor that converts
+//  *  input signals to raw data and then sends it to the actorRef. The replies of
+//  *  that actor should not be signals. They come back to the intermediate actor
+//  *  which applies mapping function replyMap to convert them to Signals.
+//  *  Converts replies of the actor to contacts.
+//  */
+//case class ActorRefAdapter(
+//	inputContacts : Set[Contact[Any]],
+//	outputContacts : Set[Contact[Any]],
+//	/** signals to input contacts are preprocessed before this map.
+//	 *  This function should convert other messages to signals, if it can. */
+//	replyMap : PartialFunction[Any, Signal[_]],
+//	name : String,
+//	actorRef : ActorRef) extends Component
+//case class FunctionalSystem(
+//		inputContacts: Set[Contact[Any]],
+//		outputContacts: Set[Contact[Any]],
+//		name: String,
+//		actorFactory:(List[Signal[_]]=>Any) => Actor) extends Component
+//		case ActorRefAdapter(inputContacts, _, replyMap, _, actorRef) =>
+//			new Actor {
+//				val processRequests:Receive = {
+//					case Signal(c, d) if inputContacts.contains(c) ⇒ actorRef ! d
+//				}
+//				val processAnswers:Receive = replyMap.andThen(s => parent ! s)
+//				def receive = processRequests orElse processAnswers
+//			}

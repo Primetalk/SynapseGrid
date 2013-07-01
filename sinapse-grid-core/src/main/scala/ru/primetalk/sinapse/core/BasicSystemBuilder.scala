@@ -34,7 +34,7 @@ trait BasicSystemBuilder {
   protected val contacts = mutable.ListBuffer[Contact[_]]()
   protected val privateStateHandles = mutable.ListBuffer[StateHandle[_]]()
   protected val links = mutable.ListBuffer[Link[_, _, Nothing, Any]]()
-  protected val components = mutable.ListBuffer[OuterSystem]()
+  protected val components = mutable.ListBuffer[Component]()
   protected val inputContacts = mutable.Set[Contact[_]]()
   protected val outputContacts = mutable.Set[Contact[_]]()
 
@@ -100,7 +100,7 @@ trait BasicSystemBuilder {
     links += link
     link.to
   }
-  def addComponent(component:OuterSystem){
+  def addComponent(component:Component){
     components += component
   }
   /**

@@ -17,7 +17,7 @@ package ru.primetalk.sinapse.core
  * The Link is represented with a triple of two contacts and a linkInfo
  *
  */
-case class Link[T1, T2, -TL1 >: T1, +TL2 <: T2 ](from:Contact[T1], to:Contact[T2], info: LinkInfo[TL1, TL2]) extends Named with OuterSystem {
+case class Link[T1, T2, -TL1 >: T1, +TL2 <: T2 ](from:Contact[T1], to:Contact[T2], info: LinkInfo[TL1, TL2]) extends Named with Component {
 	def toTriple = (from, to, info)
 	def name = info.name
 	lazy val inputContacts : Set[Contact[_]] = Set(from)

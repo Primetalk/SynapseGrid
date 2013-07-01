@@ -38,6 +38,7 @@
     <orderEntry type="library" exported="" name="slf4j-api-1.7.2" level="project" />
     <orderEntry type="module" module-name="sinapse-grid-slf4j" exported="" />
     <orderEntry type="library" scope="TEST" name="scala-actors-2.10.0" level="project" />
+    <orderEntry type="library" name="org.scala-lang:scala-compiler:2.10.2" level="application" />
   </component>
 </module>
 

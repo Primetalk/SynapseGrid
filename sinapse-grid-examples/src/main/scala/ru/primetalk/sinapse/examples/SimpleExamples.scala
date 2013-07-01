@@ -15,6 +15,7 @@ package ru.primetalk.sinapse.examples
 
 import ru.primetalk.sinapse.core._
 import scala.util.matching.Regex
+import scala.util.Try
 
 object SimpleExamples {
 
@@ -40,7 +41,7 @@ object SimpleExamples {
   abstract class ExampleMap[TInput, TOutput](name: String) extends Example[TInput, TOutput](name) {
     lazy val exampleMapTransducer: TInput => TOutput  = {
       val s = toStaticSystem
-      s.toDot.saveTo(s"target/${s.name}.dot")
+      Try{s.toDot.saveTo(s"target/${s.name}.dot")}
       val transducer = s.toDynamicSystem.toMapTransducer(input, output)
       transducer(_)
     }
@@ -52,7 +53,7 @@ object SimpleExamples {
 
     lazy val exampleFlatMapTransducer: TInput => List[TOutput] = {
       val s = toStaticSystem
-      s.toDot.saveTo(s"target/${s.name}.dot")
+      Try{s.toDot.saveTo(s"target/${s.name}.dot")}
       val transducer = s.toDynamicSystem.toTransducer(input, output)
       transducer(_)
     }
