@@ -4,7 +4,7 @@ SinapseGrid contact system
 Key features
 --------------------
 1. SinapseGrid provides better opportunity for function composition, which goes far away from monad capabilities.
-2. При использовании совместно с Akka-экторами появляется возможность строго типизированной обработки сообщений, существенно превосходящая Typed actors.
+2. By using mutually with Akka-actors, you have a opportunity to use strictly typed data processing, that significantly shifts Typed actors.
 3. Composite functions, that have multiple input and output.
 
 (Reasons, that brought us to creating SinapseGrid could be found here: [Потребности систем ведения диалога](docs/SpeechPortalMotivation.RU.md). )
@@ -17,12 +17,12 @@ Imagine a breadboard for assembling an electronic circuits.
 There are bunch of apertures and contact areas. Some contacts are signed and arranged in the most comfortable way for electronic device connection
 Other contacts dedicated for service purposes, and used to link components
 
-На макетной плате могут быть установлены компоненты, образующие, например, блок питания, или усилитель низкой частоты, или фильтр, или какую-нибудь ещё подсистему.
-Причём на такой плате могут остаться незадействованными часть контактов для подсистем, которые в собираемом устройстве не требуются.
-К ним не будут подсоединены никакие компоненты. Некоторые выводы блока питания могут оказаться невостребованными.
-Или часть входов универсальной микросхемы могут остаться неиспользованными.
+There are bunch of different components, installed on breadboard, that forming, for instance: power supply, low frequency amplifier, some filter or anything else.
+Some components may stay untapped, some contacts and subsystems may not be involved.
+There'll be no components connected to them. Some power supply outputs may stay unclaimed. Or some circuit's inputs may be unused.
 
 Breadboard can be a good illustration to contact system.
+
 
 Contacts and impedors
 ------------------------
@@ -53,36 +53,35 @@ or, more briefly
 <pre>
 	val len = myContact.map(_.length)
 </pre>
-//////////////////////////////////////////////////////////////////////////////////
 
-На рисунке изображён пример системы (подключены дополнительные контакты - вход и выход, чтобы можно было запускать тесты).
+Th sample of system is listed below ( to make testing possible, additional contacts were connected: input, output ).
 
 ![example1 system picture](images/example1.png)
 
-(В последнем случае контакт len будет создан автоматически и соответствующего типа (Int).)
+( In the last case, the len contact of following type (Int) will be created automatically. )
 
-Обработка данных
+
+Data processing
 ------------------------------------
+The code above, doesn't make any kind of job. Contacts don't store any data, functions either.
+This code only declares system structure - Contacts and their bounds with components.
 
-Вышеприведённый код сам по себе не выполняет никакой работы. В контактах данные не хранятся, в функциях тоже не хранятся.
-Этот код только описывает структуру системы — какие контакты с какими компонентами связаны.
-
-Для того, чтобы связать данные с каким-либо контактом, используется «внешнее связывание».
-То есть создаётся объект, содержащий ссылку как на контакт, так и на данные, связанные с этим контактом.
-Такой объект в терминологии Системы Контактов называется Сигналом.
+External binding - used to attach data with some contact. I.e. Object, that contains contact line
+I.e. Will be created a object, that contains link, contact and data, which bound to this contact.
+In Concat System terminology this object will be called a Signal.
 
 <pre>
 	case class Signal[T](contact:Contact[T], data:T)
 </pre>
 
-(Кроме термина Сигнал можно встретить термины Событие, Данные, Фрейм, Сообщение.)
-
-Состояние системы представляется списком сигналов на разных контактах в один дискретный момент времени.
+(Besides of Signal you may meet terms like: Event, Data, Frame and Message.)
+System state will be represented as a Signal's list on different contacts in one discrete time moment.
 
 <pre>
 	type Signals = List[Signal[_]]
 </pre>
 
+A special Signal Processor component, performs functional transformation of source signals list to
 Реализован специальный компонент SignalProcessor, который выполняет функциональное преобразование исходного списка сигналов в один момент времени в список сигналов
 последующий момент времени.
 Каждый сигнал по очереди передаётся на вход каждого компонента, подключенного к соответствующему контакту.
@@ -93,15 +92,18 @@ or, more briefly
 И SignalProcessor как раз  и используется для построения trellis'а на основе входных данных.
 
 В какой момент останавливается построение trellis'а? Если обработку никак не останавливать, то все данные дойдут до крайних контактов и, т.к. там не подключено никаких компонентов,
-то данные исчезнут. Чтобы этого избежать, в описании системы указывается, какие контакты являются выходными
+то данные исчезнут.
+To avoid this, output contacts are specified in system description.
 
 <pre>
 	outputs(len) // outputs(output1, output2, output3)
 </pre>
 
+therefore, precessing will stop,
 поэтому обработка останавливается тогда, все сигналы в текущем списке принадлежат множеству выходных контактов.
 
-//////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Arrow types
 ------------------------------------
 
@@ -209,7 +211,7 @@ Current state value is not available at update. Actually it's not stored anywher
 
 [example3]: images/example3.png "System example #3"
 
-В DSL имеется набор вспомогательных функций высшего порядка, упрощающих работу с состояниями.
+DSL has a set of auxiliary high-order functions, that simplify working with states.
 ////////////////////////////////////////////////////////////////////////////////////////
 
 Drawing system scheme
@@ -237,7 +239,6 @@ Drawings in images folder pefromed
 Чтобы получить чистое описание системы, построенное Builder'ом, достаточно вызвать метод toStaticSystem.
 Этот метод возвращает простой immutable case-класс, содержащий все контакты и стрелочки.
 
-Некоторые специальные DSL находятся в отдельных трейтах, которые надо просто подключить к своему Builder'у, чтобы этим DSL воспользоваться.
 There are bunch of DLS's that stored in separate traits, to use them, you have to connect them to your Builder.
 
 Для конструирования системы кроме очевидного способа
