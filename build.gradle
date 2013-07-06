@@ -25,6 +25,7 @@ tasks.withType(ScalaCompile) {
 subprojects {
     apply plugin: 'scala'
     apply plugin: 'maven'
+    apply plugin: 'maven-publish'
 
     group = 'ru.primetalk'
     version = '1.0.0-SNAPSHOT'
@@ -45,8 +46,12 @@ subprojects {
             }
         }
     }
+//    publications {
+//        mavenJava(MavenPublication) {
+//            from components.java
+//        }
+//    }
 }
-
 project(':sinapse-grid-core') {
     dependencies {
 //        testCompile slf4j
