@@ -27,7 +27,7 @@ import ru.primetalk.sinapse.akka.SpecialActorContacts.InitCompleted
 class StaticSystemActor(system: StaticSystem) extends EscalatingActor {
 	val log = Logging(context.system, this)
 
-	val emptyContext = Map[Contact[_], _]()
+	val emptyContext = Map[Contact[_], Any]()
 	val processor = StaticSystemActor.toSingleSignalProcessor(context, self)(system)
 
 	private def innerProcessSignals(ls: List[Signal[_]]) {
@@ -45,7 +45,7 @@ class StaticSystemActor(system: StaticSystem) extends EscalatingActor {
 			(ls: List[Signal[_]]) ⇒
 				innerProcessSignals(Signal(SenderInput, sender) :: ls)
 		else
-			innerProcessSignals(_)
+			innerProcessSignals _
 
 
 	def receive = LoggingReceive {
