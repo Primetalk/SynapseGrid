@@ -155,7 +155,8 @@ Working with state
 Не требуется пересоздавать систему для обработки других данных — достаточно один раз при старте приложения её создать.
 Отладка таких систем практически исключена за ненадобностью — из-за отсутствия внутреннего состояния и побочных эффектов результат всегда детерминированно определяется входными данными.
 
-Если логика обработки данных требует сохранения состояния, то первое, что приходит в голову — использовать внутри функции переменную и сохранять состояние в ней. К примеру, так:
+Если логика обработки данных требует сохранения состояния, то первое, что приходит в голову — использовать внутри функции переменную и сохранять состояние в ней.
+For instance:
 
 <pre>
 	var counter = 0
@@ -164,13 +165,13 @@ Working with state
 
 This will work, alas we're losing all advantages of immutable system.
 
-But what if we will store the state separate from the system? And in the
-А что, если хранить состояние отдельно от системы? И в нужный момент перед работой функции текущее состояние извлекается, а потом помещается обратно.
+But what if we will store the state separate from the system? And then, in the right time
+И в нужный момент перед работой функции текущее состояние извлекается, а потом помещается обратно.
 
 Как работать с таким состоянием, которое где-то хранится? Функция должна принимать на вход текущее значение состояния и возвращать новое значение.
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 <pre>
-	val helloCount = myContact.[указание на переменную, где хранится состояние counter].map({(any, counter) => (counter+1, counter + 1)})
+	val helloCount = myContact.[link to variable, where counter state is stored].map({(any, counter) => (counter+1, counter + 1)})
 </pre>
 
 Let's take a closer look to this function. We'll make id verbose via def;
@@ -185,9 +186,9 @@ Let's take a closer look to this function. We'll make id verbose via def;
 
 The function, that process the state is pure. Q.e.d.
 
-Остаётся только определиться, как нам ловко хранить и извлекать состояние.
+Now, it only remains to determine how easily to store and retrieve state.
 
-Для идентификации различных переменных состояния мы будем использовать разновидность контакта — StateHandle[T].
+We will use StateHandle[T] (some sort of Contact), to identify different state variables
 
 <pre>
 	val counterS = state[Int]("counterS", 0)
@@ -197,23 +198,23 @@ The function, that process the state is pure. Q.e.d.
 This identifier contains variable type, name, and initial value.
 
 Current state value is not available at update. Actually it's not stored anywhere.
-(Забегая немного вперёд: SignalProcessor хранит текущие значения всех переменных состояния в Map'е).
+Looking ahead a little bit, SignalProcessor stores current all variables values in Map
 
-Чтобы в нашей функции helloCounter использовать это состояние, необходимо на него сослаться:
+To use this state in our helloCounter function, we have to refer it.
 
 <pre>
     (myContact.withState(counterS) -> helloCount).stateMap({(counter: Int, any:String) => (counter + 1, counter + 1)},"inc "+counterS)
 	val helloCount = myContact.stateMap(counterS, {(any, counter) => (counter+1, counter + 1)})
 </pre>
 
-В итоге получилось несколько громоздко, но зато мы имеем все преимущества чистых функций.
+It looks a little bit cumbersome, but we have all pure functions advantages.
 
 ![example3 system picture][example3]
 
 [example3]: images/example3.png "System example #3"
 
 DSL has a set of auxiliary high-order functions, that simplify working with states.
-////////////////////////////////////////////////////////////////////////////////////////
+
 
 Drawing system scheme
 -----------------------
