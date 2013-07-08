@@ -81,29 +81,26 @@ System state will be represented as a Signal's list on different contacts in one
 	type Signals = List[Signal[_]]
 </pre>
 
-A special Signal Processor component, performs functional transformation of source signals list to
-Реализован специальный компонент SignalProcessor, который выполняет функциональное преобразование исходного списка сигналов в один момент времени в список сигналов
-последующий момент времени.
-Каждый сигнал по очереди передаётся на вход каждого компонента, подключенного к соответствующему контакту.
-Результат работы компонента в форме сигнала (или нескольких сигналов) добавляется к списку сигналов следующего момента времени.
-Когда все сигналы предшествующего момента времени обработаны, SignalProcessor завершает работу.
+There is a special implemented component SignalProcessor, which performs functional transformation of the original list of signals at a time to the alarm list
+later time.
+Each signal is transmitted to the input queue of each component connected to the corresponding contact.
+The output waveform component (or more signals) is added to the list of the next timing signal.
+Signal Processor exits, when all signals are processed by previous points of time
 
-В теории скрытых марковских моделей есть хорошее понятие треллис (trellis). Это развёртка во времени совокупности сигналов.
-И SignalProcessor как раз  и используется для построения trellis'а на основе входных данных.
+The theory of hidden Markov models has a good notion of trellis ( the time scan of signal constellation).
+SignalProcessor is used to build trellis, that based on the input data.
 
-В какой момент останавливается построение trellis'а? Если обработку никак не останавливать, то все данные дойдут до крайних контактов и, т.к. там не подключено никаких компонентов,
-то данные исчезнут.
+When the trellis building stops?
+If the process does not stop, then all data will reach the outer contacts and as there are no connected components all data will be lost.
 To avoid this, output contacts are specified in system description.
 
 <pre>
 	outputs(len) // outputs(output1, output2, output3)
 </pre>
 
-therefore, precessing will stop,
-поэтому обработка останавливается тогда, все сигналы в текущем списке принадлежат множеству выходных контактов.
+therefore, precessing will stop, when all signals in the current list will belong to output contacts.
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Arrow types
 ------------------------------------
 
