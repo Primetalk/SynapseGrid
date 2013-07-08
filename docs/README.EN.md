@@ -148,9 +148,11 @@ In some cases, when processing algorithm branches a lot, this syntax looks prett
 
 Working with state
 -------------------
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 До сих пор все примеры оперировали только данными, приходящими на входной контакт. Результат нигде не сохранялся и передавался далее.
 То есть использовались "чистые" функции без побочных эффектов — immutable. Такие функции обладают массой полезных свойств.
-Например, легко распараллелить обработку на несколько потоков. Не требуется пересоздавать систему для обработки других данных — достаточно один раз при старте приложения её создать.
+Например, легко распараллелить обработку на несколько потоков.
+Не требуется пересоздавать систему для обработки других данных — достаточно один раз при старте приложения её создать.
 Отладка таких систем практически исключена за ненадобностью — из-за отсутствия внутреннего состояния и побочных эффектов результат всегда детерминированно определяется входными данными.
 
 Если логика обработки данных требует сохранения состояния, то первое, что приходит в голову — использовать внутри функции переменную и сохранять состояние в ней. К примеру, так:
@@ -160,8 +162,9 @@ Working with state
 	val helloCount = myContact.map({any => 	counter += 1;  counter})
 </pre>
 
-Этот способ будет работать, но, к сожалению, мы теряем все преимущества immutable системы.
+This will work, alas we're losing all advantages of immutable system.
 
+But what if we will store the state separate from the system? And in the
 А что, если хранить состояние отдельно от системы? И в нужный момент перед работой функции текущее состояние извлекается, а потом помещается обратно.
 
 Как работать с таким состоянием, которое где-то хранится? Функция должна принимать на вход текущее значение состояния и возвращать новое значение.
@@ -221,25 +224,26 @@ Particularly, it will be very cosy to have a system graph.
 To get system's image, toDot call will be sufficient.
 This method traverses all system elements (contacts, arrows, subsystems) and generates a .dot text file.
 
-Drawings in images folder pefromed
-Просмотреть такой файл можно с помощью, например, программы XDot. Рисунки в папке images получены с помощью команды
+
+You can view .dot files via XDot, or any other software.
+All pictures in `images` folder were obtained by:
 
 <pre>
     dot -Tpng example3.dot > example3.png
 </pre>
 
 
-Конструирование системы с помощью Builder'ов
+System constructing via SystemBuilder
 --------------------------------------------
-Все примеры создания контактов и стрелочек должны находиться в каком-нибудь классе/трейте, унаследованном от SystemBuilder.
-Именно в нём находятся основные методы, позволяющие инкрементно создавать контакты и разнообразные стрелочки.
-Сам SystemBuilder, как подсказывает его название, является mutable классом и не участвует непосредственно в runtime-обработке.
-Чтобы получить чистое описание системы, построенное Builder'ом, достаточно вызвать метод toStaticSystem.
-Этот метод возвращает простой immutable case-класс, содержащий все контакты и стрелочки.
+All examples, of arrows/contacts creation must be stored in some class/trait, that extends SystemBuilder.
+It contains basic methods, which allows you to crate contacts, or different kind of arrows, incrementally.
+SystemBuilder, as you can see by it's name - is a mutable class. It doesn't take part in runtime-processing.
+To get a clear system description, constructed by SystemBuilder, that's will be enough to call toStaticSystem method.
+This method returns simple immutable case-class, which contains all contacts and arrows.
 
 There are bunch of DLS's that stored in separate traits, to use them, you have to connect them to your Builder.
 
-Для конструирования системы кроме очевидного способа
+Instead of obvious way of system construction
 
 <pre>
 	val sb = new SystemBuilderC("MySystem")
@@ -259,17 +263,18 @@ you could also extend a trait
 	val system = new MySystemBuilder.toStaticSystem
 </pre>
 
-После получения StaticSystem, её можно непосредственно использовать в SignalProcessor'е для обработки сигналов.
-При этом состояние системы придётся всё время передавать на вход SignalProcessor'у и запоминать при возврате.
-Чтобы упростить управление состоянием, имеется специальный класс DynamicSystem = StaticSystem + State.
-Пользоваться таким классом можно как обычной функцией (правда, имея в виду, что внутри спрятано состояние и функция имеет побочный эффект).
+After receiving StaticSystem, it can be directly used for signal processing via SignalProcessor.
+By this the system state will transmit the input SignalProcessor and remember on return all the time.
+There is DynamicSystem ( DynamicSystem == StaticSystem + State) class, can be used to ease state manage,
+
+You can use this class as an ordinary function (but bear in mind that has the state, hidden inside, and the function has a side effect).
 
 
 Subsystems
 ----------
-По мере увеличения программы, написанной на контактах, возникает необходимость выделения блоков в подсистемы для целей повторного использования.
-Чтобы добавить подсистему, используется метод addSubsystem.
-Так как у подсистемы имеется своё состояние, то также указывается stateHandle, где будет хранится состояние.
+As the program ( written in contact ) size increases, there is a need to allocate subsystem blocks, in reuse purposes.
+Use method addSubsystem to add subsystem.
+Since the subsystem has a state, stateHandle is also indicated, ( place where state will be stored ).
 
 <pre>
 	val subsystem = new MySubsystemBuilder.toStaticSystem
@@ -286,9 +291,9 @@ To make subsystem able to get an input data, some of it's contacts must be decla
 in this case, all data that appears in external system, on appropriate will be processed by subsystem.
 
 If you have a need to connect a several instances of subsystem, you would like to bind them to different input/output contacts.
-Для этого используются подсистема, вложенная в подсистему. В промежуточной подсистеме увязываются входы со входами и выходы с выходами.
-Для этого в builder'е промежуточной подсистемы используются методы mappedInput, mappedOutput, inputMappedTo, mapToOutput.
-Эти методы обеспечивают создание wiring'ов, обеспечивающих связи между контактами внешней подсистемы и контактами внутренней подсистемы.
+For this purpose, you should use a subsystem embedded in another subsystem. In the intermediate subsystem inputs link inputs, and outputs link outputs.
+To do this, Builder intermediate subsystem uses methods mappedInput, mappedOutput, inputMappedTo, mapToOutput.
+These methods enable the wiring creation, that proves connection between the external system contacts and the internal system contacts.
 
 
 Akka Actors usage
