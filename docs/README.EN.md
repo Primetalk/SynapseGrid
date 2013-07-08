@@ -104,20 +104,21 @@ therefore, precessing will stop, when all signals in the current list will belon
 Arrow types
 ------------------------------------
 
-При обработке данных часто возникает ситуация, когда на один входной элемент генерируется 0 и больше выходных элементов.
-Обработка такой ситуации в языке Scala осуществляется с помощью функции высшего порядка flatMap.
-Поэтому в системе контактов стрелочки, аннотированные функциями, возвращающими 0..n элементов, имеют тип FlatMap.
+The most common situation, in signal processing, when 0 or more input elements generated per one element
+Handling such a situation in Scala language, could be performed via higher-order function flatMap.
+That's why the arrows, annotated by functions, in the contact system,
+That's why, the arrows in the contact system, annotated by functions and which return 0 .. n elements, has the FlatMap type.
 
 <pre>
 	val wordsContact = someStringContact.flatMap(_.split("\\s+".r))
 </pre>
 
-Система будет выглядеть примерно так
+System will look like this:
 
 ![example2 system picture](images/example2.png)
 
-Важным частным случаем стрелочек типа FlatMap являются стрелочки 0..1, пропускающие или не пропускающие данные в зависимости от некоторых условий.
-Предусмотрен специальный метод для создания таких стрелочек — filter:
+An important case of FlatMap arrows are 0 .. 1 arrows, which reflect (or not) data, that depends on certain conditions.
+There's also special method, dedicated for arrows creation — filter:
 
 <pre>
 	val nonEmptyString = myContact.filter(_.length>0)
