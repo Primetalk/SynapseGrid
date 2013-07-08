@@ -128,8 +128,8 @@ There's also special method, dedicated for arrows creation — filter:
 For-comprehension compatibility
 -------------------------------
 
-Интересной особенностью языка Scala является возможность использования syntactic sugar для пользовательских методов.
-В частности, так как в системе контактов объявлены методы map, flatMap, filter и withFilter, появляется возможность использовать for-comprehension:
+An interesting feature of the Scala is ability to use syntactic sugar for custom methods.
+Particularly, methods as map, flatMap, filter and withFilter, are already announced so, there's possible to use a for-comprehension:
 
 <pre>
 	val helloContact = for {
@@ -138,13 +138,13 @@ For-comprehension compatibility
 	} yield "Hello, "+s
 </pre>
 
-Этот код эквивалентен цепочке, состоящей из двух стрелочек:
+The same code is listed below ( iе contains two arrows ):
 
 <pre>
 	val helloContact = myContact.filter(s => s.length>0).map(s=>"Hello, "+s)
 </pre>
 
-В некоторых случаях, когда алгоритм обработки разветвляется не очень сильно, такой синтаксис выглядит неплохо.
+In some cases, when processing algorithm branches a lot, this syntax looks pretty good.
 
 Working with state
 -------------------
