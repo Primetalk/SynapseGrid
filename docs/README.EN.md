@@ -81,46 +81,44 @@ System state will be represented as a Signal's list on different contacts in one
 	type Signals = List[Signal[_]]
 </pre>
 
-A special Signal Processor component, performs functional transformation of source signals list to
-Реализован специальный компонент SignalProcessor, который выполняет функциональное преобразование исходного списка сигналов в один момент времени в список сигналов
-последующий момент времени.
-Каждый сигнал по очереди передаётся на вход каждого компонента, подключенного к соответствующему контакту.
-Результат работы компонента в форме сигнала (или нескольких сигналов) добавляется к списку сигналов следующего момента времени.
-Когда все сигналы предшествующего момента времени обработаны, SignalProcessor завершает работу.
+There is a special implemented component SignalProcessor, which performs functional transformation of the original list of signals at a time to the alarm list
+later time.
+Each signal is transmitted to the input queue of each component connected to the corresponding contact.
+The output waveform component (or more signals) is added to the list of the next timing signal.
+Signal Processor exits, when all signals are processed by previous points of time
 
-В теории скрытых марковских моделей есть хорошее понятие треллис (trellis). Это развёртка во времени совокупности сигналов.
-И SignalProcessor как раз  и используется для построения trellis'а на основе входных данных.
+The theory of hidden Markov models has a good notion of trellis ( the time scan of signal constellation).
+SignalProcessor is used to build trellis, that based on the input data.
 
-В какой момент останавливается построение trellis'а? Если обработку никак не останавливать, то все данные дойдут до крайних контактов и, т.к. там не подключено никаких компонентов,
-то данные исчезнут.
+When the trellis building stops?
+If the process does not stop, then all data will reach the outer contacts and as there are no connected components all data will be lost.
 To avoid this, output contacts are specified in system description.
 
 <pre>
 	outputs(len) // outputs(output1, output2, output3)
 </pre>
 
-therefore, precessing will stop,
-поэтому обработка останавливается тогда, все сигналы в текущем списке принадлежат множеству выходных контактов.
+therefore, precessing will stop, when all signals in the current list will belong to output contacts.
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Arrow types
 ------------------------------------
 
-При обработке данных часто возникает ситуация, когда на один входной элемент генерируется 0 и больше выходных элементов.
-Обработка такой ситуации в языке Scala осуществляется с помощью функции высшего порядка flatMap.
-Поэтому в системе контактов стрелочки, аннотированные функциями, возвращающими 0..n элементов, имеют тип FlatMap.
+The most common situation, in signal processing, when 0 or more input elements generated per one element
+Handling such a situation in Scala language, could be performed via higher-order function flatMap.
+That's why the arrows, annotated by functions, in the contact system,
+That's why, the arrows in the contact system, annotated by functions and which return 0 .. n elements, has the FlatMap type.
 
 <pre>
 	val wordsContact = someStringContact.flatMap(_.split("\\s+".r))
 </pre>
 
-Система будет выглядеть примерно так
+System will look like this:
 
 ![example2 system picture](images/example2.png)
 
-Важным частным случаем стрелочек типа FlatMap являются стрелочки 0..1, пропускающие или не пропускающие данные в зависимости от некоторых условий.
-Предусмотрен специальный метод для создания таких стрелочек — filter:
+An important case of FlatMap arrows are 0 .. 1 arrows, which reflect (or not) data, that depends on certain conditions.
+There's also special method, dedicated for arrows creation — filter:
 
 <pre>
 	val nonEmptyString = myContact.filter(_.length>0)
@@ -130,8 +128,8 @@ Arrow types
 For-comprehension compatibility
 -------------------------------
 
-Интересной особенностью языка Scala является возможность использования syntactic sugar для пользовательских методов.
-В частности, так как в системе контактов объявлены методы map, flatMap, filter и withFilter, появляется возможность использовать for-comprehension:
+An interesting feature of the Scala is ability to use syntactic sugar for custom methods.
+Particularly, methods as map, flatMap, filter and withFilter, are already announced so, there's possible to use a for-comprehension:
 
 <pre>
 	val helloContact = for {
@@ -140,36 +138,37 @@ For-comprehension compatibility
 	} yield "Hello, "+s
 </pre>
 
-Этот код эквивалентен цепочке, состоящей из двух стрелочек:
+The same code is listed below ( iе contains two arrows ):
 
 <pre>
 	val helloContact = myContact.filter(s => s.length>0).map(s=>"Hello, "+s)
 </pre>
 
-В некоторых случаях, когда алгоритм обработки разветвляется не очень сильно, такой синтаксис выглядит неплохо.
+In some cases, when processing algorithm branches a lot, this syntax looks pretty good.
 
 Working with state
 -------------------
-До сих пор все примеры оперировали только данными, приходящими на входной контакт. Результат нигде не сохранялся и передавался далее.
-То есть использовались "чистые" функции без побочных эффектов — immutable. Такие функции обладают массой полезных свойств.
-Например, легко распараллелить обработку на несколько потоков. Не требуется пересоздавать систему для обработки других данных — достаточно один раз при старте приложения её создать.
-Отладка таких систем практически исключена за ненадобностью — из-за отсутствия внутреннего состояния и побочных эффектов результат всегда детерминированно определяется входными данными.
+Till now, all examples operated only with data, that was coming to the input contact.Result wasn't stored or transmitted anywhere.
+We used "pure" immutable functions without side-effects. This functions has a lot of useful characteristics. For example, we could easily parallel processing.
+There's no need to recreate system to perform another data processing — on-start creation will be enough.
+There's no need to debug systems like this - absence of inside state and side-effects, makes determinate (defined only by input data) result.
 
-Если логика обработки данных требует сохранения состояния, то первое, что приходит в голову — использовать внутри функции переменную и сохранять состояние в ней. К примеру, так:
+If data processing logic requires state save - the most obvious solution to use variable inside function to store state.
+For instance:
 
 <pre>
 	var counter = 0
 	val helloCount = myContact.map({any => 	counter += 1;  counter})
 </pre>
 
-Этот способ будет работать, но, к сожалению, мы теряем все преимущества immutable системы.
+This will work, alas we're losing all advantages of immutable system.
 
-А что, если хранить состояние отдельно от системы? И в нужный момент перед работой функции текущее состояние извлекается, а потом помещается обратно.
+But what if we will store the state separate from the system? And then, in the right time before function call, state will be executed and then put back.
 
-Как работать с таким состоянием, которое где-то хранится? Функция должна принимать на вход текущее значение состояния и возвращать новое значение.
+How to work with state, stored somewhere? Function has to accept current state on input and return new value.
 
 <pre>
-	val helloCount = myContact.[указание на переменную, где хранится состояние counter].map({(any, counter) => (counter+1, counter + 1)})
+	val helloCount = myContact.[link to variable, where counter state is stored].map({(any, counter) => (counter+1, counter + 1)})
 </pre>
 
 Let's take a closer look to this function. We'll make id verbose via def;
@@ -184,9 +183,9 @@ Let's take a closer look to this function. We'll make id verbose via def;
 
 The function, that process the state is pure. Q.e.d.
 
-Остаётся только определиться, как нам ловко хранить и извлекать состояние.
+Now, it only remains to determine how easily to store and retrieve state.
 
-Для идентификации различных переменных состояния мы будем использовать разновидность контакта — StateHandle[T].
+We will use StateHandle[T] (some sort of Contact), to identify different state variables
 
 <pre>
 	val counterS = state[Int]("counterS", 0)
@@ -196,23 +195,23 @@ The function, that process the state is pure. Q.e.d.
 This identifier contains variable type, name, and initial value.
 
 Current state value is not available at update. Actually it's not stored anywhere.
-(Забегая немного вперёд: SignalProcessor хранит текущие значения всех переменных состояния в Map'е).
+Looking ahead a little bit, SignalProcessor stores current all variables values in Map
 
-Чтобы в нашей функции helloCounter использовать это состояние, необходимо на него сослаться:
+To use this state in our helloCounter function, we have to refer it.
 
 <pre>
     (myContact.withState(counterS) -> helloCount).stateMap({(counter: Int, any:String) => (counter + 1, counter + 1)},"inc "+counterS)
 	val helloCount = myContact.stateMap(counterS, {(any, counter) => (counter+1, counter + 1)})
 </pre>
 
-В итоге получилось несколько громоздко, но зато мы имеем все преимущества чистых функций.
+It looks a little bit cumbersome, but we have all pure functions advantages.
 
 ![example3 system picture][example3]
 
 [example3]: images/example3.png "System example #3"
 
 DSL has a set of auxiliary high-order functions, that simplify working with states.
-////////////////////////////////////////////////////////////////////////////////////////
+
 
 Drawing system scheme
 -----------------------
@@ -223,25 +222,26 @@ Particularly, it will be very cosy to have a system graph.
 To get system's image, toDot call will be sufficient.
 This method traverses all system elements (contacts, arrows, subsystems) and generates a .dot text file.
 
-Drawings in images folder pefromed
-Просмотреть такой файл можно с помощью, например, программы XDot. Рисунки в папке images получены с помощью команды
+
+You can view .dot files via XDot, or any other software.
+All pictures in `images` folder were obtained by:
 
 <pre>
     dot -Tpng example3.dot > example3.png
 </pre>
 
 
-Конструирование системы с помощью Builder'ов
+System constructing via SystemBuilder
 --------------------------------------------
-Все примеры создания контактов и стрелочек должны находиться в каком-нибудь классе/трейте, унаследованном от SystemBuilder.
-Именно в нём находятся основные методы, позволяющие инкрементно создавать контакты и разнообразные стрелочки.
-Сам SystemBuilder, как подсказывает его название, является mutable классом и не участвует непосредственно в runtime-обработке.
-Чтобы получить чистое описание системы, построенное Builder'ом, достаточно вызвать метод toStaticSystem.
-Этот метод возвращает простой immutable case-класс, содержащий все контакты и стрелочки.
+All examples, of arrows/contacts creation must be stored in some class/trait, that extends SystemBuilder.
+It contains basic methods, which allows you to crate contacts, or different kind of arrows, incrementally.
+SystemBuilder, as you can see by it's name - is a mutable class. It doesn't take part in runtime-processing.
+To get a clear system description, constructed by SystemBuilder, that's will be enough to call toStaticSystem method.
+This method returns simple immutable case-class, which contains all contacts and arrows.
 
 There are bunch of DLS's that stored in separate traits, to use them, you have to connect them to your Builder.
 
-Для конструирования системы кроме очевидного способа
+Instead of obvious way of system construction
 
 <pre>
 	val sb = new SystemBuilderC("MySystem")
@@ -261,17 +261,18 @@ you could also extend a trait
 	val system = new MySystemBuilder.toStaticSystem
 </pre>
 
-После получения StaticSystem, её можно непосредственно использовать в SignalProcessor'е для обработки сигналов.
-При этом состояние системы придётся всё время передавать на вход SignalProcessor'у и запоминать при возврате.
-Чтобы упростить управление состоянием, имеется специальный класс DynamicSystem = StaticSystem + State.
-Пользоваться таким классом можно как обычной функцией (правда, имея в виду, что внутри спрятано состояние и функция имеет побочный эффект).
+After receiving StaticSystem, it can be directly used for signal processing via SignalProcessor.
+By this the system state will transmit the input SignalProcessor and remember on return all the time.
+There is DynamicSystem ( DynamicSystem == StaticSystem + State) class, can be used to ease state manage,
+
+You can use this class as an ordinary function (but bear in mind that has the state, hidden inside, and the function has a side effect).
 
 
 Subsystems
 ----------
-По мере увеличения программы, написанной на контактах, возникает необходимость выделения блоков в подсистемы для целей повторного использования.
-Чтобы добавить подсистему, используется метод addSubsystem.
-Так как у подсистемы имеется своё состояние, то также указывается stateHandle, где будет хранится состояние.
+As the program ( written in contact ) size increases, there is a need to allocate subsystem blocks, in reuse purposes.
+Use method addSubsystem to add subsystem.
+Since the subsystem has a state, stateHandle is also indicated, ( place where state will be stored ).
 
 <pre>
 	val subsystem = new MySubsystemBuilder.toStaticSystem
@@ -288,9 +289,9 @@ To make subsystem able to get an input data, some of it's contacts must be decla
 in this case, all data that appears in external system, on appropriate will be processed by subsystem.
 
 If you have a need to connect a several instances of subsystem, you would like to bind them to different input/output contacts.
-Для этого используются подсистема, вложенная в подсистему. В промежуточной подсистеме увязываются входы со входами и выходы с выходами.
-Для этого в builder'е промежуточной подсистемы используются методы mappedInput, mappedOutput, inputMappedTo, mapToOutput.
-Эти методы обеспечивают создание wiring'ов, обеспечивающих связи между контактами внешней подсистемы и контактами внутренней подсистемы.
+For this purpose, you should use a subsystem embedded in another subsystem. In the intermediate subsystem inputs link inputs, and outputs link outputs.
+To do this, Builder intermediate subsystem uses methods mappedInput, mappedOutput, inputMappedTo, mapToOutput.
+These methods enable the wiring creation, that proves connection between the external system contacts and the internal system contacts.
 
 
 Akka Actors usage
