@@ -20,7 +20,7 @@
 
 ext {
     aGroup = 'ru.primetalk'
-    aVersion = '1.1'//'1.2.0-SNAPSHOT'
+    aVersion = '1.1.2'//'1.2.0-SNAPSHOT'
     isReleaseVersion = !aVersion.endsWith("SNAPSHOT")
 
     scalaMajorVersion = '2.10'
@@ -63,6 +63,24 @@ subprojects {
         testCompile "junit:junit:4.11"
         testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
     }
+    // making source.jar
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    // making javadoc.jar
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+    // adding source.jar and javadoc.jar to artifacts
+    artifacts {
+        archives sourcesJar
+        archives javadocJar
+    }
+
+
     uploadArchives {
         repositories {
             mavenDeployer {
