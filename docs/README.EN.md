@@ -3,7 +3,7 @@ SinapseGrid contact system
 
 Key features
 --------------------
-1. SinapseGrid provides better opportunity for function composition, which goes far away from monad capabilities.
+1. SinapseGrid provides better opportunity for functional composition, which goes far beyond monad capabilities.
 2. By using mutually with Akka-actors, you have a opportunity to use strictly typed data processing, that significantly shifts Typed actors.
 3. Composite functions, that have multiple input and output.
 
@@ -232,7 +232,8 @@ All pictures in `images` folder were obtained by:
 
 
 System constructing via SystemBuilder
---------------------------------------------
+-------------------------------------
+
 All examples, of arrows/contacts creation must be stored in some class/trait, that extends SystemBuilder.
 It contains basic methods, which allows you to crate contacts, or different kind of arrows, incrementally.
 SystemBuilder, as you can see by it's name - is a mutable class. It doesn't take part in runtime-processing.

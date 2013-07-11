@@ -20,7 +20,8 @@
 
 ext {
     aGroup = 'ru.primetalk'
-    aVersion = '1.1.2'//'1.2.0-SNAPSHOT'
+    aVersion = '1.1.3-SNAPSHOT'
+//    aVersion = '1.1.3'//'1.2.0-SNAPSHOT'
     isReleaseVersion = !aVersion.endsWith("SNAPSHOT")
 
     scalaMajorVersion = '2.10'
