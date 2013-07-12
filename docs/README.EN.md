@@ -3,7 +3,7 @@ SinapseGrid contact system
 
 Key features
 ------------
-1. SinapseGrid provides better opportunity for function composition, which goes far beyond from monad capabilities.
+1. SinapseGrid provides better opportunity for function composition, which goes far beyond monad capabilities.
 2. Mutual usage with a Akka-actors allows strictly typed data processing, that significantly excels Typed actors.
 3. Composite functions, that have multiple inputs and outputs.
 
@@ -17,26 +17,30 @@ Imagine a breadboard for assembling an electronic circuit.
 There is bunch of apertures and contact areas. Some contacts are arranged for apt electronic device connections while others are auxiliary, and used to link components
 
 There are different components (impedors, transistors), installed on the breadboard.
-There are also subsystems like: power supply, low frequency amplifier, filter and etc.
-Some subsystems may stay untapped, some contacts and subsystems may not be involved.
-There may be not connected components to them. Some power supply outputs may stay unclaimed. Or some circuit's inputs may be unused.
+There are also subsystems like: power supply, low frequency amplifier, filter and etc. Those subsystems are themselves made up of a few components.
+Some subsystems may stay unclaimed and left without any components installed.
+Simultaneously some contacts that belong to a subsystem may not be involved and may simply "hang".
 
-Breadboard can be a good illustration to contact system.
+For instance some output voltages in a power supply may be unused. Or some inputs of a general purpose microcircuit may be unused.
 
+Breadboard is a good metaphor that illustrates SinapseGrid contact system.
 
 Contacts and links
----------------------
-The Contact is an object with Contact[T] type and with a name, that usually matches variable name.
-It's very easy to create a simple instance of Contact. You may see example listed below (All examples are written Scala)
+------------------
+The Contact is an instance of Contact[T] type that has a name, that usually matches the variable name.
+(In future it is planned to implement a macro that will ensure this property.)
+It's very easy to create a simple instance of Contact. You may see example listed below (All examples are written in Scala)
 
 <pre>
 	val myContact = contact[String]("myContact")
 </pre>
 
-Contact that doesn't contain any data, because it designates a point on the breadboard.
-It may have component's IO connections of type String.
-The component that has one input and one output is called an arrow or an link.
-In the most wonted way, an ordinary function can be applied as component. Like in example below:
+Contact doesn't contain any data. It designates a point on the breadboard. You may consider it as an assigned name on the breadboard.
+The 'myContact' may have connections to component's inputs and outputs of type String.
+
+The component that has one input and one output is called an arrow or a link.
+
+An ordinary Scala function is already a component/a link that can be connected to contacts:
 
 <pre>
 	def getLength(s:String) = s.length
@@ -55,41 +59,49 @@ or, briefly
 	val len = myContact.map( _.length )
 </pre>
 
-The system sample is listed below (to make testing possible, additional contacts were connected: input, output).
+The system sample is shown below (to make testing possible, additional contacts have been connected: `input`, `output`).
 
 ![example1 system picture](images/example1.png)
 
-(In the last case, the len contact of following type (Int) will be created automatically.)
+(In the latter case, the `len` contact of inferred type (Int) is created automatically.)
 
 
 Data processing
 ---------------
 
-The code above, doesn't make any job, because contacts either functions don't store any data.
-This code only declares system structure - Contacts and their bonds with components or subsystems.
+The code above, doesn't do actual job, because nor contacts neither functions store any data.
+This code only declares the system's structure - Contacts and their interconnections.
 
-External binding is used to attach data to some contact.
-It means, that some object will be created. This Object will store link, contact  and data bound to corresponding contact.
-In Concat System terminology this object will be called a Signal.
+External binding is used to attach data to a contact.
+It means, that a dedicated object will be created that holds the contact and the data bound to it.
+In Contact System terminology this object is called a Signal.
 
 <pre>
 	case class Signal[T](contact:Contact[T], data:T)
 </pre>
 
-(You may also meet terms, that corresponds to a signal like: Event, Data, Frame and Message.)
-System state will be represented as list of signals, that stored on different contacts in one discrete time moment.
+(This object is often referred to as Event, Data, Frame or Message.)
+System state is represented as a list of signals:
 
 <pre>
 	type Signals = List[Signal[_]]
 </pre>
 
-SignalProcessor performs functional transformation of the original list of signals to it's finite state.
-Each signal is transmitted to the input queue, that belong to each component and  it's connected to the corresponding contact.
-Signal, received after contact's job completion, will be  added to the list of the next timing signal.
-Signal Processor exits, when all signals are processed by previous points of time
+The list represents all data attached to corresponding contacts in one discrete time moment.
 
-The theory of hidden Markov models has a good notion of trellis (the time chart of signal constellation).
-SignalProcessor is used to build  a trellis, based on input data.
+SignalProcessor performs a functional transformation of the original list of signals to it's subsequent state.
+Each signal in order is put into the input of each component which is connected to the corresponding contact.
+The component transforms the received data (signals) according to it's logic and produces zero, one or more output data items.
+The results of components' transformation are associated with the component's output contact. The data items are converted
+into signals which are added to the system's state for the next time moment.
+Signal Processor exits, when all signals of the current time moment have been processed.
+
+The theory of hidden Markov models has a good notion of trellis (the time chart(scan) of signal constellation).
+SignalProcessor builds the trellis starting from input data.
+
+
+----------------------
+
 
 When the trellis building stops?
 If the process does not stop, then all data will reach the outer contacts and, as there are no connected components, all data will be lost.
