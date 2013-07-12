@@ -116,10 +116,11 @@ trait SystemBuilder extends BasicSystemBuilder {
   implicit class ImplRichContactPair[S, T](c : Contact[(S, T)]) {//extends ImplRichContact[(S, T)](c) {
     require(c!= null, "Contact is null")
 
-//    /** Converts data to pair with current state value. */
-//    def unzipWithState(stateHolder : StateHandle[S], name:String = "") : Contact[T] = {
-//      (new LinkWithState(c, auxContact[T], stateHolder)).stateMap((s, p) ⇒ (p._1, p._2), nextLabel(name, "unzip to "+stateHolder))
-//    }
+    /** Converts data to pair with current state value. */
+    def unzipWithState(stateHandle : StateHandle[S], name:String = "") : Contact[T] = {
+      (c -> auxContact[T]) .stateMap(stateHandle, nextLabel(name, "unzip to "+stateHandle)) ((s, p:(S, T)) ⇒ (p._1, p._2))
+//      (new LinkWithState(c, auxContact[T], stateHandle)).stateMap((s, p) ⇒ (p._1, p._2), nextLabel(name, "unzip to "+stateHolder))
+    }
     /** Switches based on the first element of the pair.*/
     def Case(CaseValue:S):Contact[T] = {
       c -> auxContact[T] collect ({ case (CaseValue, value) => value },s"Case($CaseValue)")
@@ -174,24 +175,31 @@ trait SystemBuilder extends BasicSystemBuilder {
   }
 
   implicit class ImplStateLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) {
-    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, Seq[T2])) =
-      addLink(c._1, c._2, new StatefulFlatMapLink(f, stateHandle, nextLabel(name, "sfm")))
-
     def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, T2)) =
       addLink(c._1, c._2, new StatefulMapLink(f, stateHandle,
         nextLabel(name, "sm")))
+    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, Seq[T2])) =
+      addLink(c._1, c._2, new StatefulFlatMapLink(f, stateHandle, nextLabel(name, "sfm")))
+
   }
 
   class ContactWithState[T1, S](val c1:Contact[T1], val stateHandle:StateHandle[S]) {
     def stateMap[T2](f: (S, T1) ⇒ (S, T2), name:String ="") =
       addLink(c1, auxContact[T2], new StatefulMapLink(f, stateHandle,
         nextLabel(name, "sm")))
+    def stateFlatMap[T2](f: (S, T1) ⇒ (S, Seq[T2]), name:String ="") =
+      addLink(c1, auxContact[T2], new StatefulFlatMapLink(f, stateHandle,
+        nextLabel(name, "sfm")))
+
   }
 
   implicit class ImplStateLinkBuilder2[T1, T2, S](p:(ContactWithState[T1, S], Contact[T2])) {
     def stateMap(f: (S, T1) ⇒ (S, T2), name:String ="") =
       addLink(p._1.c1, p._2, new StatefulMapLink(f, p._1.stateHandle,
         nextLabel(name, "sm")))
+    def stateFlatMap(f: (S, T1) ⇒ (S, Seq[T2]), name:String ="") =
+      addLink(p._1.c1, p._2, new StatefulFlatMapLink(f, p._1.stateHandle,
+        nextLabel(name, "sfm")))
   }
   implicit class ImplRichContact[T](val c: Contact[T]) {
     require(c != null, "Contact is null")
