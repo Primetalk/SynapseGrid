@@ -20,8 +20,8 @@
 
 ext {
     aGroup = 'ru.primetalk'
-    aVersion = '1.1.3-SNAPSHOT'
-//    aVersion = '1.1.3'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.1.5-SNAPSHOT'
+    aVersion = '1.1.5'//'1.2.0-SNAPSHOT'
     isReleaseVersion = !aVersion.endsWith("SNAPSHOT")
 
     scalaMajorVersion = '2.10'
@@ -82,19 +82,43 @@ subprojects {
     }
 
 
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+        repositories {
+            maven{ // declare properties in ~/.gradle/gradle.properties
+                url nexusPublic
+                credentials {
+                    username nexusUsername
+                    password nexusPassword
+                }
+            }
+        }
+    }
     uploadArchives {
         repositories {
             mavenDeployer {
+//                        repository(url: "file://localhost/tmp/myRepo/")
                 repository {
-                    mavenLocal()
-                    //(url: "~/.m2/repository")
+                    //mavenLocal()
+                    maven{ // declare properties in ~/.gradle/gradle.properties
+                        url nexusPublic
+                        credentials {
+                            username nexusUsername
+                            password nexusPassword
+                        }
+                    }
+                    //(url "~/.m2/repository")
                 }
 //                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
                 pom.project {
                     licenses {
                         license {
                             name 'BSD Software License, 2-clause version'
-                            url 'https://github.com/Primetalk/SinapseGrid/blob/master/LICENSE.md'
+                            url 'https://github.com/Primetalk/SynapseGrid/blob/master/LICENSE.md'
                             distribution 'repo'
                         }
                     }
@@ -116,8 +140,8 @@ subprojects {
                         }
                     }
                     scm {
-                        url 'https://github.com/Primetalk/SinapseGrid'
-                        connection 'https://github.com/Primetalk/SinapseGrid'
+                        url 'https://github.com/Primetalk/SynapseGrid'
+                        connection 'https://github.com/Primetalk/SynapseGrid'
                     }
                 }
             }
@@ -128,31 +152,31 @@ subprojects {
 //        sign configurations.archives
 //    }
 }
-project(':sinapse-grid-core') {
+project(':synapse-grid-core') {
     dependencies {
     }
 }
 
-project(':sinapse-grid-slf4j') {
+project(':synapse-grid-slf4j') {
     dependencies {
-        compile project(':sinapse-grid-core')
+        compile project(':synapse-grid-core')
         compile slf4j
     }
 }
 
-project(':sinapse-grid-akka') {
+project(':synapse-grid-akka') {
     dependencies {
-        compile project(':sinapse-grid-slf4j')
+        compile project(':synapse-grid-slf4j')
         compile "com.typesafe.akka:akka-actor_$scalaMajorVersion:$akkaVersion"
         compile "com.typesafe.akka:akka-remote_$scalaMajorVersion:$akkaVersion"
         compile "com.typesafe.akka:akka-slf4j_$scalaMajorVersion:$akkaVersion"
     }
 }
 
-project(':sinapse-grid-examples') {
+project(':synapse-grid-examples') {
     dependencies {
-        compile project(':sinapse-grid-slf4j')
-//        compile project(':sinapse-grid-akka')
+        compile project(':synapse-grid-slf4j')
+//        compile project(':synapse-grid-akka')
     }
 }
 

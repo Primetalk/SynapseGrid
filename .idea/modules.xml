@@ -3,10 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SinapseGrid.iml" filepath="$PROJECT_DIR$/SinapseGrid.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sinapse-grid-akka.iml" filepath="$PROJECT_DIR$/sinapse-grid-akka.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sinapse-grid-core/sinapse-grid-core.iml" filepath="$PROJECT_DIR$/sinapse-grid-core/sinapse-grid-core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sinapse-grid-examples/sinapse-grid-examples.iml" filepath="$PROJECT_DIR$/sinapse-grid-examples/sinapse-grid-examples.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sinapse-grid-slf4j.iml" filepath="$PROJECT_DIR$/sinapse-grid-slf4j.iml" />
+      <module fileurl="file://$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" filepath="$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" />
+      <module fileurl="file://$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" filepath="$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" filepath="$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/synapse-grid-slf4j/synapse-grid-slf4j.iml" filepath="$PROJECT_DIR$/synapse-grid-slf4j/synapse-grid-slf4j.iml" />
     </modules>
   </component>
 </project>

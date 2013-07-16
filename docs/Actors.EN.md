@@ -1,10 +1,10 @@
 Multithreading support
 ======================
 
-SinapseGrid has a perfect integration with the awesome Akka library. (By the way, I'd like to acknowledge Jonas Bonér and Martin Odersky  creating this library.)
+SynapseGrid has a perfect integration with the awesome Akka library. (By the way, I'd like to acknowledge Jonas Bonér and Martin Odersky  creating this library.)
 
 
-System capabilities (SinapseGrid)
+System capabilities (SynapseGrid)
 ----------------------------------------------
 1. Parallel data processing
 2. Explicit declaration, which subsystems will be executed in separate actor.

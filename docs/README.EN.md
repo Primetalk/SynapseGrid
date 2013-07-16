@@ -1,13 +1,13 @@
-SinapseGrid contact system
+SynapseGrid contact system
 ==========================
 
 Key features
 ------------
-1. SinapseGrid provides better opportunity for function composition, which goes far beyond monad capabilities.
+1. SynapseGrid provides better opportunity for function composition, which goes far beyond monad capabilities.
 2. Mutual usage with a Akka-actors allows strictly typed data processing, that significantly excels Typed actors.
 3. Composite functions, that have multiple inputs and outputs.
 
-(Reasons, that led us to create SinapseGrid could be found here: [Потребности систем ведения диалога](docs/SpeechPortalMotivation.RU.md). )
+(Reasons, that led us to create SynapseGrid could be found here: [Потребности систем ведения диалога](docs/SpeechPortalMotivation.RU.md). )
 
 Breadboard concept
 ------------------
@@ -23,7 +23,7 @@ Simultaneously some contacts that belong to a subsystem may not be involved and 
 
 For instance some output voltages in a power supply may be unused. Or some inputs of a general purpose microcircuit may be unused.
 
-Breadboard is a good metaphor that illustrates SinapseGrid contact system.
+Breadboard is a good metaphor that illustrates SynapseGrid contact system.
 
 Contacts and links
 ------------------
