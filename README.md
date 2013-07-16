@@ -1,10 +1,10 @@
-SinapseGrid
+SynapseGrid
 ===========
 
 Feature highlights
 ------------------
 
-1. SinapseGrid allows function composition far more flexible than monads.
+1. SynapseGrid allows function composition far more flexible than monads.
 2. Strictly typed message handling in Akka actors (a bit more natural than in Typed actors).
 3. Multi input/multi output functions.
 4. Systems process portions of information ASAP.
@@ -19,6 +19,6 @@ See also
 --------
 
 1. [README.md in Russian](docs/README.RU.md) until the complete translation appear here.
-2. [Motivation for SinapseGrid](docs/SpeechPortalMotivation.RU.md)
+2. [Motivation for SynapseGrid](docs/SpeechPortalMotivation.RU.md)
 3. [License (BSD-like)](LICENSE.md)
 4. [Actors support (in Russian)](Actors.RU.md).
