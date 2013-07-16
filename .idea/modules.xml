@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/SinapseGrid.iml" filepath="$PROJECT_DIR$/SinapseGrid.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SynapseGrid.iml" filepath="$PROJECT_DIR$/SynapseGrid.iml" />
       <module fileurl="file://$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" filepath="$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" />
       <module fileurl="file://$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" filepath="$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" filepath="$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" />
