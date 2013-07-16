@@ -4,6 +4,8 @@
       <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-actors/2.10.0/scala-actors-2.10.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-actors/2.10.0/scala-actors-2.10.0-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

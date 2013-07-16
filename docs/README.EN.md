@@ -157,12 +157,12 @@ In some cases, when processing algorithm branches a lot, this syntax looks prett
 Working with state
 ------------------
 
-Till now, all examples operated only with data, that was coming to the input contact.Result wasn't stored or transmitted anywhere.
-We used "pure" immutable functions without side-effects. This functions has a lot of useful characteristics. For example, we could easily parallel processing.
+Till now, all examples operated only with data, that was coming to the input contact. The result wasn't stored or transmitted anywhere.
+We used "pure" immutable functions without side-effects. This functions has a lot of useful characteristics. For example, we could easily parallel data processing.
 There's no need to recreate system to perform another data processing — on-start creation will be enough.
-There's no need to debug systems like this - absence of inside state and side-effects, makes determinate (defined only by input data) result.
+Also, there's no need to debug systems like this - the absence of inside state and side-effects, makes determinate (defined only by input data) result.
 
-If data processing logic requires state save - the most obvious solution to use variable inside function to store state.
+If data processing logic requires state save - the most obvious solution to use variable inside a function to store the state.
 For instance:
 
 <pre>
@@ -172,7 +172,7 @@ For instance:
 
 This will work, alas we're losing all advantages of immutable system.
 
-But what if we will store the state separate from the system? And then, in the right time before function call, state will be executed and then put back.
+But what if we will store the state separately from the system? And then, in the right time before function call, state will be executed and then put back.
 
 How to work with state, stored somewhere? Function has to accept current state on input and return new value.
 
@@ -189,6 +189,8 @@ Let's take a closer look to this function. We'll make it verbose via def;
 	  return (resultOfThisFunction, newCounterValue)
 	}
 </pre>
+
+-------
 
 The function, that process the state is pure. Q.e.d.
 
