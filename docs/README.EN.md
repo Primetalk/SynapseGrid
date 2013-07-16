@@ -21,7 +21,7 @@ There are also subsystems like: power supply, low frequency amplifier, filter an
 Some subsystems may stay unclaimed and left without any components installed.
 Simultaneously some contacts that belong to a subsystem may not be involved and may simply "hang".
 
-For instance some output voltages in a power supply may be unused. Or some inputs of a general purpose microcircuit may be unused.
+For instance, some output voltages in a power supply may be unused. Or some inputs of a general purpose microcircuit may be unused.
 
 Breadboard is a good metaphor that illustrates SynapseGrid contact system.
 
@@ -29,18 +29,18 @@ Contacts and links
 ------------------
 The Contact is an instance of <code>Contact[T]</code> type that has a name, that usually matches the variable name.
 (In future it is planned to implement a macro that will ensure this property.)
-It's very easy to create a simple instance of Contact. You may see example listed below (All examples are written in Scala)
+It's very easy to create a simple instance of Contact. You may see example an listed below (All examples are written in Scala)
 
 <pre>
 	val myContact = contact[String]("myContact")
 </pre>
 
 Contact doesn't contain any data. It designates a point on the breadboard. You may consider it as an assigned name on the breadboard.
-The 'myContact' may have connections to component's inputs and outputs of type String.
+The <code>myContact</code> may have connections to component's inputs and outputs of type String.
 
 The component that has one input and one output is called an arrow or a link.
 
-An ordinary Scala function is already a component/a link that can be connected to contacts:
+An ordinary Scala function is already a component/(a link) that can be connected to contacts:
 
 <pre>
 	def getLength(s:String) = s.length
@@ -59,7 +59,7 @@ or, briefly
 	val len = myContact.map( _.length )
 </pre>
 
-The system sample is shown below (to make testing possible, additional contacts have been connected: `input`, `output`).
+The system sample is shown below (to make testing possible, additional contacts has been connected: `input`, `output`).
 
 ![example1 system picture](images/example1.png)
 
@@ -92,7 +92,7 @@ The list represents all data attached to corresponding contacts in one discrete 
 SignalProcessor performs a functional transformation of the original list of signals to it's subsequent state.
 Each signal in order is put into the input of each component which is connected to the corresponding contact.
 The component transforms the received data (signals) according to it's logic and produces zero, one or more output data items.
-The results of components' transformation are associated with the component's output contact. The data items are converted
+The results of component's transformation are associated with the component's output contact. The data items are converted
 into signals which are added to the system's state for the next time moment.
 Signal Processor exits, when all signals of the current time moment have been processed.
 
@@ -158,7 +158,7 @@ Working with state
 ------------------
 
 Till now, all examples operated only with data, that was coming to the input contact. The result wasn't stored or transmitted anywhere.
-We used "pure" immutable functions without side-effects. This functions has a lot of useful characteristics. For example, we could easily parallel data processing.
+We used "pure" immutable functions without side-effects. This functions have a lot of useful characteristics. For example, we could easily parallel data processing.
 There's no need to recreate system to perform another data processing — on-start creation will be enough.
 Also, there's no need to debug systems like this - the absence of inside state and side-effects, makes determinate (defined only by input data) result.
 
@@ -226,12 +226,12 @@ Drawing the system scheme
 
 Since it's a declarative system, there is a great chance to study and analyse it through a system graph.
 
-To get system's image, toDot call will be sufficient.
+To get system's image, <code>toDot</code> call will be sufficient.
 This method traverses all system elements (contacts, arrows, subsystems) and generates a .dot text file.
 
 
 You can view .dot files via XDot, or any other software.
-All pictures in `images` folder were obtained by:
+All pictures in the <code>images</code> folder were obtained by this command:
 
 <pre>
     dot -Tpng example3.dot > example3.png
@@ -241,11 +241,10 @@ All pictures in `images` folder were obtained by:
 System constructing via SystemBuilder
 -------------------------------------
 All examples, of arrows/contacts creation must be stored in some class/trait, that extends SystemBuilder.
-It have to contain basic methods, that allow you to incrementally crate contacts or different sort of arrows.
+It has to contain basic methods, that allow you to incrementally crate contacts or different sort of arrows.
 SystemBuilder – is a mutable class. It doesn't participate in runtime-processing.
 
-!!!!!
-To get a clear system description, constructed by SystemBuilder, that's will be enough to call toStaticSystem method.
+To get a clear system description, constructed by SystemBuilder call <code>toStaticSystem</code> method.
 This method returns simple immutable case-class, which contains all contacts and arrows.
 
 There are bunch of DLS's that stored in separate traits, to use them, you have to connect them to your Builder.
@@ -259,7 +258,7 @@ Instead of obvious way of system construction
 	val system = sb.toStaticSystem
 </pre>
 
-you could also extend a trait
+you can also extend a trait
 
 <pre>
 	trait MySystemBuilder extends SystemBuilder {
@@ -270,11 +269,11 @@ you could also extend a trait
 	val system = new MySystemBuilder.toStaticSystem
 </pre>
 
-After receiving StaticSystem, it can be directly used for signal processing via SignalProcessor.
+After receiving a <code>StaticSystem</code>, it can be directly used for signal processing via SignalProcessor.
 By this the system state will transmit the input SignalProcessor and remember on return all the time.
 There is DynamicSystem ( DynamicSystem == StaticSystem + State) class, can be used to ease state manage,
 
-You can use this class as an ordinary function (but bear in mind that has the state, hidden inside, and the function has a side effect).
+You can use this class as an ordinary function (but bear in mind that it has a state hidden inside) Function will have a side effect.
 
 
 Subsystems
