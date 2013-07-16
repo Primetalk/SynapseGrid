@@ -279,7 +279,7 @@ You can use this class as an ordinary function (but bear in mind that it has a s
 Subsystems
 ----------
 As the program size increases, there is a need to allocate some subsystem blocks in reuse purposes.
-Use the addSubsystem method to add subsystem.
+Use the <code>addSubsystem</code> method to add subsystem.
 Since the subsystem has a state, stateHandle is also indicated.
 
 >! TODO:Add stateHandle description
@@ -298,10 +298,10 @@ To make subsystem able to get an input data, some of it's contacts must be decla
 
 in this case, all data that appears in external system and on apt contacts will be processed by subsystem.
 
-If there is a need to connect a several instances of subsystem, you would like to bind them to different input/output contacts.
+If there is a need to connect a several instances of subsystem, you'd like to bind them to different input/output contacts.
 For this purpose, you should use a subsystem embedded in another subsystem. In the intermediate subsystem inputs link inputs, and outputs link outputs.
-To do this, Builder intermediate subsystem uses methods mappedInput, mappedOutput, inputMappedTo, mapToOutput.
-These methods enable the wiring creation, that proves connection between the external system contacts and the internal system contacts.
+To do this, Builder intermediate subsystem uses methods <code>mappedInput</code>, <code>mappedOutput</code>, <code>inputMappedTo</code>, <code>mapToOutput</code>.
+These methods enable a wiring creation, that proves connection between the external system contacts and the internal system contacts.
 
 
 Akka Actors usage
