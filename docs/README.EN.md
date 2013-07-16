@@ -99,10 +99,6 @@ Signal Processor exits, when all signals of the current time moment have been pr
 The theory of hidden Markov models has a good notion of trellis (the time chart(scan) of signal constellation).
 SignalProcessor builds the trellis starting from input data.
 
-
-----------------------
-
-
 When the trellis building stops?
 If the process does not stop, then all data will reach the outer contacts and, as there are no connected components, all data will be lost.
 To avoid this, output contacts are specified in system description.
@@ -129,11 +125,11 @@ System will look like this:
 
 ![example2 system picture](images/example2.png)
 
-An important case of FlatMap arrows are 0..1 arrows, which reflect (sometimes they doesn't) data, that depends on certain conditions.
-There's also a method, dedicated for arrows creation. It's called a filter:
+An important case of FlatMap arrows are 0..1 arrows, which reflect (sometimes they don't) data, that depends on certain conditions.
+There's also a method, dedicated to create arrows. It's called a filter:
 
 <pre>
-	val nonEmptyString = myContact.filter(_.length>0)
+	val nonEmptyString = myContact.filter( _.length > 0 )
 </pre>
 
 
@@ -150,7 +146,7 @@ Methods like map, flatMap, filter or withFilter, are already announced, so, it's
 	} yield "Hello, "+s
 </pre>
 
-The same code is you may below (iе contains two arrows):
+The same code you may find below (iе contains two arrows):
 
 <pre>
 	val helloContact = myContact.filter(s => s.length>0).map(s=>"Hello, "+s)
