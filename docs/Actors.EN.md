@@ -25,10 +25,11 @@ On schedule
 
 Akka Actors usage
 ---------------------------
-All systems, that were described above, are single-threaded. So, there are many possible ways to jump for multithreading.
-One of them by creating actor-based system, that will be fully compatible with Akka.
-When Actor receive a Signal message, it's processing will be performed in the most obvious way: signal will be sent next, to embedded DynamicSystem.
-There's a special NonSignalWithSenderInput contact. It could be used for compatibility with programs, that doesn't work with Signals.
-This contact has (ActorRef, Any) type. The first element will contain received data sender, the second, strictly speaking - data.
+All, described above, systems are single-threaded. There are also many possible ways to achieve multithreading.
+One of them – create an actor-based system, that will be fully compatible with Akka.
+When Actor receives a Signal message, then it will be proceed in the most obvious way: signal will be sent next to embedded DynamicSystem.
+
+The NonSignalWithSenderInput contact can be used for compatibility with programs, which doesn't support Signals.
+This contact has (ActorRef, Any) type. It's first element will contain received data sender, the second – data..
 
 
