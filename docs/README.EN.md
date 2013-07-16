@@ -27,7 +27,7 @@ Breadboard is a good metaphor that illustrates SynapseGrid contact system.
 
 Contacts and links
 ------------------
-The Contact is an instance of Contact[T] type that has a name, that usually matches the variable name.
+The Contact is an instance of <code>Contact[T]</code> type that has a name, that usually matches the variable name.
 (In future it is planned to implement a macro that will ensure this property.)
 It's very easy to create a simple instance of Contact. You may see example listed below (All examples are written in Scala)
 
@@ -190,13 +190,11 @@ Let's take a closer look to this function. We'll make it verbose via def;
 	}
 </pre>
 
--------
-
 The function, that process the state is pure. Q.e.d.
 
-Now, it only remains to determine how easily to store and retrieve state.
+It only remains to determine how to store and retrieve state easily.
 
-We will use StateHandle[T] (some sort of Contact), to identify different state variables
+We will use <code>StateHandle[T]</code> (some sort of Contact), to identify different state variables
 
 <pre>
 	val counterS = state[Int]("counterS", 0)
@@ -206,7 +204,6 @@ We will use StateHandle[T] (some sort of Contact), to identify different state v
 This identifier contains variable type, name, and initial value.
 
 Current state value is not available at update. Actually it's not stored anywhere.
-Looking ahead a little bit, SignalProcessor stores current all variables values in Map
 
 To use this state in our helloCounter function, we have to refer it.
 
@@ -215,19 +212,19 @@ To use this state in our helloCounter function, we have to refer it.
 	val helloCount = myContact.stateMap(counterS, {(any, counter) => (counter+1, counter + 1)})
 </pre>
 
-It looks a little bit cumbersome, but we have all pure functions advantages.
+It looks a little bit cumbersome, but we have all advantages of pure functions .
 
 ![example3 system picture][example3]
 
 [example3]: images/example3.png "System example #3"
 
-DSL has a set of auxiliary high-order functions, that simplify working with states.
+Synapse Grid DSL provides a set of auxiliary high-order functions, that simplify working with states.
 
 
 Drawing the system scheme
 -------------------------
 
-Since we have a declarative system, there is a great chance to study and analyse it through e a system graph.
+Since it's a declarative system, there is a great chance to study and analyse it through a system graph.
 
 To get system's image, toDot call will be sufficient.
 This method traverses all system elements (contacts, arrows, subsystems) and generates a .dot text file.
@@ -317,7 +314,6 @@ When Actor receives a Signal message, then it will be proceed in the most obviou
 
 The NonSignalWithSenderInput contact can be used for compatibility with programs, which doesn't support Signals.
 This contact has (ActorRef, Any) type. It's first element will contain received data sender, the second – data.
-
 
 1. [Read more about Actor support](Actors.EN.md).
 
