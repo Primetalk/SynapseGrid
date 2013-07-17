@@ -17,8 +17,8 @@ Feature highlights
 
 See also
 --------
-1. [README.EN.md in English](docs/README.EN.md) English readme.
-2. [README.md по-русски ](docs/README.RU.md)
+1. [README in English](docs/README.EN.md) English readme.
+2. [README.md по-русски](docs/README.RU.md)
 3. [Motivation for SynapseGrid](docs/SpeechPortalMotivation.RU.md)
 4. [License (BSD-like)](LICENSE.md)
 5. [Actors support (in Russian)](Actors.RU.md).

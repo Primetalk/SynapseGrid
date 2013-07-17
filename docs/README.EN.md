@@ -4,7 +4,7 @@ SynapseGrid contact system
 Key features
 ------------
 1. SynapseGrid provides better opportunity for function composition, which goes far beyond monad capabilities.
-2. Mutual usage with a Akka-actors allows strictly typed data processing, that significantly excels Typed actors.
+2. Mutual usage with Akka-actors allows strictly typed data processing, that significantly excels Typed actors.
 3. Composite functions, that have multiple inputs and outputs.
 
 (Reasons, that led us to create SynapseGrid could be found here: [Потребности систем ведения диалога](docs/SpeechPortalMotivation.RU.md). )
@@ -14,10 +14,11 @@ Breadboard concept
 Contact System is based on some principles, that are lightened here.
 
 Imagine a breadboard for assembling an electronic circuit.
-There is bunch of apertures and contact areas. Some contacts are arranged for apt electronic device connections while others are auxiliary, and used to link components
+There is bunch of apertures and contact areas. Some contacts are arranged for apt electronic device connections while others are auxiliary,
+ and used to link components.
 
-There are different components (impedors, transistors), installed on the breadboard.
-There are also subsystems like: power supply, low frequency amplifier, filter and etc. Those subsystems are themselves made up of a few components.
+There are different components (impedors, transistors), installed on the breadboard. The components are atomic from our point of view.
+There are also subsystems like: power supply, low frequency amplifier, filter and etc. Those subsystems are themselves made up of a few components (not atomic).
 Some subsystems may stay unclaimed and left without any components installed.
 Simultaneously some contacts that belong to a subsystem may not be involved and may simply "hang".
 
@@ -29,11 +30,12 @@ Contacts and links
 ------------------
 The Contact is an instance of <code>Contact[T]</code> type that has a name, that usually matches the variable name.
 (In future it is planned to implement a macro that will ensure this property.)
-It's very easy to create a simple instance of Contact. You may see example an listed below (All examples are written in Scala)
+It's very easy to create a simple instance of Contact:
 
 <pre>
 	val myContact = contact[String]("myContact")
 </pre>
+(All examples are written in Scala. However, the same things can usually be done in Java.)
 
 Contact doesn't contain any data. It designates a point on the breadboard. You may consider it as an assigned name on the breadboard.
 The <code>myContact</code> may have connections to component's inputs and outputs of type String.
@@ -46,7 +48,7 @@ An ordinary Scala function is already a component/(a link) that can be connected
 	def getLength(s:String) = s.length
 </pre>
 
-Let's write a code, that calculates length for every incoming string.
+Let's write a code, that calculates length of an incoming string.
 
 <pre>
 	val len = contact[Int]( "len" )
@@ -58,30 +60,30 @@ or, briefly
 <pre>
 	val len = myContact.map( _.length )
 </pre>
+(In the latter case, the `len` contact of inferred type <code>Contact[Int]</code> is created automatically.)
 
-The system sample is shown below (to make testing possible, additional contacts has been connected: `input`, `output`).
+The system picture is shown below (to make testing possible, additional contacts have been connected: `input`, `output`).
 
 ![example1 system picture](images/example1.png)
-
-(In the latter case, the `len` contact of inferred type (Int) is created automatically.)
-
 
 Data processing
 ---------------
 
-The code above, doesn't do actual job, because nor contacts neither functions store any data.
-This code only declares the system's structure - Contacts and their interconnections.
+### Signals
 
-External binding is used to attach data to a contact.
-It means, that a dedicated object will be created that holds the contact and the data bound to it.
-In Contact System terminology this object is called a Signal.
+The code above, doesn't do actual job, because nor contacts neither functions store any data.
+This code only declares the system's structure - Contacts, Components and their interconnections.
+
+In order to actually process some data we need a way to associate the data with the contact. We call this
+"external binding". A dedicated object is created that holds the contact and the data bound to it.
+In Contact System terminology this object is called a Signal:
 
 <pre>
 	case class Signal[T](contact:Contact[T], data:T)
 </pre>
 
 (This object is often referred to as Event, Data, Frame or Message.)
-System state is represented as a list of signals:
+System transient state is represented as a list of signals:
 
 <pre>
 	type Signals = List[Signal[_]]
@@ -89,44 +91,52 @@ System state is represented as a list of signals:
 
 The list represents all data attached to corresponding contacts in one discrete time moment.
 
-SignalProcessor performs a functional transformation of the original list of signals to it's subsequent state.
+### SignalProcessor
+
+SignalProcessor performs a functional transformation of the original list of signals to the subsequent list.
 Each signal in order is put into the input of each component which is connected to the corresponding contact.
 The component transforms the received data (signals) according to it's logic and produces zero, one or more output data items.
-The results of component's transformation are associated with the component's output contact. The data items are converted
-into signals which are added to the system's state for the next time moment.
+The results of component's transformation are associated with the contact to which the component's output is connected.
+The data items are converted into signals which are added to the system's state for the next time moment.
 Signal Processor exits, when all signals of the current time moment have been processed.
 
-The theory of hidden Markov models has a good notion of trellis (the time chart(scan) of signal constellation).
+The theory of hidden Markov models has a good notion of <b>trellis</b> (the time chart of signals; scan of signals along the discrete time).
 SignalProcessor builds the trellis starting from input data.
 
 When the trellis building stops?
-If the process does not stop, then all data will reach the outer contacts and, as there are no connected components, all data will be lost.
-To avoid this, output contacts are specified in system description.
+If the process does not stop, then all data will reach the outer contacts and, as far as there are no connected components,
+all data will be lost. To avoid this, output contacts are specified in system description:
 
 <pre>
 	outputs(len) // outputs(output1, output2, output3)
 </pre>
 
-therefore, processing will stop, when all signals in the current list will belong to output contacts.
-
+therefore, processing will stop, when all signals in the current list belong to output contacts.
 
 Arrow types
 -----------
 
-The most common situation in signal processing, when 0 or more input elements generated per one element
-Handling such situation in Scala, could be performed via higher-order function called flatMap.
+The most common situation in signal processing is when 0 or more output elements are generated per one input element.
+Such situation is traditionally handled in Scala via high-order function called flatMap.
 That's why an arrows, annotated by functions, that return 0..n elements has a FlatMap type.
 
 <pre>
 	val wordsContact = someStringContact.flatMap(_.split("\\s+".r))
 </pre>
 
+For a string "hello bye" two elements are produced - "hello", "bye". In terms of signals:
+
+<pre>
+ val inputSignals = List(Signal(someStringContact, "hello bye"))
+ val outputSignals = List(Signal(wordsContact, "hello"), Signal(wordsContact, "bye"))
+</pre>
+
 System will look like this:
 
 ![example2 system picture](images/example2.png)
 
-An important case of FlatMap arrows are 0..1 arrows, which reflect (sometimes they don't) data, that depends on certain conditions.
-There's also a method, dedicated to create arrows. It's called a filter:
+An important case of FlatMap arrows are 0..1 arrows, which either pass data or not depending on a certain condition.
+There's also a <code>filter</code> method, dedicated to create this kind of arrows:
 
 <pre>
 	val nonEmptyString = myContact.filter( _.length > 0 )
@@ -136,7 +146,7 @@ There's also a method, dedicated to create arrows. It's called a filter:
 For-comprehension compatibility
 -------------------------------
 
-An interesting feature of the Scala is ability to use syntactic sugar for custom methods.
+An interesting feature of the Scala is the ability to use syntactic sugar for custom methods.
 Methods like map, flatMap, filter or withFilter, are already announced, so, it's possible to use a for-comprehension:
 
 <pre>
@@ -152,35 +162,36 @@ The same code you may find below (iе contains two arrows):
 	val helloContact = myContact.filter(s => s.length>0).map(s=>"Hello, "+s)
 </pre>
 
-In some cases, when processing algorithm branches a lot, this syntax looks pretty good.
+In some cases, when the processing algorithm branches not too much, this syntax looks pretty good.
 
 Working with state
 ------------------
 
-Till now, all examples operated only with data, that was coming to the input contact. The result wasn't stored or transmitted anywhere.
-We used "pure" immutable functions without side-effects. This functions have a lot of useful characteristics. For example, we could easily parallel data processing.
-There's no need to recreate system to perform another data processing — on-start creation will be enough.
-Also, there's no need to debug systems like this - the absence of inside state and side-effects, makes determinate (defined only by input data) result.
+Till now, all examples operated only with the data on the input contact. The result hasn't been stored inside the system.
+We have been using "pure" immutable functions without side-effects. These functions have a lot of useful characteristics.
+For example, we could easily parallel data processing.
+There's no need to recreate the system to perform processing of another data — on-start one time creation is enough.
+Also, there's usually no need to debug such systems - the absence of side-effects makes the result to be determined only by input data.
 
-If data processing logic requires state save - the most obvious solution to use variable inside a function to store the state.
-For instance:
+If data processing logic requires state saving - the most obvious solution is to use a variable inside the function to store the state:
 
 <pre>
 	var counter = 0
 	val helloCount = myContact.map({any => 	counter += 1;  counter})
 </pre>
 
-This will work, alas we're losing all advantages of immutable system.
+This will work, alas we're losing all the advantages of an immutable system.
 
-But what if we will store the state separately from the system? And then, in the right time before function call, state will be executed and then put back.
+But what if we store the state separately from the component that requires it? And then, in the proper time before the function call,
+the state is evoked and after processing it is put back.
 
-How to work with state, stored somewhere? Function has to accept current state on input and return new value.
+How to work with state, stored elsewhere? A function has to accept the current state on input and return the new state value.
 
 <pre>
 	val helloCount = myContact.[link to variable, where counter state is stored].map({(any, counter) => (counter+1, counter + 1)})
 </pre>
 
-Let's take a closer look to this function. We'll make it verbose via def;
+Let's take a closer look to this function. We'll make it verbose via def:
 
 <pre>
 	def incCounter(any:String, counter:Int) : (Int, Int) = {
@@ -192,46 +203,46 @@ Let's take a closer look to this function. We'll make it verbose via def;
 
 The function, that process the state is pure. Q.e.d.
 
-It only remains to determine how to store and retrieve state easily.
+It only moment left is to determine how to store and retrieve the state easily.
 
-We will use <code>StateHandle[T]</code> (some sort of Contact), to identify different state variables
+We will use <code>StateHandle[T]</code> (some sort of Contact), to identify the state variable
 
 <pre>
 	val counterS = state[Int]("counterS", 0)
 	val helloCount = contact[Int]("helloCount")
 </pre>
 
-This identifier contains variable type, name, and initial value.
+This identifier contains variable type, name, and the initial value.
 
-Current state value is not available at update. Actually it's not stored anywhere.
+<code>counterS</code> is not available for an immediate update. Actually it's not stored anywhere yet.
+It will only be present during the signal processing.
 
-To use this state in our helloCounter function, we have to refer it.
+To use this state in our helloCounter function, we have to refer to it:
 
 <pre>
     (myContact.withState(counterS) -> helloCount).stateMap({(counter: Int, any:String) => (counter + 1, counter + 1)},"inc "+counterS)
 	val helloCount = myContact.stateMap(counterS, {(any, counter) => (counter+1, counter + 1)})
 </pre>
 
-It looks a little bit cumbersome, but we have all advantages of pure functions .
+It looks a little bit cumbersome, but we have all the advantages of pure functions.
 
 ![example3 system picture][example3]
 
 [example3]: images/example3.png "System example #3"
 
-Synapse Grid DSL provides a set of auxiliary high-order functions, that simplify working with states.
-
+Synapse Grid DSL provides a set of other high-order functions, that simplify working with states (<code>zipWithState</code>,
+<code>getState</code>, <code>saveTo</code> and others).
 
 Drawing the system scheme
 -------------------------
 
-Since it's a declarative system, there is a great chance to study and analyse it through a system graph.
+Since it's a declarative system, there is a great chance to study and analyse it through the system's graph.
 
-To get system's image, <code>toDot</code> call will be sufficient.
-This method traverses all system elements (contacts, arrows, subsystems) and generates a .dot text file.
+To get system's image, <code>toDot</code> call is sufficient.
+This method traverses all system elements (contacts, arrows, subsystems) and generates a text in [.dot format](http://www.graphviz.org/Documentation.php).
 
-
-You can view .dot files via XDot, or any other software.
-All pictures in the <code>images</code> folder were obtained by this command:
+You can view .dot files via XDot or other appropriate software.
+All pictures in the <code>images</code> folder have been obtained by the following command:
 
 <pre>
     dot -Tpng example3.dot > example3.png
@@ -240,25 +251,24 @@ All pictures in the <code>images</code> folder were obtained by this command:
 
 System constructing via SystemBuilder
 -------------------------------------
-All examples, of arrows/contacts creation must be stored in some class/trait, that extends SystemBuilder.
-It has to contain basic methods, that allow you to incrementally crate contacts or different sort of arrows.
-SystemBuilder – is a mutable class. It doesn't participate in runtime-processing.
+The DSL for arrows/contacts creation is mostly declared in the <code>SystemBuilder</code>.
+It contains basic methods, that allows you to incrementally create contacts or different sort of arrows/links.
+SystemBuilder is a mutable class. It doesn't participate in runtime-processing.
+To get the clear system description, constructed by SystemBuilder, call <code>toStaticSystem</code> method.
+This method returns simple immutable case-class <code>StaticSystem</code> , which contains all contacts and arrows.
 
-To get a clear system description, constructed by SystemBuilder call <code>toStaticSystem</code> method.
-This method returns simple immutable case-class, which contains all contacts and arrows.
+There are some other DLS's that are stored in separate traits. To use them, simple mix-in to your Builder.
 
-There are bunch of DLS's that stored in separate traits, to use them, you have to connect them to your Builder.
-
-Instead of obvious way of system construction
+There are two ways to get DSL in scope. The first one is to create an instance of SystemBuilder and import it's methods:
 
 <pre>
 	val sb = new SystemBuilderC("MySystem")
 	import sb._
 	...
-	val system = sb.toStaticSystem
+	val system = toStaticSystem
 </pre>
 
-you can also extend a trait
+The other one (the preferred one) is to extend the SystemBuilder trait:
 
 <pre>
 	trait MySystemBuilder extends SystemBuilder {
@@ -269,18 +279,18 @@ you can also extend a trait
 	val system = new MySystemBuilder.toStaticSystem
 </pre>
 
-After receiving a <code>StaticSystem</code>, it can be directly used for signal processing via SignalProcessor.
-By this the system state will transmit the input SignalProcessor and remember on return all the time.
-There is DynamicSystem ( DynamicSystem == StaticSystem + State) class, can be used to ease state manage,
+After receiving the <code>StaticSystem</code>, it can be directly used for signal processing with a SignalProcessor.
+However one has to do the housekeeping — store the state of the system somewhere. To simplify it there is a
+<code>DynamicSystem</code> ( DynamicSystem == StaticSystem + State) class, that can be used to manage the state.
 
-You can use this class as an ordinary function (but bear in mind that it has a state hidden inside) Function will have a side effect.
-
+You can use this class as an ordinary function (but bear in mind that it has a hidden state inside).
+The function has the side effect.
 
 Subsystems
 ----------
-As the program size increases, there is a need to allocate some subsystem blocks in reuse purposes.
+As the program evolve the need arises to split the system into subsystem blocks (for reuse, for encapsulation, or for modularization).
 Use the <code>addSubsystem</code> method to add subsystem.
-Since the subsystem has a state, stateHandle is also indicated.
+Since the subsystem has a state, stateHandle should also be indicated.
 
 >! TODO:Add stateHandle description
 
@@ -290,29 +300,28 @@ Since the subsystem has a state, stateHandle is also indicated.
 	sb.addSubsystem(subsystem, s1)
 </pre>
 
-To make subsystem able to get an input data, some of it's contacts must be declared as input:
+For the subsystem to be able to obtain input data, some of it's contacts should be marked as inputs:
 
 <pre>
 	inputs(input1, input2)
 </pre>
 
-in this case, all data that appears in external system and on apt contacts will be processed by subsystem.
+in this case, all data that appears in outer system on these contacts will be processed by subsystem.
 
-If there is a need to connect a several instances of subsystem, you'd like to bind them to different input/output contacts.
+If there is a need to reuse several instances of a subsystem, you probably would like to bind them to different input/output contacts.
 For this purpose, you should use a subsystem embedded in another subsystem. In the intermediate subsystem inputs link inputs, and outputs link outputs.
-To do this, Builder intermediate subsystem uses methods <code>mappedInput</code>, <code>mappedOutput</code>, <code>inputMappedTo</code>, <code>mapToOutput</code>.
+To do this, the Builder for intermediate subsystem uses methods <code>mappedInput</code>, <code>mappedOutput</code>, <code>inputMappedTo</code>, <code>mapToOutput</code>.
 These methods enable a wiring creation, that proves connection between the external system contacts and the internal system contacts.
-
 
 Akka Actors usage
 -----------------
 
-All, described above, systems are single-threaded. There are also many possible ways to achieve multithreading.
-One of them – create an actor-based system, that will be fully compatible with Akka.
-When Actor receives a Signal message, then it will be proceed in the most obvious way: signal will be sent next to embedded DynamicSystem.
+All systems, described above, are single-threaded. There are a few possible ways to achieve parallel execution.
+One of them is to create an actor-based system, that is fully compatible with Akka.
+When Actor receives a Signal message, then it is proceed in the most obvious way: signal is sent to the embedded DynamicSystem.
 
-The NonSignalWithSenderInput contact can be used for compatibility with programs, which doesn't support Signals.
-This contact has (ActorRef, Any) type. It's first element will contain received data sender, the second – data.
+The NonSignalWithSenderInput contact can be used for compatibility with programs that do not work with Signals.
+This contact has <code>Contact[(ActorRef, Any)]</code> type. It's first element will contain the sender of the received message,
+the second – the message itself.
 
 1. [Read more about Actor support](Actors.EN.md).
-
