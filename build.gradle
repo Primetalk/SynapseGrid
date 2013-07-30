@@ -20,8 +20,8 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 ext {
     aGroup = 'ru.primetalk'
-//    aVersion = '1.1.5-SNAPSHOT'
-    aVersion = '1.1.5'//'1.2.0-SNAPSHOT'
+    aVersion = '1.1.6-SNAPSHOT'
+//    aVersion = '1.1.5'//'1.2.0-SNAPSHOT'
     isReleaseVersion = !aVersion.endsWith("SNAPSHOT")
 
     scalaMajorVersion = '2.10'
