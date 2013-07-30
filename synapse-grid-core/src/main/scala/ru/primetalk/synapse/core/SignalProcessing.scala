@@ -20,7 +20,7 @@ import scala.Predef._
 /** This contact is used to enable special simultaneous processing of signals. */
 object TrellisContact extends Contact[List[Signal[_]]]
 
-case class TrellisProducerSpeedy(
+case class TrellisProducerSpeedy(name:String,
                                   signalProcessors: Map[Contact[_], List[SingleSignalProcessor]],
                                   stopContacts: Set[Contact[_]])
   extends TrellisProducer {
@@ -44,7 +44,7 @@ case class TrellisProducerSpeedy(
           newSignals = signals reverse_::: newSignals
         } catch {
           case e: Exception => throw new RuntimeException(
-		        s"Exception ${e.getClass.getSimpleName} in handler during processing $signal.",e)
+		        s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.",e)
         }
       }
 
@@ -71,7 +71,7 @@ class SignalProcessorOld(system: StaticSystem,
                       inContacts: Set[Contact[_]], stopContacts: Set[Contact[_]])
 	extends SingleSignalProcessor {
 	val mapContactsToProcessors = SignalProcessing.systemToSignalProcessors(system, SignalProcessing.componentToSignalProcessor(system))
-	val step = TrellisProducerSpeedy(mapContactsToProcessors, stopContacts): TrellisProducer
+	val step = TrellisProducerSpeedy(system.name, mapContactsToProcessors, stopContacts): TrellisProducer
 	val processInnerSignals = TrellisProducerLoopy(step, stopContacts)
 
 
@@ -92,7 +92,7 @@ class SignalProcessor(mapContactsToProcessors: Map[Contact[_], List[SingleSignal
 											name:String,
                       inContacts: Set[Contact[_]], stopContacts: Set[Contact[_]])
 	extends SingleSignalProcessor {
-	val step = TrellisProducerSpeedy(mapContactsToProcessors, stopContacts): TrellisProducer
+	val step = TrellisProducerSpeedy(name:String,mapContactsToProcessors, stopContacts): TrellisProducer
 	val processInnerSignals = TrellisProducerLoopy(step, stopContacts)
 
 	def apply(context: Map[Contact[_], _], signal: Signal[_]): TrellisElement = {

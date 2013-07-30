@@ -27,14 +27,17 @@ import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 class StaticSystemActor(system: StaticSystem) extends EscalatingActor {
 	val log = Logging(context.system, this)
 
-	val emptyContext = Map[Contact[_], Any]()
+//	var emptyContext = system.s0// Map[Contact[_], Any]()
+  var systemState = system.s0
 	val processor = StaticSystemActor.toSingleSignalProcessor(context, self)(system)
 
 	private def innerProcessSignals(ls: List[Signal[_]]) {
 		MDC.put("akkaSource", "" + self.path)
 		val results = ls.flatMap {
 			signal: Signal[_] =>
-				processor(emptyContext, signal)._2
+				val res = processor(systemState, signal)
+        systemState = res._1
+        res._2
 		}
 		if (!results.isEmpty)
 			context.parent ! InternalSignals(results)

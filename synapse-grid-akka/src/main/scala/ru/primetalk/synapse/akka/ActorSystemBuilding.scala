@@ -28,13 +28,13 @@ case class ActorInnerSubsystem(subsystem:StaticSystem) extends Component {
   val inputContacts = subsystem.inputContacts
   val outputContacts = subsystem.outputContacts
 }
-trait AkkaSystemBuilder extends SystemBuilder {
+trait ActorContainerBuilder extends SystemBuilder {
 	def addActorSubsystem(subsystem:StaticSystem) {
 		addComponent(new ActorInnerSubsystem(subsystem))
 	}
 }
 /** Basic builder that defines a few helpers for constructing actor-held systems. */
-class ActorSystemBuilder extends SystemBuilder {
+trait ActorSystemBuilder extends ActorContainerBuilder {
   inputs(SenderInput, ContextInput)
 	val sender = state[ActorRef]("sender", akka.actor.Actor.noSender)
 	labels("saveTo("+sender+")")
