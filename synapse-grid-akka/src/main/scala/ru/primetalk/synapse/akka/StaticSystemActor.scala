@@ -89,7 +89,7 @@ object StaticSystemActor {
 		}
 		val converter = actorInnerSubsystemConverter orElse SignalProcessing.componentToSignalProcessor(system: StaticSystem)
 		val signalProcessors = SignalProcessing.systemToSignalProcessors(system, converter)
-		val proc = new SignalProcessor(signalProcessors, system.name, system.inputContacts, system.outputContacts)
+		val proc = new SignalProcessor(signalProcessors, system.name, system.inputContacts, system.outputContacts).processInnerSignals
 		proc
 	}
 
