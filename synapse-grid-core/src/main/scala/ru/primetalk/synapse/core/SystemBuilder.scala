@@ -39,7 +39,7 @@ trait SystemBuilder extends BasicSystemBuilder {
     this
   }
 
-  private[this] def nextLabel(userProvidedLabel: String, defaultLabel: => String): String =
+  private[synapse] def nextLabel(userProvidedLabel: String, defaultLabel: => String): String =
     (userProvidedLabel, proposedLabels) match {
       case ("", List()) ⇒ defaultLabel
       case ("", head :: tail) ⇒
