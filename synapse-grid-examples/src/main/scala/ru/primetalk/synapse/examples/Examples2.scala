@@ -7,26 +7,23 @@
  * © Primetalk Ltd., 2013.
  * All rights reserved.
  * Authors: A.Zhizhelev, A.Nehaev, P. Popov
- * (2-clause BSD license) See LICENSE
  *
- * Created: 30.06.13, zhizhelev
+ * Created: 17.07.13, zhizhelev
  */
 package ru.primetalk.synapse.examples
 
-import org.scalatest.FunSuite
+import ru.primetalk.synapse.core.SystemBuilder
 
-class SimpleExamplesTest extends FunSuite{
-  import SimpleExamples._
-  test("example 1"){
-    assert(e1("hello") === 5)
+object Examples2 {
+  object StringSplitterBuilder extends SystemBuilder {
+    val a = contact[String]("a")
+    val b = contact[String]("b")
+    val c = contact[Char]("c")
+
+    inputs(a)
+    outputs(b,c)
+    a -> b flatMap (_.split("\\s+"))
+    a -> c flatMap (_.toCharArray.toSeq)
   }
-  test("example 2"){
-    assert(e2("hello bye") === List("hello", "bye"))
-  }
-  test("example 3"){
-    assert(e3("hello") === 1)
-    assert(e3("hello") === 2)
-    assert(e3("hello") === 3)
-  }
-//  test("example 2")
+
 }

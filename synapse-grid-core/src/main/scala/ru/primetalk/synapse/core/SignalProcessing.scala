@@ -44,7 +44,7 @@ case class TrellisProducerSpeedy(
           newSignals = signals reverse_::: newSignals
         } catch {
           case e: Exception => throw new RuntimeException(
-		        s"Exception ${e.getClass.getSimpleName} in handler during processing $signal.")
+		        s"Exception ${e.getClass.getSimpleName} in handler during processing $signal.",e)
         }
       }
 

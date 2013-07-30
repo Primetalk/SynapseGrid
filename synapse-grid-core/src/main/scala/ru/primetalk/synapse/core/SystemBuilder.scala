@@ -14,7 +14,7 @@
 package ru.primetalk.synapse.core
 
 import scala.reflect.ClassTag
-import scala.collection.mutable
+import scala.collection.{GenTraversableOnce, mutable}
 
 /** DSL for constructing systems */
 trait SystemBuilder extends BasicSystemBuilder {
@@ -39,7 +39,7 @@ trait SystemBuilder extends BasicSystemBuilder {
     this
   }
 
-  private[synapse] def nextLabel(userProvidedLabel: String, defaultLabel: => String): String =
+  private[this] def nextLabel(userProvidedLabel: String, defaultLabel: => String): String =
     (userProvidedLabel, proposedLabels) match {
       case ("", List()) ⇒ defaultLabel
       case ("", head :: tail) ⇒
@@ -105,7 +105,7 @@ trait SystemBuilder extends BasicSystemBuilder {
 
     def filter(predicate: T1 ⇒ Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
       addLink(p._1, p._2,
-        new FlatMapLink[T1, T2, Seq[T2]]({
+        new FlatMapLink[T1, T2]({
           x ⇒
             if (predicate(x))
               Seq(x: T2)
@@ -142,15 +142,15 @@ trait SystemBuilder extends BasicSystemBuilder {
     def const(value: T2, name: String = ""): Contact[T2] =
       addLink(c._1, c._2, new MapLink((t: T1) => value, nextLabel(name, "⇒" + value)))
 
-    def flatMap[TSeq <: TraversableOnce[T2]](f: T1 ⇒ TSeq, name: String = "") =
-      addLink(c._1, c._2, new FlatMapLink[T1, T2, TSeq](f, nextLabel(name, "" + f)))
+    def flatMap[TSeq](f: T1 ⇒ GenTraversableOnce[T2], name: String = "") =
+      addLink(c._1, c._2, new FlatMapLink[T1, T2](f, nextLabel(name, "" + f)))
 
     def optionalMap(f: T1 ⇒ Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
-      addLink(c._1, c._2, new FlatMapLink[T1, T2, Seq[T2]](f(_).toSeq, nextLabel(name, "" + f))) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
+      addLink(c._1, c._2, new FlatMapLink[T1, T2](f(_).toSeq, nextLabel(name, "" + f))) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
     /** Cast data to the given class if possible */
     def castFilter[T3 <: T2](t2Class: Class[T3], name: String = "") = {
       addLink(c._1, c._2,
-        new FlatMapLink[T1, T2, Seq[T2]](
+        new FlatMapLink[T1, T2](
           d ⇒ if (t2Class.isInstance(d))
             Seq(d.asInstanceOf[T2])
           else
@@ -160,7 +160,7 @@ trait SystemBuilder extends BasicSystemBuilder {
 
     def castFilter2[T3 <: T2](implicit t3Class: ClassTag[T3]) = {
       addLink(c._1, c._2,
-        new FlatMapLink[T1, T2, Seq[T2]]({
+        new FlatMapLink[T1, T2]({
           case t3Class(d) => Seq(d.asInstanceOf[T2])
           case _ => Seq()
         },
@@ -178,8 +178,8 @@ trait SystemBuilder extends BasicSystemBuilder {
     def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, T2)) =
       addLink(c._1, c._2, new StatefulMapLink(f, stateHandle,
         nextLabel(name, "sm")))
-    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, Seq[T2])) =
-      addLink(c._1, c._2, new StatefulFlatMapLink(f, stateHandle, nextLabel(name, "sfm")))
+    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, GenTraversableOnce[T2])) =
+      addLink(c._1, c._2, new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](f, stateHandle, nextLabel(name, "sfm")))
 
   }
 
@@ -187,8 +187,8 @@ trait SystemBuilder extends BasicSystemBuilder {
     def stateMap[T2](f: (S, T1) ⇒ (S, T2), name:String ="") =
       addLink(c1, auxContact[T2], new StatefulMapLink(f, stateHandle,
         nextLabel(name, "sm")))
-    def stateFlatMap[T2](f: (S, T1) ⇒ (S, Seq[T2]), name:String ="") =
-      addLink(c1, auxContact[T2], new StatefulFlatMapLink(f, stateHandle,
+    def stateFlatMap[T2, TSeq <: GenTraversableOnce[T2]](f: (S, T1) ⇒ (S, TSeq), name:String ="") =
+      addLink(c1, auxContact[T2], new StatefulFlatMapLink[S,T1, T2, TSeq](f, stateHandle,
         nextLabel(name, "sfm")))
 
   }
@@ -197,8 +197,8 @@ trait SystemBuilder extends BasicSystemBuilder {
     def stateMap(f: (S, T1) ⇒ (S, T2), name:String ="") =
       addLink(p._1.c1, p._2, new StatefulMapLink(f, p._1.stateHandle,
         nextLabel(name, "sm")))
-    def stateFlatMap(f: (S, T1) ⇒ (S, Seq[T2]), name:String ="") =
-      addLink(p._1.c1, p._2, new StatefulFlatMapLink(f, p._1.stateHandle,
+    def stateFlatMap[TSeq <: GenTraversableOnce[T2]](f: (S, T1) ⇒ (S, TSeq), name:String ="") =
+      addLink(p._1.c1, p._2, new StatefulFlatMapLink[S,T1, T2, TSeq](f, p._1.stateHandle,
         nextLabel(name, "sfm")))
   }
   implicit class ImplRichContact[T](val c: Contact[T]) {
@@ -288,6 +288,9 @@ trait SystemBuilder extends BasicSystemBuilder {
 
     def flatMap[T2](f: T ⇒ TraversableOnce[T2], name: String = ""): Contact[T2] =
       new ImplLinkBuilder(c, auxContact[T2]).flatMap(f, nextLabel(name, "fM(" + f + ")"))
+
+    def splitToElements[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
+      flatMap(t => ev(t), nextLabel(name, "split"))
 
     def foreach(body: T ⇒ Any, name: String = "") =
       addLink(c, devNull, new MapLink(body, nextLabel(name, "foreach")))

@@ -18,9 +18,13 @@ import scala.language.implicitConversions
 
 package object core {
 
+  implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder) {
+    def system = systemBuilder.toStaticSystem
+    def toDot = SystemRenderer(system)
+    def toDynamicSystem = SignalProcessing.toDynamicSystem(system)
+  }
   implicit class RichStaticSystem(system: StaticSystem) {
     def toDot = SystemRenderer(system)
-
     def toDynamicSystem = SignalProcessing.toDynamicSystem(system)
   }
 

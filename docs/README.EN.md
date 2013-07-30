@@ -309,9 +309,10 @@ For the subsystem to be able to obtain input data, some of it's contacts should 
 in this case, all data that appears in outer system on these contacts will be processed by subsystem.
 
 If there is a need to reuse several instances of a subsystem, you probably would like to bind them to different input/output contacts.
-For this purpose, you should use a subsystem embedded in another subsystem. In the intermediate subsystem inputs link inputs, and outputs link outputs.
-To do this, the Builder for intermediate subsystem uses methods <code>mappedInput</code>, <code>mappedOutput</code>, <code>inputMappedTo</code>, <code>mapToOutput</code>.
-These methods enable a wiring creation, that proves connection between the external system contacts and the internal system contacts.
+For this purpose, you should use a subsystem embedded in another "wiring" subsystem. In the intermediate subsystem inputs are linked to innermost inputs,
+ and outputs are connected to the innermost outputs.
+To do the mappings of contacts, the intermediate subsystem Builder uses methods <code>mappedInput</code>, <code>mappedOutput</code>, <code>inputMappedTo</code>, <code>mapToOutput</code>.
+These methods enable a wiring creation, that provides the connection between the outer system contacts and the inner system contacts.
 
 Akka Actors usage
 -----------------

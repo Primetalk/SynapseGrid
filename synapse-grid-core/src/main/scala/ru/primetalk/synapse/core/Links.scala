@@ -13,6 +13,8 @@
  */
 package ru.primetalk.synapse.core
 
+import scala.collection.GenTraversableOnce
+
 /**
  * The Link is represented with a triple of two contacts and a linkInfo
  *
@@ -33,15 +35,15 @@ case class MapLink[T1, T2](f: T1 ⇒ T2, override val name: String)
 /**
  * The kind of link that does sequential transformation of data.
  */
-case class FlatMapLink[T1, T2, TSeq <: TraversableOnce[T2]](f: T1 ⇒ TSeq, override val name: String)
+case class FlatMapLink[T1, T2](f: T1 ⇒ GenTraversableOnce[T2], override val name: String)
 	extends LinkInfo[T1, T2] 
 
 /**
  * The kind of link that does sequential transformation of data.
  * The function itself has state that is transformed every time.
  */
-case class StatefulFlatMapLink[S, T1, T2](
-	f: (S, T1) ⇒ (S, Seq[T2]),
+case class StatefulFlatMapLink[S, T1, T2, TSeq <: GenTraversableOnce[T2]](
+	f: (S, T1) ⇒ (S, TSeq),
 	stateHolder: StateHandle[S],
 	override val name: String)
 		extends LinkInfo[T1, T2] 

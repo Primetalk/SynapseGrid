@@ -4,8 +4,6 @@
       <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-reflect/2.10.0/scala-reflect-2.10.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-reflect/2.10.0/scala-reflect-2.10.0-sources.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

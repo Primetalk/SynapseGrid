@@ -23,7 +23,7 @@ trait BasicSystemBuilder {
   private var name = getClass.getSimpleName.
     replaceAllLiterally("Builder", "").
     replaceAllLiterally("BuilderC", "").
-    replaceAllLiterally("$", "_")
+    replaceAllLiterally("$", "")
 
   def setSystemName(name : String) {
     this.name = name
