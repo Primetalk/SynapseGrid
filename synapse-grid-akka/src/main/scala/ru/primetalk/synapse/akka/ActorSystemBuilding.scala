@@ -19,18 +19,29 @@ import ru.primetalk.synapse.akka.SpecialActorContacts.{NonSignalWithSenderInput,
 import ru.primetalk.synapse.slf4j.SystemBuilderWithLogging
 
 /**
-  * For an ActorInnerSubsystem an actor will be constructed. The state will reside in that actor.
-  * @author А.Жижелев
-  *
-  */
-case class ActorInnerSubsystem(subsystem:StaticSystem) extends Component {
-  def name = subsystem.name
-  val inputContacts = subsystem.inputContacts
-  val outputContacts = subsystem.outputContacts
+ * For an ActorInnerSubsystem an actor will be constructed. The state will reside in that actor.
+ * @author А.Жижелев
+ *
+ */
+case class ActorInnerSubsystem(subsystem: StaticSystem) extends Component {
+	def name = subsystem.name
+	val inputContacts = subsystem.inputContacts
+	val outputContacts = subsystem.outputContacts
 }
 trait ActorContainerBuilder extends SystemBuilder {
-	def addActorSubsystem(subsystem:StaticSystem) {
+	def addActorSubsystem(subsystem: StaticSystem) {
 		addComponent(new ActorInnerSubsystem(subsystem))
+	}
+
+	/**
+	 * Create subsystem for the child actor.
+	 *
+	 * @param factory create actor using the supplied parent reference.
+	 */
+	def childActorAdapterSnippet[TInput, TOutput](name: String,
+		input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor): StaticSystem = {
+		NonSignalWithSenderInput.input
+		new ChildActorAdapterSnippet(name, input, outputContact)(factory).toStaticSystem
 	}
 }
 /** Basic builder that defines a few helpers for constructing actor-held systems. */
@@ -72,16 +83,7 @@ trait ActorSystemBuilder extends ActorContainerBuilder {
         }
 		}
 	}
-	/**
-	  * Create subsystem for the child actor.
-	  * 
-	  * @param factory create actor using the supplied parent reference.
-	  */
-	def childActorAdapterSnippet[TInput, TOutput](name : String, 
-			input:Contact[TInput], outputContact:Contact[TOutput])(factory : ActorRef ⇒ Actor) : StaticSystem = {
-		NonSignalWithSenderInput.input
-		new ChildActorAdapterSnippet(name, input, outputContact)(factory).toStaticSystem
-	}
+	
 }
 
 /** Creates subsystem that is built around some actor.*/
