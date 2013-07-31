@@ -34,7 +34,7 @@ allprojects {
     apply plugin: 'idea'
 
     repositories {
-        mavenLocal()
+        //mavenLocal()
         mavenCentral()
     }
 }
@@ -64,6 +64,7 @@ subprojects {
         testCompile "junit:junit:4.11"
         testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
     }
+    
     // making source.jar
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
@@ -75,6 +76,7 @@ subprojects {
         classifier = 'javadoc'
         from javadoc.destinationDir
     }
+    
     // adding source.jar and javadoc.jar to artifacts
     artifacts {
         archives sourcesJar
@@ -82,7 +84,7 @@ subprojects {
     }
 
 
-    publishing {
+/*  publishing {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
@@ -90,7 +92,7 @@ subprojects {
         }
         repositories {
             maven{ // declare properties in ~/.gradle/gradle.properties
-                url nexusPublic
+                url nexusRep
                 credentials {
                     username nexusUsername
                     password nexusPassword
@@ -98,22 +100,24 @@ subprojects {
             }
         }
     }
+ */
+    
+    configurations {
+		deployerJars
+	}
+	
+	dependencies {
+		deployerJars "org.apache.maven.wagon:wagon-http:2.2"
+	}
+    
     uploadArchives {
         repositories {
             mavenDeployer {
-//                        repository(url: "file://localhost/tmp/myRepo/")
-                repository {
-                    //mavenLocal()
-                    maven{ // declare properties in ~/.gradle/gradle.properties
-                        url nexusPublic
-                        credentials {
-                            username nexusUsername
-                            password nexusPassword
-                        }
-                    }
-                    //(url "~/.m2/repository")
-                }
-//                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                configuration = configurations.deployerJars
+				repository (url: nexusRep) {
+					authentication(userName: nexusUsername, password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
+				}
+//              beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
                 pom.project {
                     licenses {
                         license {
