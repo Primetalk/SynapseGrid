@@ -35,7 +35,7 @@ trait ActorContainerBuilder extends SystemBuilder {
 }
 /** Basic builder that defines a few helpers for constructing actor-held systems. */
 trait ActorSystemBuilder extends ActorContainerBuilder {
-  inputs(SenderInput, ContextInput)
+	inputs(SenderInput, ContextInput)
 	val sender = state[ActorRef]("sender", akka.actor.Actor.noSender)
 	labels("saveTo("+sender+")")
 	SenderInput.saveTo(sender)
@@ -57,9 +57,10 @@ trait ActorSystemBuilder extends ActorContainerBuilder {
 	}
 	class ImplRichContactActor[T](c : Contact[ T]) extends ImplRichContact[T](c) {
 		def toActorIndirect (actorRefState:StateHandle[ActorRef], name:String = "") = {
-			from(self)
-        labelNext ("to @" + actorRefState) zipWithState
-          actorRefState labelNext "tell" foreach {
+			from(self).
+			labelNext ("to @" + actorRefState).
+			zipWithState(actorRefState). 
+				labelNext ("tell") foreach {
           case (null, (_, _)) ⇒
             throw new IllegalStateException("toActorIndirect(" + actorRefState + "): actorRef is not initialized.")
           case (actor, (null, msg)) ⇒
