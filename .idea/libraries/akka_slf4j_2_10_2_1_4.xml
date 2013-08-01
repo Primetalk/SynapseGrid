@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="akka-slf4j_2.10-2.1.4">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/typesafe/akka/akka-slf4j_2.10/2.1.4/akka-slf4j_2.10-2.1.4.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/com.typesafe.akka/akka-slf4j_2.10/2.1.4/bundle/ac659cb69bab4115663706143455163e623bd8d7/akka-slf4j_2.10-2.1.4.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/typesafe/akka/akka-slf4j_2.10/2.1.4/akka-slf4j_2.10-2.1.4-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/com.typesafe.akka/akka-slf4j_2.10/2.1.4/source/f9a3e40fbfaa7dba76f2e88b6463c171907abf01/akka-slf4j_2.10-2.1.4-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

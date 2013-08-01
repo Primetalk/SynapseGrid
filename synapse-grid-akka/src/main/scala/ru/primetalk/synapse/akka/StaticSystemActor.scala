@@ -17,19 +17,32 @@ import ru.primetalk.synapse.core._
 import akka.event.{LoggingReceive, Logging}
 import org.slf4j.MDC
 import ru.primetalk.synapse.akka.SpecialActorContacts._
-import akka.actor.{Props, Actor, ActorRef, ActorRefFactory}
+import akka.actor._
 import ru.primetalk.synapse.core.Signal
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
-
-/** Actor that corresponds to the given static system. It will work according to
+import akka.actor.SupervisorStrategy.Escalate
+import SignalProcessing._
+/** Escalates all exceptions to upper level. This actor is an appropriate default for
+  *  in-channel actors.*/
+trait EscalatingActor extends Actor {
+  override val supervisorStrategy =
+    AllForOneStrategy(){
+      case _:Throwable=>Escalate
+    }
+}
+/**
+  * Actor that corresponds to the given static system. It will work according to
   * the schema of the system.
-  * If there are ActorInnerSubsystem-s within the system, then they will become children actors of this one. */
-class StaticSystemActor(system: StaticSystem) extends EscalatingActor {
+  * If there are ActorInnerSubsystem-s within the system, then they will become children actors of this one.
+  *
+  * @param systemPath the list of intermediate systems from parent actor to the system of this actor
+  */
+class StaticSystemActor(systemPath:List[String], system: StaticSystem) extends EscalatingActor {
 	val log = Logging(context.system, this)
 
 //	var emptyContext = system.s0// Map[Contact[_], Any]()
   var systemState = system.s0
-	val processor = StaticSystemActor.toSingleSignalProcessor(context, self)(system)
+	val processor = StaticSystemActor.toSingleSignalProcessor(context, self)(systemPath, system)
 
 	private def innerProcessSignals(ls: List[Signal[_]]) {
 		MDC.put("akkaSource", "" + self.path)
@@ -40,7 +53,7 @@ class StaticSystemActor(system: StaticSystem) extends EscalatingActor {
         res._2
 		}
 		if (!results.isEmpty)
-			context.parent ! InternalSignals(results)
+			context.parent ! InternalSignals(systemPath, results)
 	}
 
 	val processSignals =
@@ -54,8 +67,12 @@ class StaticSystemActor(system: StaticSystem) extends EscalatingActor {
 	def receive = LoggingReceive {
 		case s@Signal(_, _) ⇒
 			processSignals(s :: Nil)
-		case InternalSignals(signals) =>
-			processSignals(signals)
+		case InternalSignals(path, signals) =>
+			processSignals(signals.map(signal =>
+        (signal.asInstanceOf[Signal[Any]] /: path )((s, name:String) =>
+          Signal(SubsystemSpecialContact:Contact[SubsystemDirectSignal], SubsystemDirectSignal(name, s)).asInstanceOf[Signal[Any]]
+        )
+      ))
 		case nonSignalMessage ⇒
 			val s = Signal(NonSignalWithSenderInput, (sender, nonSignalMessage))
 			processSignals(s :: Nil)
@@ -76,26 +93,34 @@ class StaticSystemActor(system: StaticSystem) extends EscalatingActor {
 }
 
 object StaticSystemActor {
-	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(system: StaticSystem): SingleSignalProcessor = {
-		val actorInnerSubsystemConverter: PartialFunction[Component, SingleSignalProcessor] = {
-			case ActorInnerSubsystem(subsystem) =>
+
+
+	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(path:List[String], system: StaticSystem): SingleSignalProcessor = {
+		val actorInnerSubsystemConverter: SubsystemConverter = {
+			case (path1, ActorInnerSubsystem(subsystem)) =>
 				val actorRef = actorRefFactory.actorOf(Props(
-					new StaticSystemActor(subsystem)),
+					new StaticSystemActor(path1,subsystem)),
 					subsystem.name)
 				(context: Context, signal) => {
 					actorRef.tell(signal, self)
 					(context, List())
 				}
 		}
-		val converter = actorInnerSubsystemConverter orElse SignalProcessing.componentToSignalProcessor(system: StaticSystem)
-		val signalProcessors = SignalProcessing.systemToSignalProcessors(system, converter)
+
+
+    val converter = {
+      val c = SignalProcessing.componentToSignalProcessor(system)
+      c += actorInnerSubsystemConverter
+      c
+    }
+		val signalProcessors = SignalProcessing.systemToSignalProcessors(path, system, converter)
 		val proc = new SignalProcessor(signalProcessors, system.name, system.inputContacts, system.outputContacts).processInnerSignals
 		proc
 	}
 
 	/** Converts top level system to top level actor. */
-	def toActorTree(actorRefFactory: ActorRefFactory)(system: StaticSystem): ActorRef =
+	def toActorTree(actorRefFactory: ActorRefFactory)(path:List[String], system: StaticSystem): ActorRef =
 		actorRefFactory.actorOf(Props(
-			new StaticSystemActor(system)),
+			new StaticSystemActor(path,system)),
 			system.name)
 }

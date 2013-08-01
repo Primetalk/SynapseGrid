@@ -18,6 +18,9 @@ trait Component extends Named {
   val inputContacts: Set[Contact[_]]
   val outputContacts: Set[Contact[_]]
 }
+trait ComponentWithInternalStructure extends Component {
+  def toStaticSystem:StaticSystem
+}
 object StaticSystem {
   type State = Map[Contact[_], Any]
 }
@@ -64,10 +67,11 @@ case class InnerSystem[S](
                             /** main state handle that will hold private state of the subsystem. */
                            stateHandle:StateHandle[Map[Contact[_], Any]],
                            /** State handles to be shared with parent */
-                           sharedStateHandles: List[StateHandle[_]] = Nil) extends Component {
+                           sharedStateHandles: List[StateHandle[_]] = Nil) extends Component with ComponentWithInternalStructure{
   val inputContacts = s.inputContacts
   val outputContacts = s.outputContacts
   def name = s.name
+  def toStaticSystem:StaticSystem = s
 }
 /** Special component that atomically updates state.*/
 case class StateUpdate[S, T2](

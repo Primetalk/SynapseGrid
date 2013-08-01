@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="akka-actor_2.10-2.1.4">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/typesafe/akka/akka-actor_2.10/2.1.4/akka-actor_2.10-2.1.4.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/com.typesafe.akka/akka-actor_2.10/2.1.4/bundle/9ca152825e3aa754e1e6f56d60989b4709eab744/akka-actor_2.10-2.1.4.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/typesafe/akka/akka-actor_2.10/2.1.4/akka-actor_2.10-2.1.4-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/com.typesafe.akka/akka-actor_2.10/2.1.4/source/c9058ca41ca97ffaf10238978ec9f75646ff34ab/akka-actor_2.10-2.1.4-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

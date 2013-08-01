@@ -13,7 +13,7 @@
   */
 package ru.primetalk.synapse.akka
 
-import ru.primetalk.synapse.core.{StaticSystem, StateHandle, SystemBuilder, Contact, Component}
+import ru.primetalk.synapse.core._
 import akka.actor.{Props, Actor, ActorContext, ActorRef}
 import ru.primetalk.synapse.akka.SpecialActorContacts.{NonSignalWithSenderInput, ContextInput, SenderInput}
 import ru.primetalk.synapse.slf4j.SystemBuilderWithLogging
@@ -23,10 +23,12 @@ import ru.primetalk.synapse.slf4j.SystemBuilderWithLogging
  * @author А.Жижелев
  *
  */
-case class ActorInnerSubsystem(subsystem: StaticSystem) extends Component {
+case class ActorInnerSubsystem(subsystem: StaticSystem) extends Component with ComponentWithInternalStructure{
 	def name = subsystem.name
 	val inputContacts = subsystem.inputContacts
 	val outputContacts = subsystem.outputContacts
+
+  def toStaticSystem: StaticSystem = subsystem
 }
 trait ActorContainerBuilder extends SystemBuilder {
 	def addActorSubsystem(subsystem: StaticSystem) {
@@ -46,17 +48,36 @@ trait ActorContainerBuilder extends SystemBuilder {
 }
 /** Basic builder that defines a few helpers for constructing actor-held systems. */
 trait ActorSystemBuilder extends ActorContainerBuilder {
-	inputs(SenderInput, ContextInput)
-	val sender = state[ActorRef]("sender", akka.actor.Actor.noSender)
-	labels("saveTo("+sender+")")
-	SenderInput.saveTo(sender)
+	lazy val sender = {
+    val sender1 = state[ActorRef]("sender", akka.actor.Actor.noSender)
 
-	val context = state[ActorContext]("context", null)
-	ContextInput.saveTo(context)
+    inputs(SenderInput)
+    SenderInput.saveTo(sender1)
+    sender1
+  }
 
-	val self = state[ActorRef]("self", akka.actor.Actor.noSender)
-	val SelfInput = contact[ActorRef]("SelfInput")
-	ContextInput -> SelfInput map(_.self, "_.self") saveTo self
+	lazy val context = {
+    val context1 = state[ActorContext]("context", null)
+    inputs(ContextInput)
+    ContextInput.saveTo(context1)
+    context1
+  }
+
+	lazy val self = {
+    val self1 = state[ActorRef]("self", akka.actor.Actor.noSender)
+
+    inputs(ContextInput)
+    ContextInput map(_.self, "_.self") saveTo self1
+    self1
+  }
+	lazy val SelfInput = {
+    val SelfInput1 = contact[ActorRef]("SelfInput")
+
+    inputs(ContextInput)
+    ContextInput -> SelfInput1 map(_.self, "_.self")
+    SelfInput1
+  }
+
 	
 	implicit class ImplRichContactUnzipperToActor[T](c : Contact[(ActorRef, T)]) {//extends ImplRichContact[(ActorRef, T)](c) {
 		def tellToActor(actor:ActorRef, name:String = "") = {
@@ -86,7 +107,8 @@ trait ActorSystemBuilder extends ActorContainerBuilder {
 	
 }
 
-/** Creates subsystem that is built around some actor.*/
+/** Creates subsystem that is built around some actor.
+  */
 class ChildActorAdapterSnippet[TInput, TOutput](
 		name : String, 
 		input:Contact[TInput], 

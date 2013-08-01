@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="protobuf-java-2.4.1">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/google/protobuf/protobuf-java/2.4.1/protobuf-java-2.4.1.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/com.google.protobuf/protobuf-java/2.4.1/jar/c589509ec6fd86d5d2fda37e07c08538235d3b9/protobuf-java-2.4.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/google/protobuf/protobuf-java/2.4.1/protobuf-java-2.4.1-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/com.google.protobuf/protobuf-java/2.4.1/source/e406f69360f2a89cb4aa724ed996a1c5599af383/protobuf-java-2.4.1-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

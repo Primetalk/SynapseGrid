@@ -20,6 +20,10 @@ import scala.Predef._
 /** This contact is used to enable special simultaneous processing of signals. */
 object TrellisContact extends Contact[List[Signal[_]]]
 
+case class SubsystemDirectSignal(subsystemName:String, signal:Signal[_])
+/** This contact is used to process signals of internal system*/
+object SubsystemSpecialContact extends Contact[SubsystemDirectSignal]
+
 case class TrellisProducerSpeedy(name:String,
                                   signalProcessors: Map[Contact[_], List[SingleSignalProcessor]],
                                   stopContacts: Set[Contact[_]])
@@ -70,7 +74,9 @@ case class TrellisProducerLoopy(trellisProducer: TrellisProducer,
 class SignalProcessorOld(system: StaticSystem,
                       inContacts: Set[Contact[_]], stopContacts: Set[Contact[_]])
 	extends SingleSignalProcessor {
-	val mapContactsToProcessors = SignalProcessing.systemToSignalProcessors(system, SignalProcessing.componentToSignalProcessor(system))
+	val mapContactsToProcessors =
+    SignalProcessing.systemToSignalProcessors(List(),system,
+      SignalProcessing.componentToSignalProcessor(system))
 	val step = TrellisProducerSpeedy(system.name, mapContactsToProcessors, stopContacts): TrellisProducer
 	val processInnerSignals = TrellisProducerLoopy(step, stopContacts)
 
@@ -92,19 +98,70 @@ class SignalProcessor(mapContactsToProcessors: Map[Contact[_], List[SingleSignal
 											name:String,
                       inContacts: Set[Contact[_]], stopContacts: Set[Contact[_]])
 	extends SingleSignalProcessor {
+
 	val step = TrellisProducerSpeedy(name:String,mapContactsToProcessors, stopContacts): TrellisProducer
+
 	val processInnerSignals = TrellisProducerLoopy(step, stopContacts)
 
+  def assertIsInInputs(signal:Signal[_]){
+    if (!inContacts.contains(signal.contact))
+      throw new IllegalArgumentException(
+        s"The system $name does not have appropriate input contacts for signal: $signal.")
+  }
 	def apply(context: Map[Contact[_], _], signal: Signal[_]): TrellisElement = {
-		if (!inContacts.contains(signal.contact))
-			throw new IllegalArgumentException(
-				s"The system $name does not have appropriate input contacts for signal: $signal.")
 
 		processInnerSignals(context, signal)
 	}
+
 }
+
 object SignalProcessing {
-	val linkToSignalProcessor : PartialFunction[Component, SingleSignalProcessor]= {
+
+  type SimpleComponentConverter = PartialFunction[Component, SingleSignalProcessor]
+  type SubsystemConverter = PartialFunction[(List[String], Component), SingleSignalProcessor]
+
+  type ComponentConverter = (List[String], Component) => SingleSignalProcessor
+  implicit def enrichConverter(cvt:SimpleComponentConverter):SubsystemConverter = {
+    case (path, comp) if cvt.isDefinedAt(comp) => cvt(comp)
+  }
+
+  class MutableComponentConverter extends ComponentConverter {
+//    private val converters = new scala.collection.mutable.ListBuffer[SimpleComponentConverter]()
+    private val subsystemConverters = new scala.collection.mutable.ListBuffer[SubsystemConverter]()
+    private var readOnly = false
+    private def assertWritable(arg:Any){
+      if(readOnly)
+        throw new IllegalStateException(s"MutableComponentConverter is read only. Cannot add $arg.")
+    }
+
+    def +=(cvt:SubsystemConverter) {
+      assertWritable(cvt)
+      subsystemConverters += cvt
+    }
+
+//    def addSimple(cvt:SimpleComponentConverter) {
+//      +=(enrichConverter(cvt))
+//    }
+//
+    def ++=(cvts:TraversableOnce[SubsystemConverter]) {
+      assertWritable(cvts)
+      subsystemConverters ++= cvts
+    }
+//    def ++=(cvts:TraversableOnce[SimpleComponentConverter]) {
+//      assertWritable(cvts)
+//      ++= (cvts.map(enrichConverter))
+//    }
+
+    lazy val totalConverter:SubsystemConverter = {
+      readOnly = true
+      (subsystemConverters :\ enrichConverter(unmatched))(_ orElse _)
+    }
+
+    def apply(path:List[String], component:Component):SingleSignalProcessor =
+      totalConverter((path,component))
+  }
+
+  val linkToSignalProcessor1 : SimpleComponentConverter = {
 		case Link(from, to, MapLink(f, _)) ⇒
 			(context, signal) ⇒
 				(context, List(new Signal(to, f.asInstanceOf[Any ⇒ Any](signal.data))))
@@ -143,60 +200,112 @@ object SignalProcessing {
 				val stateHandle = pe: Contact[_]
 				(context updated(stateHandle, f.asInstanceOf[(Any, Any) => Any](context(stateHandle), signal.data)), List())
 		}
-		case InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles) ⇒
-			val mapContactsToProcessors = SignalProcessing.systemToSignalProcessors(subsystem, SignalProcessing.componentToSignalProcessor(subsystem))
-			val proc = new SignalProcessor(mapContactsToProcessors, subsystem.name, subsystem.inputContacts, subsystem.outputContacts)
-			val sharedStateHandlersSet = sharedStateHandles.toSet[Contact[_]]
-			val subsystemStateHandle1 = subsystemStateHandle: Contact[_]
-			(if (sharedStateHandlersSet.isEmpty)
-				(context: Context, signal) ⇒ {
-					val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
-					val oldStateWithShared = oldState
-					val (newState, signals) = proc(oldStateWithShared, signal)
-					val newStateWithoutShared = newState
-					(context updated(subsystemStateHandle1, newStateWithoutShared), signals)
-				}
-			else
-				(context, signal) ⇒ {
-					val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
-					val sharedStates = sharedStateHandles.map(ssh ⇒ (ssh, context(ssh)))
-					val oldStateWithShared = oldState ++ sharedStates
-					val (newState, signals) = proc(oldStateWithShared, signal)
-					val newStateWithoutShared = newState.filterKeys(ssh ⇒ !sharedStateHandlersSet.contains(ssh))
-					val sharedStateValues = newState.filterKeys(ssh ⇒ sharedStateHandlersSet.contains(ssh))
-					((context updated(subsystemStateHandle1, newStateWithoutShared)) ++ sharedStateValues, signals)
-				}) :SingleSignalProcessor
-	}
-	def redLinkToSignalProcessor(system: StaticSystem):PartialFunction[Component, SingleSignalProcessor] = {
-		case Link(from, to, RedMapLink(stopContacts, label)) ⇒
-			val mapContactsToProcessors = SignalProcessing.systemToSignalProcessors(system, SignalProcessing.componentToSignalProcessor(system))
+  }
+
+  def innerSystemSignalHandlerWithoutShared(subsystemStateHandle1:Contact[_], proc:SignalProcessor)(context: Context, signal:Signal[_]) = {
+    val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
+    val oldStateWithShared = oldState
+    val (newState, signals) = proc(oldStateWithShared, signal)
+    val newStateWithoutShared = newState
+    (context updated(subsystemStateHandle1, newStateWithoutShared), signals)
+  }
+  def innerSystemSignalHandlerWithShared(
+                                         subsystemStateHandle1:Contact[_],
+                                         proc:SignalProcessor,
+                                         sharedStateHandles: List[StateHandle[_]]) = {
+    val sharedStateHandlersSet = sharedStateHandles.toSet[Contact[_]]
+    (context: Context, signal:Signal[_]) =>
+    val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
+    val sharedStates = sharedStateHandles.map(ssh ⇒ (ssh, context(ssh)))
+    val oldStateWithShared = oldState ++ sharedStates
+    val (newState, signals) = proc(oldStateWithShared, signal)
+    val newStateWithoutShared = newState.filterKeys(ssh ⇒ !sharedStateHandlersSet.contains(ssh))
+    val sharedStateValues = newState.filterKeys(ssh ⇒ sharedStateHandlersSet.contains(ssh))
+    ((context updated(subsystemStateHandle1, newStateWithoutShared)) ++ sharedStateValues, signals)
+  }
+
+  def innerSystemToSignalProcessor(converterRecursive: ComponentConverter): SubsystemConverter = {
+    case (path, InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles)) ⇒
+      val mapContactsToProcessors = SignalProcessing.systemToSignalProcessors(subsystem.name::path, subsystem, converterRecursive)
+      val proc = new SignalProcessor(mapContactsToProcessors, subsystem.name, subsystem.inputContacts, subsystem.outputContacts)
+      (
+        if (sharedStateHandles.isEmpty)
+          innerSystemSignalHandlerWithoutShared(subsystemStateHandle, proc)
+        else
+          innerSystemSignalHandlerWithShared(subsystemStateHandle, proc, sharedStateHandles)
+      ): SingleSignalProcessor
+  }
+
+  def redLinkToSignalProcessor(system: StaticSystem) : SubsystemConverter = {
+		case (path, Link(from, to, RedMapLink(stopContacts, label))) ⇒
+			val mapContactsToProcessors =
+        SignalProcessing.systemToSignalProcessors(path, system,
+          SignalProcessing.componentToSignalProcessor(system)
+        )
 			val proc = new SignalProcessor(mapContactsToProcessors, system.name+"RedMapLink("+label+")", Set(to), stopContacts)
 			(context, signal) ⇒ proc(context, Signal(to, signal.data))
 	}
 
+  val unmatched : SimpleComponentConverter = {
+    case msg =>
+      throw new IllegalArgumentException(
+        s"The component $msg cannot be converted to SingleSignalProcessor.")
+  }
+
 	/** Converts components to a function that will do the work when the data appears on one of the contacts. */
-	def componentToSignalProcessor(system: StaticSystem) = redLinkToSignalProcessor(system).orElse(linkToSignalProcessor)
-//	, c: Component): SingleSignalProcessor = {
-//		val componentToSignalProcessor =
-//		componentToSignalProcessor(c)
-//	}
-	def systemToSignalProcessors(system: StaticSystem, converter:PartialFunction[Component, SingleSignalProcessor]): Map[Contact[_], List[SingleSignalProcessor]] = {
+	def componentToSignalProcessor(system: StaticSystem) : MutableComponentConverter = {
+    val combinedConverter = new MutableComponentConverter
+    combinedConverter += redLinkToSignalProcessor(system)
+    combinedConverter += linkToSignalProcessor1
+    combinedConverter += innerSystemToSignalProcessor(combinedConverter )
+    combinedConverter
+  }
+
+  def subsystemDirectProcessor(procs:Map[String, SingleSignalProcessor]):SingleSignalProcessor = {
+    case (context, outerSignal) =>
+      outerSignal match {
+        case Signal(SubsystemSpecialContact, SubsystemDirectSignal(subsystemName, signal)) ⇒
+          procs.get(subsystemName).
+            map(proc => proc(context, signal)).
+            getOrElse((context, List()))
+        case _ =>
+          throw new IllegalArgumentException(s"Wrong data on contact SubsystemSpecialContact: $outerSignal.")
+      }
+  }
+	def systemToSignalProcessors( path:List[String],
+                                system: StaticSystem,
+                                converter: ComponentConverter): Map[Contact[_], List[SingleSignalProcessor]] = {
+
+    val processors = for {
+      component ← system.components
+      proc = converter(path, component):SingleSignalProcessor
+    } yield (component, proc)
 		val contactsProcessors = (
 			for {
-				component ← system.components
-				proc = converter(component)
+        (component, proc) ← processors
 				i ← component.inputContacts
 			} yield (i, proc): (Contact[_], SingleSignalProcessor) // unify existential types within pair.
 			).toList
+    val innerSystems =
+      processors.collect{
+        case (comp:ComponentWithInternalStructure, proc) => (comp.toStaticSystem.name, proc)
+      }
+    val contactsProcessors2 =
+      if(innerSystems.isEmpty)
+        contactsProcessors
+      else
+        (SubsystemSpecialContact,subsystemDirectProcessor(innerSystems.toMap)) :: contactsProcessors //(p => (SubsystemSpecialContact, p))
 
-		val lst = contactsProcessors.groupBy(_._1).map(p ⇒ (p._1, p._2.map(_._2)))
+
+		val lst = contactsProcessors2.groupBy(_._1).map(p ⇒ (p._1, p._2.map(_._2)))
 		val signalProcessors = lst.toMap[Contact[_], List[SingleSignalProcessor]].withDefault(c ⇒ List())
-
 		signalProcessors
 	}
 
-	def toDynamicSystem(system: StaticSystem) = {
-		val mapContactsToProcessors = SignalProcessing.systemToSignalProcessors(system, SignalProcessing.componentToSignalProcessor(system))
+	def toDynamicSystem(path:List[String], system: StaticSystem) = {
+		val mapContactsToProcessors =
+      SignalProcessing.systemToSignalProcessors(path, system,
+        SignalProcessing.componentToSignalProcessor(system))
 		val proc = new SignalProcessor(mapContactsToProcessors, system.name, system.inputContacts, system.outputContacts)
     var state = system.s0
     def receive(signal: Signal[_]): List[Signal[_]] = {
@@ -212,6 +321,7 @@ object SignalProcessing {
     }
     new DynamicSystem(system.inputContacts, system.outputContacts, system.name, receive)
   }
+
 }
 
 //    type TrellisElement = (Map[Contact[_], _], List[Signal[_]])

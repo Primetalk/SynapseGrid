@@ -1,24 +1,26 @@
-package ru.primetalk.synapse
-
-import _root_.akka.actor.ActorRefFactory
-import ru.primetalk.synapse.core._
-import scala.language.implicitConversions
-
 ///////////////////////////////////////////////////////////////
 // © ООО «Праймтолк», 2011-2013                              //
 // Все права принадлежат компании ООО «Праймтолк».           //
 ///////////////////////////////////////////////////////////////
+
 /**
  * SynapseGrid
  * © Primetalk Ltd., 2013.
  * All rights reserved.
  * Authors: A.Zhizhelev, A.Nehaev, P. Popov
- * (2-clause BSD license) See LICENSE
- *
- * Created: 01.07.13, zhizhelev
+ * <p/>
+ * Created: 17.07.13, zhizhelev
  */
-package object akka {
-  implicit class RichStaticSystemSystem(s:StaticSystem){
-    def toActorTree(actorRefFactory: ActorRefFactory) = StaticSystemActor.toActorTree(actorRefFactory)(List(),s)
+package ru.primetalk.synapse.examples
+
+import org.scalatest.FunSuite
+
+import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.examples.Examples3.SuperSystemBuilder
+
+class Examples3Test extends FunSuite {
+  test("3"){
+    new SuperSystemBuilder().toDotAtLevel(2).saveTo("SuperSystem.dot")
   }
+
 }

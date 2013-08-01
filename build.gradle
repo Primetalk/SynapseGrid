@@ -115,7 +115,8 @@ subprojects {
             mavenDeployer {
                 configuration = configurations.deployerJars
 				repository (url: nexusRep) {
-					authentication(userName: nexusUsername, password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
+					authentication(userName: nexusUsername,
+                            password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
 				}
 //              beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
                 pom.project {
@@ -179,8 +180,8 @@ project(':synapse-grid-akka') {
 
 project(':synapse-grid-examples') {
     dependencies {
-        compile project(':synapse-grid-slf4j')
-//        compile project(':synapse-grid-akka')
+//        compile project(':synapse-grid-slf4j')
+        compile project(':synapse-grid-akka')
     }
 }
 

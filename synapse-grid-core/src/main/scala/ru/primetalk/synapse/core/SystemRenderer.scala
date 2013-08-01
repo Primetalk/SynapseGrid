@@ -116,8 +116,8 @@ trait SystemRenderer {
 		} {
 			if(level>0) 
 				c match {
-				case InnerSystem(s:StaticSystem, _, _) =>
-					elements += staticSystem2ToDot(s,"subgraph", level - 1, counter)
+				case comp:ComponentWithInternalStructure => //InnerSystem(s:StaticSystem, _, _) =>
+					elements += staticSystem2ToDot(comp.toStaticSystem,"subgraph", level - 1, counter)
 				case _ =>
 			}
 			val id = getId(c, ComponentNode)

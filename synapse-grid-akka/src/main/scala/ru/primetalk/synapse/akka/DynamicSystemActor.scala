@@ -1,58 +1,39 @@
-/////////////////////////////////////////////////////
-// Речевой портал                                  //
-// © ООО «Праймтолк», 2011-2013                    //
-// Авторы: Жижелев А.А., Нехаев А.Р., Попов П.А.   //
-// Все права принадлежат компании ООО «Праймтолк». //
-/////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+// © ООО «Праймтолк», 2011-2013                              //
+// Все права принадлежат компании ООО «Праймтолк».           //
+///////////////////////////////////////////////////////////////
 /**
- * Speech portal
- * © Primetalk Ltd., 2011-2013.
- * Authors: Zhizhelev A., Nehaev A., Popov P.
+ * ${PROJECT_NAME}
+ * © Primetalk Ltd., 2013.
  * All rights reserved.
- * Created: 13.02.2013
+ * Authors: A.Zhizhelev, A.Nehaev, P. Popov
+ *
+ * Created: 01.08.13, zhizhelev
  */
 package ru.primetalk.synapse.akka
 
-
-import akka.actor._
-import akka.actor.SupervisorStrategy.Escalate
 import akka.event.{LoggingReceive, Logging}
+import ru.primetalk.synapse.akka.SpecialActorContacts._
 import ru.primetalk.synapse.core.Signal
+import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import ru.primetalk.synapse.core.DynamicSystem
-import akka.actor.AllForOneStrategy
 import org.slf4j.MDC
 import scala.concurrent.duration._
-import scala.language.postfixOps
-///** Signals from external systems.*/
-// @deprecated("Signals should come one by one", "01.07.2013")
-//case class Signals(list: List[Signal[_]])
-/** signals from subsystems.*/
-case class InternalSignals(list: List[Signal[_]])
 
-/** Escalates all exceptions to upper level. This actor is an appropriate default for 
- *  in-channel actors.*/
-trait EscalatingActor extends Actor {
-	override val supervisorStrategy = 
-		AllForOneStrategy(){
-			case _:Throwable=>Escalate
-		}
-}
-
-import SpecialActorContacts._
-class DynamicSystemActor(system:DynamicSystem) extends EscalatingActor {
+class DynamicSystemActor(path:List[String], system:DynamicSystem) extends EscalatingActor {
 	val log = Logging(context.system, this)
 	private def innerProcessSignals(ls : List[Signal[_]]){
 		MDC.put("akkaSource", ""+self.path)
 		val results = ls.flatMap(system.receive)
 		if(!results.isEmpty)
-			context.parent ! InternalSignals(results)
+			context.parent ! InternalSignals(path, results)
 	}
 	val processSignals =
 		if (system.inputContacts.contains(SenderInput)) // the check is done at the beginning.
 			(ls : List[Signal[_]]) ⇒
 				innerProcessSignals (Signal(SenderInput, sender) :: ls)
 		else
-			innerProcessSignals(_)
+			innerProcessSignals _
 
 	private object Tick
 
@@ -62,7 +43,7 @@ class DynamicSystemActor(system:DynamicSystem) extends EscalatingActor {
   def receive = LoggingReceive {
 		case s @ Signal(_, _) ⇒
 			processSignals(s :: Nil)
-    case InternalSignals(signals) =>
+    case InternalSignals(systemPath, signals) =>
       processSignals(signals)
 		case Tick ⇒
 			processSignals(Signal(CurrentTimeMsInput, System.currentTimeMillis) :: Nil)
@@ -73,7 +54,7 @@ class DynamicSystemActor(system:DynamicSystem) extends EscalatingActor {
 	override def preStart() {
 		if(system.inputContacts.contains(ContextInput))
 			processSignals( Signal(ContextInput, context)::Nil)
-		if(system.inputContacts.contains(PreStartInput)) 
+		if(system.inputContacts.contains(PreStartInput))
 			processSignals( Signal(PreStartInput, context)::Nil)
 		context.parent ! InitCompleted(self)
 	}
@@ -82,5 +63,3 @@ class DynamicSystemActor(system:DynamicSystem) extends EscalatingActor {
 			processSignals( Signal(PostStopInput, PostStop)::Nil)
 	}
 }
-
-

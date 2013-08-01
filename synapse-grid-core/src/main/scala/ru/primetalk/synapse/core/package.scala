@@ -18,14 +18,17 @@ import scala.language.implicitConversions
 
 package object core {
 
-  implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder) {
-    def system = systemBuilder.toStaticSystem
-    def toDot = SystemRenderer(system)
-    def toDynamicSystem = SignalProcessing.toDynamicSystem(system)
+  implicit def toStaticSystem(a:{ def toStaticSystem:StaticSystem }):StaticSystem = {
+    a.toStaticSystem
   }
   implicit class RichStaticSystem(system: StaticSystem) {
-    def toDot = SystemRenderer(system)
-    def toDynamicSystem = SignalProcessing.toDynamicSystem(system)
+    def toDot = SystemRenderer.staticSystem2ToDot(system)
+    def toDotAtLevel(level:Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
+    def toDynamicSystem = SignalProcessing.toDynamicSystem(List(),system)
+  }
+  implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
+    extends RichStaticSystem(systemBuilder.toStaticSystem){
+    def system = systemBuilder.toStaticSystem
   }
 
   implicit class RichDynamicSystem(system: DynamicSystem) {
@@ -73,7 +76,8 @@ package object core {
   /** The most general processing element.
     * Is very similar to StateFlatMap */
   type SingleSignalProcessor = (Context, Signal[_]) => (Context, List[Signal[_]])
-	type TrellisElement = (Context, List[Signal[_]])
+
+  type TrellisElement = (Context, List[Signal[_]])
 	/** A function that makes single(?) step over time. */
 	type TrellisProducer = TrellisElement => TrellisElement
 }
