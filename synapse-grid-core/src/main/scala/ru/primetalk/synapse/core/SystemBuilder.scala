@@ -269,15 +269,21 @@ trait SystemBuilder extends BasicSystemBuilder {
         if (f.isDefinedAt(t)) Seq(f(t)) else Seq()
       }, name)
 
-    //    def passIfEnabled(stateHolder : StateHandle[Boolean]) =
-    //      new LinkWithState(c, auxContact[T], stateHolder).
-    //        stateFlatMap(
-    //        (flag, v) ⇒
-    //          if (flag)
-    //            (flag, Seq(v))
-    //          else
-    //            (flag, Seq()),
-    //        "pass if "+stateHolder.name+"?")
+    def passByStateCondition[S](stateHandle : StateHandle[S], name: String = "")(condition:S=>Boolean):Contact[T] = {
+      val res = auxContact[T]
+      (c -> res).stateFlatMap(stateHandle, nextLabel(name, "pass if condition on "+stateHandle.name))( (s,t) => if(condition(s))(s,Seq(t))else(s,Seq()) )
+      res
+    }
+    def passIfEnabled(stateHandle : StateHandle[Boolean], name: String = "") =
+      passByStateCondition(stateHandle, nextLabel(name, "pass if "+stateHandle.name+"?")) (s=>s)
+//      new LinkWithState(c, auxContact[T], stateHolder).
+//        stateFlatMap(
+//        (flag, v) ⇒
+//          if (flag)
+//            (flag, Seq(v))
+//          else
+//            (flag, Seq()),
+//        "pass if "+stateHolder.name+"?")
     def activate(stateHolder: StateHandle[Boolean], isActive: Boolean = true) {
       labelNext("⇒" + isActive).map(_ ⇒ isActive).saveTo(stateHolder)
     }

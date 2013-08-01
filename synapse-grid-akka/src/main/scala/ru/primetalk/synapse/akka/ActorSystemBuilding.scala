@@ -42,7 +42,7 @@ trait ActorContainerBuilder extends SystemBuilder {
 	 */
 	def childActorAdapterSnippet[TInput, TOutput](name: String,
 		input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor): StaticSystem = {
-		NonSignalWithSenderInput.input
+		inputs(NonSignalWithSenderInput)
 		new ChildActorAdapterSnippet(name, input, outputContact)(factory).toStaticSystem
 	}
 }

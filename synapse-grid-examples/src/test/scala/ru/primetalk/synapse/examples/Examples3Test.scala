@@ -19,7 +19,7 @@ import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.examples.Examples3.SuperSystemBuilder
 
 class Examples3Test extends FunSuite {
-  test("3"){
+  test("Dump"){
     new SuperSystemBuilder().toDotAtLevel(2).saveTo("SuperSystem.dot")
   }
 
