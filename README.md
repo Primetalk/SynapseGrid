@@ -5,7 +5,7 @@ Feature highlights
 ------------------
 
 1. SynapseGrid allows function composition far more flexible than monads.
-2. Strictly typed message handling in Akka actors (a bit more natural than in Typed actors).
+2. Strictly typed message handling in Akka actors (a bit more natural than in Typed actors or Typed Channels).
 3. Multi input/multi output functions.
 4. Systems process portions of information ASAP.
 5. Declarative composition in the form of DataFlow diagram.
