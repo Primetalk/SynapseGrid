@@ -19,6 +19,7 @@ Feature highlights
   inputs(a)
   outputs(b,c)
 </pre>
+7. Dependency injection replacement (accompanied with Scala traits).
 
 ![example1 system picture](docs/images/example1.png)
 ![example2 system picture](docs/images/example2.png)
