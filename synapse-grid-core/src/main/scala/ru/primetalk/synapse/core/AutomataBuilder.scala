@@ -74,6 +74,8 @@ trait AutomataBuilder[State] extends SystemBuilder {
 			c -> saveToState map (t ⇒ s, nextLabel(name, ""+s+"!"))
 			c
 		}
+    def goto(s : State, name : String = ""):Contact[T]=
+      toState(s,name)
 		/** Switches to state and do some work along the way */
 		def moveToState(s : State, name : String = "")(fun : T ⇒ Any) = {
 			c -> saveToState map (t ⇒ { fun(t); s }, nextLabel(name, ""+s+"!"))

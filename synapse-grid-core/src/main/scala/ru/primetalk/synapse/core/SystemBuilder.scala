@@ -275,7 +275,7 @@ trait SystemBuilder extends BasicSystemBuilder {
       res
     }
     def passIfEnabled(stateHandle : StateHandle[Boolean], name: String = "") =
-      passByStateCondition(stateHandle, nextLabel(name, "pass if "+stateHandle.name+"?")) (s=>s)
+      passByStateCondition(stateHandle, nextLabel(name, "pass if "+stateHandle.name+"?")) (identity)
 //      new LinkWithState(c, auxContact[T], stateHolder).
 //        stateFlatMap(
 //        (flag, v) ⇒
@@ -341,7 +341,7 @@ trait SystemBuilder extends BasicSystemBuilder {
     }
 
     /** Sets latch value it it was not set yet */
-    def latchValue[S >: T](stateHolder: StateHandle[Option[S]], f: T ⇒ S = identity[T](_)) = {
+    def latchValue[S >: T](stateHolder: StateHandle[Option[S]], f: T ⇒ S = identity[T]_) = {
       new ImplStateLinkBuilder(c, devNull).stateFlatMap(stateHolder, nextLabel("", "" + stateHolder + "<?=Some"))
       {(s: Option[S], t: T) ⇒ (if (s.isEmpty) Some(f(t)) else s, Seq())}
 

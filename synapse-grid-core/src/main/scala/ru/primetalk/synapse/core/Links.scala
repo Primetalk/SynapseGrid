@@ -24,6 +24,7 @@ case class Link[T1, T2, -TL1 >: T1, +TL2 <: T2 ](from:Contact[T1], to:Contact[T2
 	def name = info.name
 	lazy val inputContacts : Set[Contact[_]] = Set(from)
 	lazy val outputContacts : Set[Contact[_]] = Set(to)
+  override def toString = s"Link($name, ${info.getClass.getSimpleName})"
 }
 
 trait LinkInfo[-T1, +T2] extends Named

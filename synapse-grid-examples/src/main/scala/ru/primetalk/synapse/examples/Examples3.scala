@@ -19,6 +19,7 @@ import akka.actor.ActorSystem
 
 object Examples3 {
   object Control extends Contact[Any]
+  object Monitor extends Contact[Int]
 
   object Input extends Contact[Any]
   object Output extends Contact[Any]
@@ -47,13 +48,14 @@ object Examples3 {
     addSubsystem(new WiringBuilder("BA", B,A))
 
     inputs(Control)
+    outputs(Monitor)
     Control.ifConst("start").const("ping") >> A
 
     val counter = state[Int]("counter", 0)
 //    A.foreach(println)
     A.getState(counter).map(_+1, "_+1").saveTo(counter)
     val stop = Control.ifConst("stop")
-    stop.getState(counter).foreach(cnt => println("The number of iterations = "+cnt))
-    stop.exec{actorSystem.shutdown()}
+    stop.getState(counter) >> Monitor//.foreach(cnt => println("The number of iterations = "+cnt))
+//    stop.exec{actorSystem.shutdown()}
   }
 }

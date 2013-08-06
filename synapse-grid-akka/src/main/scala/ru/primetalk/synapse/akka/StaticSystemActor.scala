@@ -97,7 +97,7 @@ object StaticSystemActor {
 
 	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(path:List[String], system: StaticSystem): SingleSignalProcessor = {
 		val actorInnerSubsystemConverter: SubsystemConverter = {
-			case (path1, ActorInnerSubsystem(subsystem)) =>
+			case (path1, _, ActorInnerSubsystem(subsystem)) =>
 				val actorRef = actorRefFactory.actorOf(Props(
 					new StaticSystemActor(path1,subsystem)),
 					subsystem.name)
@@ -109,7 +109,7 @@ object StaticSystemActor {
 
 
     val converter = {
-      val c = SignalProcessing.componentToSignalProcessor(system)
+      val c = SignalProcessing.componentToSignalProcessor
       c += actorInnerSubsystemConverter
       c
     }
