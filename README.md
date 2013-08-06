@@ -5,20 +5,21 @@ Feature highlights
 ------------------
 
 1. SynapseGrid allows function composition far more flexible than monads.
-2. Strictly typed message handling in Akka actors (a bit more natural than in Typed actors).
+2. Strictly typed message handling in Akka actors (a bit more natural than in Typed actors or Typed Channels).
 3. Multi input/multi output functions.
 4. Systems process portions of information ASAP.
 5. Declarative composition in the form of DataFlow diagram.
 6. Easy to use DSL:
 <pre>
-  val a = contact[String]("a")
-  val b = contact[String]("b")
-  val c = contact[Char]("c")
+  val a = contact\[String]\("a")
+  val b = contact\[String]\("b")
+  val c = contact\[Char]\("c")
   a -> b flatMap (_.split("\\s+"))
   a -> c flatMap (_.toCharArray)
   inputs(a)
   outputs(b,c)
 </pre>
+7. Dependency injection replacement (accompanied with Scala traits).
 
 ![example1 system picture](docs/images/example1.png)
 ![example2 system picture](docs/images/example2.png)
