@@ -31,7 +31,9 @@ case class StaticSystem(
                           outputs: List[Contact[_]],
                           privateStateHandles: List[StateHandle[_]],
                           components: List[Component],
-                          name: String) extends Named with Component with Stateful[Map[Contact[_], Any]] {
+                          name: String) extends Named
+  with Component
+  with Stateful[Map[Contact[_], Any]] {
   lazy val inputContacts = inputs.toSet
   lazy val outputContacts = outputs.toSet
   /** Contacts that should be processed by SignalsProcessor. */

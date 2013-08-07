@@ -19,6 +19,7 @@ import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import ru.primetalk.synapse.core.DynamicSystem
 import org.slf4j.MDC
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class DynamicSystemActor(path:List[String], system:DynamicSystem) extends EscalatingActor {
 	val log = Logging(context.system, this)

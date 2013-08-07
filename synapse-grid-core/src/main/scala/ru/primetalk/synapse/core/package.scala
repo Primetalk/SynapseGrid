@@ -15,6 +15,7 @@ package ru.primetalk.synapse
 
 import java.io.{File, PrintWriter}
 import scala.language.implicitConversions
+import scala.language.reflectiveCalls
 
 package object core {
 
@@ -24,7 +25,7 @@ package object core {
   implicit class RichStaticSystem(system: StaticSystem) {
     def toDot = SystemRenderer.staticSystem2ToDot(system)
     def toDotAtLevel(level:Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
-    def toDynamicSystem = SignalProcessing.toDynamicSystem(List(),system)
+    def toDynamicSystem = SystemConverting.toDynamicSystem(List(),system)
   }
   implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
     extends RichStaticSystem(systemBuilder.toStaticSystem){
@@ -75,9 +76,13 @@ package object core {
 
   /** The most general processing element.
     * Is very similar to StateFlatMap */
-  type SingleSignalProcessor = (Context, Signal[_]) => (Context, List[Signal[_]])
+  type RuntimeComponent = (Context, Signal[_]) => (Context, List[Signal[_]])
+  type SimpleSignalProcessor = Signal[_] => List[Signal[_]]
+
 
   type TrellisElement = (Context, List[Signal[_]])
 	/** A function that makes single(?) step over time. */
 	type TrellisProducer = TrellisElement => TrellisElement
+
+  type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
 }

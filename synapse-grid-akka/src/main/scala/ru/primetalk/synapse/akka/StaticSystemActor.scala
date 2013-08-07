@@ -21,7 +21,7 @@ import akka.actor._
 import ru.primetalk.synapse.core.Signal
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import akka.actor.SupervisorStrategy.Escalate
-import SignalProcessing._
+import SystemConverting._
 /** Escalates all exceptions to upper level. This actor is an appropriate default for
   *  in-channel actors.*/
 trait EscalatingActor extends Actor {
@@ -95,7 +95,7 @@ class StaticSystemActor(systemPath:List[String], system: StaticSystem) extends E
 object StaticSystemActor {
 
 
-	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(path:List[String], system: StaticSystem): SingleSignalProcessor = {
+	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(path:List[String], system: StaticSystem): RuntimeComponent = {
 		val actorInnerSubsystemConverter: SubsystemConverter = {
 			case (path1, _, ActorInnerSubsystem(subsystem)) =>
 				val actorRef = actorRefFactory.actorOf(Props(
@@ -109,12 +109,13 @@ object StaticSystemActor {
 
 
     val converter = {
-      val c = SignalProcessing.componentToSignalProcessor
+      val c = SystemConverting.componentToSignalProcessor
       c += actorInnerSubsystemConverter
       c
     }
-		val signalProcessors = SignalProcessing.systemToSignalProcessors(path, system, converter)
-		val proc = new SignalProcessor(signalProcessors, system.name, system.inputContacts, system.outputContacts).processInnerSignals
+		val signalProcessors = SystemConverting.systemToSignalProcessors(path, system, converter)
+    val rs = RuntimeSystem(system.name, signalProcessors, system.outputContacts)
+		val proc = new SignalProcessor(rs, system.inputContacts).processInnerSignals
 		proc
 	}
 
