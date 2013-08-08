@@ -298,13 +298,16 @@ trait SystemBuilder extends BasicSystemBuilder {
     def splitToElements[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
       flatMap(t => ev(t), nextLabel(name, "split"))
 
-    def foreach(body: T ⇒ Any, name: String = "") =
+    def foreach(body: T ⇒ Any, name: String = "") = {
       addLink(c, devNull, new MapLink(body, nextLabel(name, "foreach")))
+      c
+    }
 
-    def exec(body: ⇒ Any, name: String = "") =
+    def exec(body: ⇒ Any, name: String = "") = {
       addLink(c, auxContact[T], new MapLink((t: T) => {
         body; t
       }, nextLabel(name, "exec")))
+    }
 
     /** Update state in state handle. */
 

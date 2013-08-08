@@ -61,7 +61,8 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
           newSignals ++= signals //reverse_::: newSignals
         } catch {
           case e: Exception => throw new RuntimeException(
-		        s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.",e)
+		        s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.\n" +
+              s"Context value before processing:\n"+newState.mkString("\n"),e)
         }
       }
 
