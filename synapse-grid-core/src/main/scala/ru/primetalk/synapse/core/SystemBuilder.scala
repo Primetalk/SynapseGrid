@@ -312,6 +312,10 @@ trait SystemBuilder extends BasicSystemBuilder {
       addComponent(new StateUpdate[S, T](c, stateHandle, nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
     }
 
+    def inc[S](stateHandle: StateHandle[S], name: String = "")(implicit ev: S <:< Numeric[S], n : Numeric[S]) {
+      addComponent(new StateUpdate[S, T](c, stateHandle,
+        nextLabel(name, "inc(" + stateHandle + ")"), (s, _) => n.plus(s , n.one)))
+    }
     def withState[S](stateHandle: StateHandle[S]) = new ContactWithState[T, S](c, stateHandle)
 
     def saveTo[S >: T](stateHolder: StateHandle[S], name: String = "") {

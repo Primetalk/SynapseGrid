@@ -28,7 +28,7 @@ object Example3App extends App  {
 
 //  val mb = akka.actor.Actor actorSystem.
   actor ! Signal(Control,"stop")
-  i.receive(1 second) match {
+  i.receive(1.second) match {
     case Signal(_, data) =>
       println("out="+data)
       actorSystem.shutdown()
