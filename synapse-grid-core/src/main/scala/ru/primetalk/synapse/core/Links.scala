@@ -63,8 +63,7 @@ case class NopLink[-T1, +T2 >: T1](override val name: String)
 	extends LinkInfo[T1, T2] 
 
 
-/** Prioritize contacts when some data passes through this link. Processes until there are 
- *  some data on red contacts.
- *  "Fires" red contacts.*/
+/** Prioritize contacts when some data passes through this link. Processes until the data is only on stopContacts.
+  *  "Fires" starting from the initial contact until "firewall" contacts.*/
 case class RedMapLink[T1, T2](stopContacts : Set[Contact[_]], override val name: String) extends LinkInfo [T1, T2] 
 

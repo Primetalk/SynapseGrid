@@ -113,9 +113,10 @@ object StaticSystemActor {
       c += actorInnerSubsystemConverter
       c
     }
-		val signalProcessors = SystemConverting.systemToSignalProcessors(path, system, converter)
-    val rs = RuntimeSystem(system.name, signalProcessors, system.outputContacts)
-		val proc = new SignalProcessor(rs, system.inputContacts).processInnerSignals
+//		val signalProcessors =
+    val rs = SystemConverting.systemToRuntimeSystem(path, system, converter, system.outputContacts)
+//    val rs = RuntimeSystem(system.name, signalProcessors, system.outputContacts)
+		val proc = rs.toRuntimeComponent// new SignalProcessor(rs, system.inputContacts).processInnerSignals
 		proc
 	}
 

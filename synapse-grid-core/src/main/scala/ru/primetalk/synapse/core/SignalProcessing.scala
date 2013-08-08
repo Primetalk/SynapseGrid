@@ -33,6 +33,8 @@ case class SubsystemDirectSignal(subsystemName:String, signal:Signal[_])
   */
 object SubsystemSpecialContact extends Contact[SubsystemDirectSignal]
 
+/** A runtime system is a representation of the system that is
+  * organized by Contacts and is ready for direct processing of TrellisElement.*/
 case class RuntimeSystem(name:String,
                          signalProcessors: ContactToSubscribersMap,
                          stopContacts: Set[Contact[_]])
@@ -77,63 +79,69 @@ case class TrellisProducerLoopy(trellisProducer: TrellisProducer,
 		t0 #:: from(trellisProducer(t0))
 
   def apply(context: Context, signal: Signal[_]): TrellisElement =
-    from((context, List(signal))).
-      find { t =>
-        val signals = t._2
-        signals.forall(signal => stopContacts.contains(signal.contact))
+    try {
+      from((context, List(signal))).
+        find {t =>
+          val signals = t._2
+          signals.forall(signal => stopContacts.contains(signal.contact))
       }.get
+    } catch {
+      case e: Exception =>
+        throw new RuntimeException(
+          s"Exception ${e.getClass.getSimpleName} during trellis rendering starting with '$signal'. " +
+            s"Context value before processing:\n" + context.mkString("\n"), e)
+    }
 }
 
-/**
- * Processes signals for the given system.
- * @author А.Жижелев
- *
- */
-class SignalProcessorOld(system: StaticSystem,
-                      inContacts: Set[Contact[_]], stopContacts: Set[Contact[_]])
-	extends RuntimeComponent {
-//	val mapContactsToProcessors =
-//    SystemConverting.systemToSignalProcessors(List(),system,
-//      SystemConverting.componentToSignalProcessor)
-	val step = TrellisProducerSpeedy(SystemConverting.toRuntimeSystem(system,  //.name, mapContactsToProcessors,
-	   stopContacts)): TrellisProducer
-	val processInnerSignals = TrellisProducerLoopy(step, stopContacts)
-
-
-	def apply(context: Map[Contact[_], _], signal: Signal[_]): TrellisElement = {
-		if (!inContacts.contains(signal.contact))
-			throw new IllegalArgumentException(
-				s"The system ${system.name} does not have appropriate input contacts for signal: $signal.")
-
-		processInnerSignals(context, signal)
-	}
-}
-/**
- * Processes signals for the given system.
- * @author А.Жижелев
- */
-class SignalProcessor(runtimeSystem:RuntimeSystem, //mapContactsToProcessors: ContactToSubscribersMap,
-//											name:String,
-                      inContacts: Set[Contact[_]]
-//                      stopContacts: Set[Contact[_]]
-                       )
-	extends RuntimeComponent {
-
-	val step = TrellisProducerSpeedy(runtimeSystem): TrellisProducer
-
-	val processInnerSignals = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
-
-  def assertIsInInputs(signal:Signal[_]){
-    if (!inContacts.contains(signal.contact))
-      throw new IllegalArgumentException(
-        s"The system ${runtimeSystem.name} does not have appropriate input contacts for signal: $signal.")
-  }
-	def apply(context: Map[Contact[_], _], signal: Signal[_]): TrellisElement = {
-		processInnerSignals(context, signal)
-	}
-
-}
-
+///**
+// * Processes signals for the given system.
+// * @author А.Жижелев
+// *
+// */
+//class SignalProcessorOld(system: StaticSystem,
+//                      inContacts: Set[Contact[_]], stopContacts: Set[Contact[_]])
+//	extends RuntimeComponent {
+////	val mapContactsToProcessors =
+////    SystemConverting.systemToSignalProcessors(List(),system,
+////      SystemConverting.componentToSignalProcessor)
+//	val step = TrellisProducerSpeedy(SystemConverting.toRuntimeSystem(system,  //.name, mapContactsToProcessors,
+//	   stopContacts)): TrellisProducer
+//	val processInnerSignals = TrellisProducerLoopy(step, stopContacts)
+//
+//	def apply(context: Map[Contact[_], _], signal: Signal[_]): TrellisElement = {
+//		if (!inContacts.contains(signal.contact))
+//			throw new IllegalArgumentException(
+//				s"The system ${system.name} does not have appropriate input contacts for signal: $signal.")
+//
+//		processInnerSignals(context, signal)
+//	}
+//}
+///**
+// * Processes signals for the given system.
+// * @author А.Жижелев
+// */
+//class SignalProcessor(runtimeSystem:RuntimeSystem, //mapContactsToProcessors: ContactToSubscribersMap,
+////											name:String,
+//                      inContacts: Set[Contact[_]]
+////                      stopContacts: Set[Contact[_]]
+//                       )
+//	extends RuntimeComponent {
+//
+//	val step = TrellisProducerSpeedy(runtimeSystem): TrellisProducer
+//
+//	val processInnerSignals = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
+//
+//  def assertIsInInputs(signal:Signal[_]){
+//    if (!inContacts.contains(signal.contact))
+//      throw new IllegalArgumentException(
+//        s"The system ${runtimeSystem.name} does not have appropriate input contacts for signal: $signal.")
+//  }
+//	def apply(context: Map[Contact[_], _], signal: Signal[_]): TrellisElement = {
+//		processInnerSignals(context, signal)
+//	}
+//
+//}
+//
 
 
 //    type TrellisElement = (Map[Contact[_], _], List[Signal[_]])
