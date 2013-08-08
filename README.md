@@ -1,6 +1,15 @@
 SynapseGrid
 ===========
 
+A few more words about what SynapseGrid is:
+
+- framework for constructing systems that are:
+  - reactive
+  - event-driven
+  - resilent  
+- it resembles other modern event-driven architectures (Akka, Storm, Hadoop).
+- it is probably one of the finest grained frameworks. The building block is as simple as a function!
+
 Feature highlights
 ------------------
 
@@ -8,8 +17,9 @@ Feature highlights
 2. Strictly typed message handling in Akka actors (a bit more natural than in Typed actors or Typed Channels).
 3. Multi input/multi output functions.
 4. Systems process portions of information ASAP.
-5. Declarative composition in the form of DataFlow diagram.
-6. Easy to use DSL:
+5. It is possible to nest subsystems (like matreshkas).
+6. Declarative composition in the form of DataFlow diagram.
+7. Easy to use DSL:
 <pre>
   val a = contact\[String]\("a")
   val b = contact\[String]\("b")
@@ -19,7 +29,7 @@ Feature highlights
   inputs(a)
   outputs(b,c)
 </pre>
-7. Dependency injection replacement (accompanied with Scala traits).
+8. Dependency injection replacement (accompanied with Scala traits).
 
 ![example1 system picture](docs/images/example1.png)
 ![example2 system picture](docs/images/example2.png)
@@ -29,7 +39,7 @@ For details see [README in English](docs/README.EN.md).
 
 See also
 --------
-1. [README in English](docs/README.EN.md) English readme.
+1. [Walkthrough in English](docs/README.EN.md) English readme.
 2. [README по-русски](docs/README.RU.md)
 3. [Motivation for SynapseGrid](docs/SpeechPortalMotivation.RU.md)
 4. [License (BSD-like)](LICENSE.md)
