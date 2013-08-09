@@ -474,6 +474,12 @@ trait SystemBuilder extends BasicSystemBuilder {
       addLink(c._1, c._2, StateZipLink[S, T, T](stateHolder, nextLabel(name, "("+stateHolder+", _)")))
   }
 
+  implicit class RichState[S](s:StateHandle[S]){
+    def >>:(c: Contact[S]) = {
+      c.saveTo(s)
+      c
+    }
+  }
 }
 
 class SystemBuilderC(name : String) extends  SystemBuilder {
