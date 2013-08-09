@@ -48,7 +48,14 @@ trait SystemBuilderWithManagedStates extends SystemBuilder { //WithLogging {
 	}
 	
 	implicit class ManagedRichState[S](ms: ManagedStateSnippet[S]) {
-		
+
+    def >>(c: Contact[S]) =
+      ms.onUpdated >> c
+    def >>:(c: Contact[S]) ={
+      c >> ms.update
+      ms.onUpdated
+    }
+
 		def fillFrom(c: Contact[S]) = {
 			c.saveToManagedState(ms, s"fill ${ms.name} from ${c.name}")
 			ms
@@ -59,15 +66,23 @@ trait SystemBuilderWithManagedStates extends SystemBuilder { //WithLogging {
 			ms
 		}
 
+    def dependsOn[D1](ms1: ManagedStateSnippet[D1])(factory: (D1) ⇒ S) = {
+      val deps = depsToString(ms1)
+
+      ms1.onUpdated.getManagedState(ms1).
+        map(factory).
+        saveToManagedState(ms, s"update ${ms.name} from $deps")
+      ms
+    }
 		def dependsOn[D1, D2](ms1: ManagedStateSnippet[D1], ms2: ManagedStateSnippet[D2])(factory: (D1, D2) ⇒ S) = {
 			val deps = depsToString(ms1, ms2)
-			val depContact = contact[Boolean](s"changes from $deps")
-			ms1.onUpdated.const(true, "changed").directly(depContact)
-			ms2.onUpdated.const(true, "changed").directly(depContact)
+      val depContact = contact[Any](s"invalidateMS${ms.name}")
+			ms1.onUpdated >> depContact
+			ms2.onUpdated >> depContact
 
-			depContact.zipWithManagedState(ms1, "").zipWithManagedState(ms2, "").map { s21p ⇒
-				val (s2, (s1, _)) = s21p
-				factory(s1, s2)
+			depContact.getManagedState(ms1).zipWithManagedState(ms2).map {
+        case (s2, s1) =>
+				  factory(s1, s2)
 			} saveToManagedState (ms, s"update ${ms.name} from $deps")
 			
 			ms

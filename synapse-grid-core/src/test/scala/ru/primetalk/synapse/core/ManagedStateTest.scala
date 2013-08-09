@@ -35,28 +35,28 @@ class ManagedStateTest extends FunSuite {
 		val `a+b` = managedState[Int]("a+b")
 		val `(a+b)*c` = managedState[Int]("(a+b)*c")
 		
-		AInput.saveToManagedState(a)
-		BInput.saveToManagedState(b)
-		CInput.saveToManagedState(c)
+		AInput >>: a
+		BInput >>: b
+		CInput >>: c
 
 		val recalcAB = contact[Int]("recalcAB")
-		a.onUpdated >> recalcAB
-		b.onUpdated >> recalcAB
+		a >> recalcAB
+		b >> recalcAB
 		recalcAB.zipWithManagedState(a).zipWithManagedState(b).map { abp ⇒
 			val (bv, (av, _)) = abp
 			av + bv
-		} saveToManagedState (`a+b`)
+		} saveToManagedState `a+b`
 		
 		val recalcABC = contact[Int]("recalcABC")
-		c.onUpdated >> recalcABC
-		`a+b`.onUpdated >> recalcABC
+		c >> recalcABC
+		`a+b` >> recalcABC
 		recalcABC.zipWithManagedState(`a+b`).zipWithManagedState(c).map { scp ⇒
 			val (cv, (sv, _)) = scp
 			sv * cv
-		} saveToManagedState (`(a+b)*c`)
+		} saveToManagedState `(a+b)*c`
 		
-		`a+b`.onUpdated >> ABOutput
-		`(a+b)*c`.onUpdated >> ABCOutput
+		`a+b` >> ABOutput
+		`(a+b)*c` >> ABCOutput
 	}
 	
 	/**
@@ -67,17 +67,19 @@ class ManagedStateTest extends FunSuite {
 		inputs(AInput, BInput, CInput)
 		outputs(ABOutput, ABCOutput)
 		
-		val a = managedState[Int]("a").fillFrom(AInput)
-		val b = managedState[Int]("b").fillFrom(BInput)
-		val c = managedState[Int]("c").fillFrom(CInput)
-		
-		val `a+b` = managedState[Int]("a+b").passTo(ABOutput)
-		val `(a+b)*c` = managedState[Int]("(a+b)*c").passTo(ABCOutput)
-		
+		val a = managedState[Int]("a")
+    AInput >>: a
+		val b = managedState[Int]("b")
+    BInput >>: b
+		val c = managedState[Int]("c")
+    CInput >>: c
 
-		`a+b`.dependsOn(a, b) { (av, bv) ⇒
-			av + bv
-		}
+		val `a+b` = managedState[Int]("a+b")
+    `a+b` >> ABOutput
+		val `(a+b)*c` = managedState[Int]("(a+b)*c")
+    `(a+b)*c` >> ABCOutput
+
+		`a+b`.dependsOn(a, b) (_ + _)
 
 		`(a+b)*c`.dependsOn(`a+b`, c) { (sv, cv) ⇒
 			sv * cv
@@ -106,10 +108,10 @@ class ManagedStateTest extends FunSuite {
 	test("a+b *c") {
 		val abcCalc = abcSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
-		val outSigs1 = abcCalc.receive(aSig)
+		abcCalc.receive(aSig)
 		
 		val bSig = BInput.createSignal(3)
-		val outSigs2 = abcCalc.receive(bSig)
+		abcCalc.receive(bSig)
 		
 		val cSig = CInput.createSignal(5)
 		val outSigs3 = abcCalc.receive(cSig)
@@ -120,13 +122,13 @@ class ManagedStateTest extends FunSuite {
 	test("a+b *c recalc") {
 		val abcCalc = abcSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
-		val outSigs1 = abcCalc.receive(aSig)
+		abcCalc.receive(aSig)
 		
 		val bSig = BInput.createSignal(3)
-		val outSigs2 = abcCalc.receive(bSig)
+		abcCalc.receive(bSig)
 		
 		val cSig = CInput.createSignal(5)
-		val outSigs3 = abcCalc.receive(cSig)
+		abcCalc.receive(cSig)
 		
 		
 		val bSig2 = BInput.createSignal(6)
@@ -158,10 +160,10 @@ class ManagedStateTest extends FunSuite {
 	test("short a+b *c") {
 		val abcCalc = abcShortSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
-		val outSigs1 = abcCalc.receive(aSig)
+		abcCalc.receive(aSig)
 		
 		val bSig = BInput.createSignal(3)
-		val outSigs2 = abcCalc.receive(bSig)
+		abcCalc.receive(bSig)
 		
 		val cSig = CInput.createSignal(5)
 		val outSigs3 = abcCalc.receive(cSig)
@@ -172,13 +174,13 @@ class ManagedStateTest extends FunSuite {
 	test("short a+b *c recalc") {
 		val abcCalc = abcShortSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
-		val outSigs1 = abcCalc.receive(aSig)
+		abcCalc.receive(aSig)
 		
 		val bSig = BInput.createSignal(3)
-		val outSigs2 = abcCalc.receive(bSig)
+		abcCalc.receive(bSig)
 		
 		val cSig = CInput.createSignal(5)
-		val outSigs3 = abcCalc.receive(cSig)
+		abcCalc.receive(cSig)
 		
 		
 		val bSig2 = BInput.createSignal(6)
