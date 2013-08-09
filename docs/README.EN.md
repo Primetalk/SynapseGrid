@@ -169,11 +169,13 @@ Working with state
 
 Till now, all examples operated only with the data on the input contact. The result hasn't been stored inside the system.
 We have been using "pure" immutable functions without side-effects. These functions have a lot of useful characteristics.
-For example, we could easily parallel data processing.
+For example, we could easily parallelize data processing.
 There's no need to recreate the system to perform processing of another data — on-start one time creation is enough.
-Also, there's usually no need to debug such systems - the absence of side-effects makes the result to be determined only by input data.
+Also, there's usually no need to debug such systems - the absence of side-effects makes the result to be determined 
+only by input data.
 
-If data processing logic requires state saving - the most obvious solution is to use a variable inside the function to store the state:
+If data processing logic requires state saving - the most obvious solution is to use a variable inside 
+the function to store the state:
 
 <pre>
 	var counter = 0
@@ -185,7 +187,7 @@ This will work, alas we're losing all the advantages of an immutable system.
 But what if we store the state separately from the component that requires it? And then, in the proper time before the function call,
 the state is evoked and after processing it is put back.
 
-How to work with state, stored elsewhere? A function has to accept the current state on input and return the new state value.
+How to work with the state, stored elsewhere? A function has to accept the current state on input and return the new state value.
 
 <pre>
 	val helloCount = myContact.[link to variable, where counter state is stored].map({(any, counter) => (counter+1, counter + 1)})
@@ -202,6 +204,7 @@ Let's take a closer look to this function. We'll make it verbose via def:
 </pre>
 
 The function, that process the state is pure. Q.e.d.
+It can be parallelized, once-created, zero-debugged. 
 
 It only moment left is to determine how to store and retrieve the state easily.
 
@@ -215,9 +218,9 @@ We will use <code>StateHandle[T]</code> (some sort of Contact), to identify the 
 This identifier contains variable type, name, and the initial value.
 
 <code>counterS</code> is not available for an immediate update. Actually it's not stored anywhere yet.
-It will only be present during the signal processing.
+It will only be present during the signal processing in runtime.
 
-To use this state in our helloCounter function, we have to refer to it:
+To use this state in our helloCounter function, we have to refer to it somehow:
 
 <pre>
     (myContact.withState(counterS) -> helloCount).stateMap({(counter: Int, any:String) => (counter + 1, counter + 1)},"inc "+counterS)
@@ -279,20 +282,33 @@ The other one (the preferred one) is to extend the SystemBuilder trait:
 	val system = new MySystemBuilder.toStaticSystem
 </pre>
 
-After receiving the <code>StaticSystem</code>, it can be directly used for signal processing with a SignalProcessor.
-However one has to do the housekeeping — store the state of the system somewhere. To simplify it there is a
-<code>DynamicSystem</code> ( DynamicSystem == StaticSystem + State) class, that can be used to manage the state.
+After receiving the <code>StaticSystem</code>, it is then converted to RuntimeSystem. The runtime system can be considered 
+as a map of contacts to the handlers list. 
 
-You can use this class as an ordinary function (but bear in mind that it has a hidden state inside).
-The function has the side effect.
+The runtime system is further converted to RuntimeComponent that has simple functional interface. It can be directly 
+used for signal processing.
+However one has to do the housekeeping — store the state of the system somewhere. To simplify it there is a
+<code>DynamicSystem</code> class (<code> DynamicSystem == RuntimeComponent + State</code>), 
+that can be used to manage the state.
+
+You can use this class as an ordinary function that processes signals and produces signals. But bear in mind that it has a hidden state inside and
+the function has the side effect of modifying the state.
+
+To further simplify the usage it is possible to convert signal-based function to data based function. 
+<pre>
+   val dynamicSystem:DynamicSystem ...
+   val simpleDataFunction = dynamicSystem.toTransduser(InputContact, OutputContact)
+   val results = simpleDataFunction("my data for InputContact")
+</pre>
+
+The results is a simple List of output data that appeared on the OutputContact.
 
 Subsystems
 ----------
 As the program evolve the need arises to split the system into subsystem blocks (for reuse, for encapsulation, or for modularization).
 Use the <code>addSubsystem</code> method to add subsystem.
-Since the subsystem has a state, stateHandle should also be indicated.
 
->! TODO:Add stateHandle description
+Since the subsystem has state, stateHandle should also be indicated. It is a map of subsystem states to values.
 
 <pre>
 	val subsystem = new MySubsystemBuilder.toStaticSystem
@@ -314,6 +330,8 @@ For this purpose, you should use a subsystem embedded in another "wiring" subsys
 To do the mappings of contacts, the intermediate subsystem Builder uses methods <code>mappedInput</code>, <code>mappedOutput</code>, <code>inputMappedTo</code>, <code>mapToOutput</code>.
 These methods enable a wiring creation, that provides the connection between the outer system contacts and the inner system contacts.
 
+There is also a feature of shared state handles. When you need to share internal state of subsystem with some other systems.
+
 Akka Actors usage
 -----------------
 
@@ -321,8 +339,17 @@ All systems, described above, are single-threaded. There are a few possible ways
 One of them is to create an actor-based system, that is fully compatible with Akka.
 When Actor receives a Signal message, then it is proceed in the most obvious way: signal is sent to the embedded DynamicSystem.
 
-The NonSignalWithSenderInput contact can be used for compatibility with programs that do not work with Signals.
-This contact has <code>Contact[(ActorRef, Any)]</code> type. It's first element will contain the sender of the received message,
+Making a subsystem a separate Actor is easy. Just add it with <code>addActorSubsystem</code>:
+
+<pre>
+	sb.addActorSubsystem(subsystem)
+</pre>
+
+As you can see there is no need to have a separate stateHandle for storing the state of the subsystem. The state is kept inside 
+the Actor.
+
+The <code>NonSignalWithSenderInput</code> contact can be used for compatibility with Actors that do not work with Signals.
+This contact has <code>Contact[(ActorRef, Any)]</code> type. Tuple's first element will contain the sender of the received message,
 the second – the message itself.
 
 1. [Read more about Actor support](Actors.EN.md).
