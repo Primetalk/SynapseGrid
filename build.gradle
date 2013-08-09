@@ -20,8 +20,8 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 ext {
     aGroup = 'ru.primetalk'
-    aVersion = '1.1.6-SNAPSHOT'
-//    aVersion = '1.1.5'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.1.7-SNAPSHOT'
+    aVersion = '1.1.6'//'1.2.0-SNAPSHOT'
     isReleaseVersion = !aVersion.endsWith("SNAPSHOT")
 
     scalaMajorVersion = '2.10'
@@ -79,6 +79,8 @@ subprojects {
     
     // adding source.jar and javadoc.jar to artifacts
     artifacts {
+        archives jar
+
         archives sourcesJar
         archives javadocJar
     }
@@ -114,11 +116,14 @@ subprojects {
         repositories {
             mavenDeployer {
                 configuration = configurations.deployerJars
-				repository (url: nexusRep) {
-					authentication(userName: nexusUsername,
-                            password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
-				}
-//              beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+                }
+//                repository (url: nexusRep) {
+//					authentication(userName: nexusUsername,
+//                            password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
+//				}
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
                 pom.project {
                     licenses {
                         license {
@@ -146,16 +151,18 @@ subprojects {
                     }
                     scm {
                         url 'https://github.com/Primetalk/SynapseGrid'
-                        connection 'https://github.com/Primetalk/SynapseGrid'
+                        connection 'scm:git:git@github.com:Primetalk/SynapseGrid.git'
+                        developerConnection 'scm:git:git@github.com:Primetalk/SynapseGrid.git'
                     }
+
                 }
             }
         }
     }
-//    signing {
-//        required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
-//        sign configurations.archives
-//    }
+    signing {
+        required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
 }
 project(':synapse-grid-core') {
     dependencies {
