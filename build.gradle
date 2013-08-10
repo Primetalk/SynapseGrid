@@ -1,6 +1,6 @@
 import org.gradle.plugins.signing.Sign
 gradle.taskGraph.whenReady { taskGraph ->
-    if (isReleaseVersion && taskGraph.allTasks.any { it instanceof Sign }) {
+    if (enableSigning && taskGraph.allTasks.any { it instanceof Sign }) {
         // Use Java 6's console to read from the console (no good for a CI environment)
         Console console = System.console()
         console.printf "\n\nWe have to sign some things in this build.\n\nPlease enter your signing details.\n\n"
@@ -22,8 +22,9 @@ ext {
     aGroup = 'ru.primetalk'
 //    aVersion = '1.1.7-SNAPSHOT'
     aVersion = '1.1.6'//'1.2.0-SNAPSHOT'
-    isReleaseVersion = !aVersion.endsWith("SNAPSHOT")
+//    enableSigning = !aVersion.endsWith("SNAPSHOT")
 
+    enableSigning = false
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.2"
     akkaVersion = '2.1.4'
@@ -116,12 +117,13 @@ subprojects {
         repositories {
             mavenDeployer {
                 configuration = configurations.deployerJars
-                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+//                "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+//                "https://oss.sonatype.org/content/repositories/snapshots"
+                repository(url: repositoryUrl) {
+                    authentication(userName: repositoryUsername, password: repositoryPassword)
                 }
-//                repository (url: nexusRep) {
-//					authentication(userName: nexusUsername,
-//                            password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
+//              repository (url: nexusRep) {
+//					authentication(userName: nexusUsername, password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
 //				}
                 beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
                 pom.project {
@@ -160,14 +162,11 @@ subprojects {
         }
     }
     signing {
-        required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+        required { enableSigning && gradle.taskGraph.hasTask("uploadArchives") }
         sign configurations.archives
     }
 }
-project(':synapse-grid-core') {
-    dependencies {
-    }
-}
+project(':synapse-grid-core') {}
 
 project(':synapse-grid-slf4j') {
     dependencies {
