@@ -1,7 +1,7 @@
 SynapseGrid
 ===========
 
-A few more words about what SynapseGrid is:
+A few words about what SynapseGrid is:
 
 - framework for constructing systems that are:
   - reactive
@@ -30,7 +30,7 @@ Feature highlights
   outputs(b,c)
 </pre>
 8. Dependency injection replacement (accompanied with Scala traits).
-
+9. DataFlow diagram for a system can be created easily — system.toDot:
 ![example1 system picture](docs/images/example1.png)
 ![example2 system picture](docs/images/example2.png)
 ![example3 system picture](docs/images/example3.png)
