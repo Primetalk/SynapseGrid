@@ -20,11 +20,10 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 ext {
     aGroup = 'ru.primetalk'
-//    aVersion = '1.1.7-SNAPSHOT'
-    aVersion = '1.1.6'//'1.2.0-SNAPSHOT'
-//    enableSigning = !aVersion.endsWith("SNAPSHOT")
-
+    aVersion = '1.1.7-SNAPSHOT'
     enableSigning = false
+//    aVersion = '1.2.0'//'1.2.0-SNAPSHOT'
+//    enableSigning = true
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.2"
     akkaVersion = '2.1.4'
