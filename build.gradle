@@ -20,9 +20,11 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 ext {
     aGroup = 'ru.primetalk'
-    aVersion = '1.1.7-SNAPSHOT'
+    aVersion = '1.2.1-SNAPSHOT'
     enableSigning = false
 //    aVersion = '1.2.0'//'1.2.0-SNAPSHOT'
+//    enableSigning = true
+//    aVersion = '1.2.1-SNAPSHOT'
 //    enableSigning = true
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.2"
@@ -126,6 +128,16 @@ subprojects {
 //				}
                 beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
                 pom.project {
+                    packaging 'jar'
+                    description 'SynapseGrid is a framework for constructing reactive real-time immutable data flow systems. ' +
+                            '-core contains everything to run a single-threaded system, -akka contains everything to run systems' +
+                            'over Akka actors, -slf4j - enables logging, -examples - a few test systems.'
+                    url 'https://github.com/Primetalk/SynapseGrid'
+                    parent {
+                        groupId 'org.sonatype.oss'
+                        artifactId 'oss-parent'
+                        version 7
+                    }
                     licenses {
                         license {
                             name 'BSD Software License, 2-clause version'
