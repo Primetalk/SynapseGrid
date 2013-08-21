@@ -26,17 +26,6 @@ trait Named {
     getClass.getSimpleName + "(\"" + name + "\")"
 }
 
-/**
- * Stateful elements of the system
- */
-trait Stateful[State] extends Named {
-  type StateType = State
-  /**
-   * The initial state of the element
-   */
-  val s0: State
-}
-
 sealed trait ContactStyle
 
 case object NormalContact extends ContactStyle
@@ -65,53 +54,6 @@ object Contact {
     }
 }
 
-/**
- * Permanent contacts store shared state that can be updated with stateful
- * links.
- */
-class StateHandle[S](name: String, val s0: S) extends Contact[S](name, StateContact) with Stateful[S] {
-  override def toString = "S(" + name + ")"
-}
-
-object StateHandle {
-  def apply[S](name: String, s0: S) = new StateHandle(name, s0)
-
-  def unapply(s: Any): Option[(String, _)] =
-    s match {
-      case stateHandle: StateHandle[_] => Some(stateHandle.name, stateHandle.s0)
-      case _ => None
-    }
-}
-
-/**
- * Signal is a pair of contact and data on it.
- */
-case class Signal[T](contact: Contact[T], data: T) {
-  val _1 = contact
-  val _2 = data
-}
 
 
-object Contacts {
-  implicit def pairToSignal[T](p: (Contact[T], T)) = Signal(p._1, p._2)
 
-  /**
-   * Extractor of contacts' data from result.
-   */
-  implicit class ContactExtractor[T](c: Contact[T]) {
-
-    def createSignal(d: T) = Signal(c, d)
-
-    def createSignals(ds: T*): List[Signal[T]] = ds.map(Signal(c, _)).toList
-
-    def get(signals: List[Signal[_]]) :List[T]= {
-      val C = c
-      signals.collect{case Signal(C, data) => data.asInstanceOf[T]}
-    }
-
-    def filterFunction = (signals: List[Signal[_]]) ⇒ signals.filter(_._1 == c).map(_.asInstanceOf[Signal[T]])
-
-    def filterNotFunction = (signals: List[Signal[_]]) ⇒ signals.filterNot(_._1 == c)
-  }
-
-}

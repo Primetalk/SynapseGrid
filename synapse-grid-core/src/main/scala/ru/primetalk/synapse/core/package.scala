@@ -19,6 +19,45 @@ import scala.language.reflectiveCalls
 
 package object core {
 
+
+  /**
+   * Extractor of contacts' data from result.
+   */
+  implicit class ContactExtractor[T](c: Contact[T]) {
+
+    def signal(d: T) = Signal(c, d)
+    def createSignal(d: T) = Signal(c, d)
+
+    def createSignals(ds: T*): List[Signal[T]] = ds.map(Signal(c, _)).toList
+
+    def get(signals: List[Signal[_]]) :List[T]= {
+      val C = c
+      signals.collect{case Signal(C, data) => data.asInstanceOf[T]}
+    }
+    def filterFunction = (signals: List[Signal[_]]) ⇒ signals.filter(_._1 == c).map(_.asInstanceOf[Signal[T]])
+
+    def filterNotFunction = (signals: List[Signal[_]]) ⇒ signals.filterNot(_._1 == c)
+  }
+
+  implicit class RichSignalList(signals: List[Signal[_]]){
+    /** Divides the list of signals. The first part will contain signals on the given contact.
+      * the second — the rest signals.*/
+    def partition[T](c:Contact[T]) :(List[Signal[T]], List[Signal[_]]) =
+      signals.
+        partition(_.contact == c).
+        asInstanceOf[(List[Signal[T]], List[Signal[_]])]
+
+    def get[T](`c`:Contact[T]) :List[T]=
+      signals.
+        collect{
+          case Signal(`c`, data) =>
+            data.asInstanceOf[T]
+      }
+
+
+  }
+  implicit def pairToSignal[T](p: (Contact[T], T)) = Signal(p._1, p._2)
+
   implicit def toStaticSystem(a:{ def toStaticSystem:StaticSystem }):StaticSystem = {
     a.toStaticSystem
   }
@@ -33,6 +72,7 @@ package object core {
   }
 
   implicit class RichDynamicSystem(system: DynamicSystem) {
+
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
       data: TInput =>
         val inputSignal = Signal(input, data)

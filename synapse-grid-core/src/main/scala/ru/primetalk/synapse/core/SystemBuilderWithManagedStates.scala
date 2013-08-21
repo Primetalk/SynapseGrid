@@ -69,7 +69,7 @@ trait SystemBuilderWithManagedStates extends SystemBuilder { //WithLogging {
 		def dependsOn[D1](ms1: ManagedStateSnippet[D1])(factory: (D1) ⇒ S) = {
 			val deps = depsToString(ms1)
 
-			ms1.onUpdated.getManagedState(ms1).
+			ms1.onUpdated.//getManagedState(ms1).
 				map(factory).
 				saveToManagedState(ms, s"update ${ms.name} from $deps")
 			ms
