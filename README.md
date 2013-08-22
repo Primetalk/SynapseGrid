@@ -37,10 +37,16 @@ Feature highlights
 
 For details see [README in English](docs/README.EN.md).
 
-See also
+See also (English)
 --------
-1. [Walkthrough in English](docs/README.EN.md) English readme.
-2. [README по-русски](docs/README.RU.md)
-3. [Motivation for SynapseGrid](docs/SpeechPortalMotivation.RU.md)
-4. [License (BSD-like)](LICENSE.md)
-5. [Actors support (in Russian)](Actors.RU.md).
+1. [Walkthrough](docs/README.EN.md).
+2. [Motivation for SynapseGrid](docs/SpeechPortalMotivation.RU.md).
+3. [License (BSD-like)](LICENSE.md).
+4. [Subsystems](docs/Subsystems.EN.md).
+
+См. также (See also in Russian)
+---------
+1. [README по-русски](docs/README.RU.md).
+2. [Actors support (in Russian)](docs/Actors.RU.md).
+3. [Лицензия](docs/LICENSE.RU.md).
+4. [Работа с подсистемами](docs/Subsystems.RU.md).

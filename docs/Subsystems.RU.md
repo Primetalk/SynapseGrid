@@ -74,3 +74,17 @@
 
 </pre>
 
+При необходимости Builder'ы можно вообще инкапсулировать полностью:
+
+<pre>
+    class MySystem {
+        val input1 = new Contact[Int]("input1")
+        val output1 = new Contact[Int]("output1")
+        private val system = new SystemBuilder {
+            inputs(input1)
+            outputs(output1)
+            input1.map(_ * 2) >> output1
+        }.toStaticSystem
+	    def toStaticSystem = system
+	}
+</pre>

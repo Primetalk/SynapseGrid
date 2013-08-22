@@ -28,11 +28,12 @@ case class ActorInnerSubsystem(subsystem: StaticSystem) extends Component with C
 	val inputContacts = subsystem.inputContacts
 	val outputContacts = subsystem.outputContacts
 
-  def toStaticSystem: StaticSystem = subsystem
+  def toStaticSystem : StaticSystem = subsystem
 }
 trait ActorContainerBuilder extends SystemBuilder {
-	def addActorSubsystem(subsystem: StaticSystem) {
+	def addActorSubsystem[T<:StaticSystem](subsystem: T):T = {
 		addComponent(new ActorInnerSubsystem(subsystem))
+    subsystem
 	}
 
 	/**
