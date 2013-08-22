@@ -334,6 +334,7 @@ There is also a feature of shared state handles. When you need to share internal
 
 The signals that comes to subsystem's inputs are completely processed during single trellis step of the parent system. Inner processing is done in absolutely the same way as the processing in the parent system
 
+For a better approach to subsystems see [Subsystems](Subsystems.EN.md)
 
 Akka Actors usage
 -----------------
@@ -358,4 +359,6 @@ the second – the message itself.
 ### Processing Actor's output signals
 
 <i>When a nested actor receives some data on it's input contacts, it can produce some signals on it's output contacts. If the parent system is also an Actor system then the output signals are simply fed to the parent system's signal processor and that's it. But if there are some intermediate simple subsystems towards the nearest parent Actor system, then some special effort is taken to process the results. The output signals are sent to the nearest parent Actor. And every signal is nested in a special Signal. The signal contains the path to the immediate subsystem that contains the Actor.</i>
-1. [Read more about Actor support](Actors.EN.md).
+
+
+[Read more about Actor support](Actors.EN.md).

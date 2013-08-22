@@ -19,6 +19,7 @@ import scala.language.reflectiveCalls
 
 package object core {
 
+  def contact[T](name:String) = new Contact[T](name)
 
   /**
    * Extractor of contacts' data from result.
