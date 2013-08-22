@@ -31,7 +31,7 @@ case class ActorInnerSubsystem(subsystem: StaticSystem) extends Component with C
   def toStaticSystem : StaticSystem = subsystem
 }
 trait ActorContainerBuilder extends SystemBuilder {
-	def addActorSubsystem[T<:StaticSystem](subsystem: T):T = {
+	def addActorSubsystem[T](subsystem: T)(implicit ev:T=>StaticSystem):T = {
 		addComponent(new ActorInnerSubsystem(subsystem))
     subsystem
 	}

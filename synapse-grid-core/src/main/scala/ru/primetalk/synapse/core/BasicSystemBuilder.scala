@@ -110,7 +110,7 @@ trait BasicSystemBuilder {
    * If the subsystem has output contacts (it usually has), then the result of subsystem
    * processing will appear on the same contacts of the parent system.
    */
-  def addSubsystem[T<:StaticSystem](system:T, sharedStateHandles: StateHandle[_]*):T= {
+  def addSubsystem[T](system:T, sharedStateHandles: StateHandle[_]*)(implicit ev:T=>StaticSystem):T= {
     val s = system:StaticSystem
     sharedStateHandles.foreach(addStateHandle(_))
     val s0withoutShared = s.s0 -- sharedStateHandles

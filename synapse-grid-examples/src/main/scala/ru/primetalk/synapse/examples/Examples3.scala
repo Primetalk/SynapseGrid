@@ -12,7 +12,7 @@
  */
 package ru.primetalk.synapse.examples
 
-import ru.primetalk.synapse.core.{Contact, SystemBuilder}
+import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.{ActorContainerBuilder, ActorSystemBuilder}
 import scala.language.implicitConversions
 import akka.actor.ActorSystem
