@@ -30,6 +30,7 @@ ext {
     scalaFullVersion = "${scalaMajorVersion}.2"
     akkaVersion = '2.1.4'
     slf4j = "org.slf4j:slf4j-api:1.7.2"
+    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:1.2.4"
 }
 
 allprojects {
@@ -197,9 +198,14 @@ project(':synapse-grid-akka') {
 
 project(':synapse-grid-examples') {
     dependencies {
-//        compile project(':synapse-grid-slf4j')
         compile project(':synapse-grid-akka')
     }
 }
 
+project(':synapse-grid-shapeless') {
+    dependencies {
+        compile project(':synapse-grid-core')
+        compile shapelessDep
+    }
+}
 

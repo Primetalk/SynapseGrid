@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" filepath="$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" />
       <module fileurl="file://$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" filepath="$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" filepath="$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/synapse-grid-shapeless.iml" filepath="$PROJECT_DIR$/synapse-grid-shapeless.iml" />
       <module fileurl="file://$PROJECT_DIR$/synapse-grid-slf4j/synapse-grid-slf4j.iml" filepath="$PROJECT_DIR$/synapse-grid-slf4j/synapse-grid-slf4j.iml" />
     </modules>
   </component>

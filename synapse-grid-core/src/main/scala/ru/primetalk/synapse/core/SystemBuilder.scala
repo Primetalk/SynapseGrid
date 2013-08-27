@@ -58,6 +58,24 @@ trait SystemBuilder extends BasicSystemBuilder {
   def auxContact[T] =
     new Contact[T](nextContactName, AuxiliaryContact)
 
+  /**
+   * Create contact and add it to the builder
+   */
+  def input[T](name: String) = {
+    val c = contact[T](name)
+    inputs(c)
+    c
+  }
+  /**
+   * Create contact and add it to the builder
+   */
+  def output[T](name: String) = {
+    val c = contact[T](name)
+    outputs(c)
+    c
+  }
+
+
   def connect[T1, T2 >:T1](c1:Contact[T1], c2:Contact[T2]) {
     c1 >> c2
   }
