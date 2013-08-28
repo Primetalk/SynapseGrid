@@ -26,9 +26,9 @@ package object shapeless {
   }
 
   implicit class ShapelessContact[L <: HList](c: Contact[L]) {
-    def using[S](state: StateHandle[S])(implicit sb: SystemBuilder): Contact[S :: L] = {
+    def using[S](stateHandle: StateHandle[S])(implicit sb: SystemBuilder): Contact[S :: L] = {
       import sb._
-      c.withState(state).stateMap[S :: L](
+      c.withState(stateHandle).stateMap[S :: L](
         (stateValue, message: L) =>
           (stateValue, new ::(stateValue, message))
       )
