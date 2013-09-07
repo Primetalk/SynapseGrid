@@ -88,3 +88,82 @@
 	    def toStaticSystem = system
 	}
 </pre>
+
+Иерархия систем
+---------------
+
+Иногда требуется объявить ряд систем, обладающих сходным интерфейсом
+и/или реализацией.
+
+Для этогонам необходимо иметь единственный экземпляр SystemBuilder'а для
+всех потомков. Этот экземпляр будет содержать конечную версию системы
+
+<pre>
+trait BaseTypedSystem {
+	protected val sb = new SystemBuilderWithLogging {}
+	private lazy val system = sb.toStaticSystem
+	def toStaticSystem = system
+}
+</pre>
+
+В потомках нам достаточно произвести импорт DSL из sb:
+
+<pre>
+trait MySystem1 extends BaseTypedSystem {
+    import sb._
+    val Input1 = input[Int]("Input1")
+    val Output1 = output[Int]("Output1")
+
+    Input1 >> Output1
+}
+
+trait MySystem2 extends MySystem1 {
+    import sb._
+    val Input2 = input[Int]("Input2")
+    val Output2 = output[Int]("Output2")
+
+    Input2 >> Output1
+    Input2.map(_*2) >> Output2
+    Input1.map(_*2) >> Output2
+}
+</pre>
+
+Если некоторые связи необходимо переопределять, то их можно поместить в
+метод (который перекрывается в потомках), а сам метод вызвать перед созданием системы.
+Например, так:
+
+<pre>
+trait BaseTypedSystem {
+	protected val sb = new SystemBuilderWithLogging {}
+	protected def defineSystem() {}
+	private lazy val system = {
+	    defineSystem()
+	    sb.toStaticSystem
+	}
+	def toStaticSystem = system
+}
+
+trait MySystem1 extends BaseTypedSystem {
+    import sb._
+    val Input1 = input[Int]("Input1")
+    val Output1 = output[Int]("Output1")
+
+	protected override def defineSystem(){
+        Input1 >> Output1
+    }
+}
+
+trait MySystem2 extends MySystem1 {
+    import sb._
+    val Input2 = input[Int]("Input2")
+    val Output2 = output[Int]("Output2")
+
+	protected override def defineSystem(){
+        Input2 >> Output1
+        Input2.map(_*2) >> Output2
+        Input1.map(_*2) >> Output2
+        // super.defineSystem()
+    }
+}
+</pre>
+

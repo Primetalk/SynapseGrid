@@ -84,3 +84,82 @@ One can completely eliminate Builders:
 	    def toStaticSystem = system
 	}
 </pre>
+
+System's inheritance hierarchy
+------------------------------
+
+One may wish to define a bunch of of similar systems with inherited
+interfaces and/or behavior.
+
+In order to achieve this goal we have to have a single instance of
+SystemBuilder that will contain the final version of the system:
+
+<pre>
+trait BaseTypedSystem {
+	protected val sb = new SystemBuilderWithLogging {}
+	private lazy val system = sb.toStaticSystem
+	def toStaticSystem = system
+}
+</pre>
+
+In descendants we need to import all DSL from sb:
+
+<pre>
+trait MySystem1 extends BaseTypedSystem {
+    import sb._
+    val Input1 = input[Int]("Input1")
+    val Output1 = output[Int]("Output1")
+
+    Input1 >> Output1
+}
+
+trait MySystem2 extends MySystem1 {
+    import sb._
+    val Input2 = input[Int]("Input2")
+    val Output2 = output[Int]("Output2")
+
+    Input2 >> Output1
+    Input2.map(_*2) >> Output2
+    Input1.map(_*2) >> Output2
+}
+</pre>
+
+
+If you wish to override some interconnections,
+then you can declare the interconnections within a overridable method
+and call it afterwards. For instance:
+
+<pre>
+trait BaseTypedSystem {
+	protected val sb = new SystemBuilderWithLogging {}
+	protected def defineSystem(){}
+	private lazy val system = {
+	    defineSystem()
+	    sb.toStaticSystem
+	}
+	def toStaticSystem = system
+}
+
+trait MySystem1 extends BaseTypedSystem {
+    import sb._
+    val Input1 = input[Int]("Input1")
+    val Output1 = output[Int]("Output1")
+
+	protected override def defineSystem(){
+        Input1 >> Output1
+    }
+}
+
+trait MySystem2 extends MySystem1 {
+    import sb._
+    val Input2 = input[Int]("Input2")
+    val Output2 = output[Int]("Output2")
+
+	protected override def defineSystem(){
+        Input2 >> Output1
+        Input2.map(_*2) >> Output2
+        Input1.map(_*2) >> Output2
+        // super.defineSystem()
+    }
+}
+</pre>
