@@ -22,7 +22,7 @@ import scala.language.implicitConversions
   */
 object SystemConverting {
 
-  type SimpleComponentConverter = PartialFunction[Component, RuntimeComponent]
+  type SimpleComponentConverter = PartialFunction[Component, RuntimeComponentLightweight]
   type SubsystemConverter = PartialFunction[
     (List[String],
       StaticSystem,
@@ -33,10 +33,10 @@ object SystemConverting {
   implicit def enrichConverter(cvt:SimpleComponentConverter):SubsystemConverter = {
     case (_, _, comp) if cvt.isDefinedAt(comp) =>
       val rc = cvt(comp)
-      (ctx, signals) => {
-        val (upd, newSignals) = rc(ctx, signals)
-        ( (ctx /: upd)(_ + _), newSignals)
-      }
+        RuntimeComponentHeavy{(ctx, signals) => {
+          val (upd, newSignals) = rc.f(ctx, signals)
+          ( (ctx /: upd)(_ + _), newSignals)
+        }}
   }
 
 
@@ -88,20 +88,22 @@ object SystemConverting {
 //		case Link(from, to, MapLink(f, _)) ⇒
 //			(context, signal) ⇒
 //				(context, List(new Signal(to, f.asInstanceOf[Any ⇒ Any](signal.data))))
-		case Link(from, to, FlatMapLink(f, _)) ⇒ {
+		case Link(from, to, FlatMapLink(f, _)) ⇒ RuntimeComponentLightweight{
 			(context, signal) ⇒
 				val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
 				val res = fun(signal.data)
 				(List(), res.map(new Signal(to, _)).toList)
 		}
-		case Link(from, to, StateZipLink(pe: Contact[_], _)) ⇒ {
-			(context, signal) ⇒
+		case Link(from, to, StateZipLink(pe: Contact[_], _)) ⇒
+			RuntimeComponentLightweight{(context, signal) ⇒
 				val stateHandle = pe: Contact[_]
 				(List(), List(new Signal(to, (context(stateHandle), signal.data))))
-		}
+      }
+
 		case Link(from, to, NopLink(_)) ⇒
-			(context, signal) ⇒
+      RuntimeComponentLightweight{(context, signal) ⇒
 				(List(), List(new Signal(to, signal.data)))
+      }
 //		// Deprecated. Use StateZipLink
 //		case Link(from, to, StatefulMapLink(f, pe, _)) ⇒
 //			(context, signal) ⇒ {
@@ -112,17 +114,18 @@ object SystemConverting {
 //			}
 		// Deprecated. Use StateZipLink
 		case Link(from, to, StatefulFlatMapLink(f, pe, _)) ⇒
-			(context, signal) ⇒ {
+      RuntimeComponentLightweight((context, signal) ⇒ {
 				val stateHandle = pe: Contact[_]
 				val oldState = context(stateHandle)
 				val (nState, nDataSeq) = f.asInstanceOf[(Any, Any) ⇒ (Any, Seq[Any])](oldState, signal.data)
 				(List((stateHandle, nState)), nDataSeq.toList.map(new Signal(to, _)))
-			}
-		case StateUpdate(from, pe, _, f) ⇒ {
-			(context, signal) ⇒
+			})
+		case StateUpdate(from, pe, _, f) ⇒ RuntimeComponentLightweight{
+      (context, signal) ⇒
 				val stateHandle = pe: Contact[_]
         val result = f.asInstanceOf[(Any, Any) => Any](context(stateHandle), signal.data)
         (List((stateHandle, result)), List())
+
 		}
   }
 
@@ -131,7 +134,7 @@ object SystemConverting {
     context: Context, signal:Signal[_]):(Context, List[Signal[_]]) = {
     val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
     val oldStateWithShared = oldState
-    val (newState, signals) = proc(oldStateWithShared, signal)
+    val (newState, signals) = proc.f(oldStateWithShared, signal)
     val newStateWithoutShared = newState
     (oldState +( (subsystemStateHandle1, newStateWithoutShared)), signals)
   }
@@ -144,7 +147,7 @@ object SystemConverting {
     val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
     val sharedStates = sharedStateHandles.map(ssh ⇒ (ssh, context(ssh)))
     val oldStateWithShared = oldState ++ sharedStates
-    val (delta, signals) = proc(oldStateWithShared, signal)
+    val (delta, signals) = proc.f(oldStateWithShared, signal)
 //    val (sharedStateValues, newStateWithoutShared) =   delta.partition(ssh ⇒ sharedStateHandlersSet.contains(ssh._1))
 //    val newStateWithoutShared = delta.filter(ssh ⇒ !sharedStateHandlersSet.contains(ssh._1))
 //    val sharedStateValues = delta.filter(ssh ⇒ sharedStateHandlersSet.contains(ssh._1))
@@ -161,12 +164,12 @@ object SystemConverting {
       //      val proc = RuntimeSystem(subsystem.name, mapContactsToProcessors, subsystem.outputContacts).toRuntimeComponent
       val rs = systemToRuntimeSystem(subsystem.name::path,subsystem, converterRecursive, subsystem.outputContacts)
       val proc = rs.toRuntimeComponentHeavy
-      (
+      RuntimeComponentHeavy(
         if (sharedStateHandles.isEmpty)
           innerSystemSignalHandlerWithoutShared(subsystemStateHandle, proc)
         else
           innerSystemSignalHandlerWithShared(subsystemStateHandle, proc, sharedStateHandles)
-      ): RuntimeComponentHeavy
+      )
   }
 
   def redLinkToSignalProcessor(converterWithoutRedLinks:ComponentConverter) : SubsystemConverter = {
@@ -180,11 +183,11 @@ object SystemConverting {
 //        )
 //      val rs = RuntimeSystem(system.name+"RedMapLink("+label+")", mapContactsToProcessors, stopContacts)
 //			val proc = rs.toRuntimeComponent//new SignalProcessor(rs, Set(to))
-			(context, signal) ⇒ proc(context, Signal(to, signal.data))
+			RuntimeComponentHeavy((context, signal) ⇒ proc.f(context, Signal(to, signal.data)))
 	}
   val redLinkDummy:SubsystemConverter = {
     case (path, system, Link(from, to, RedMapLink(stopContacts, label))) ⇒
-      (context, signal) ⇒ (context, List())
+      RuntimeComponentHeavy((context, signal) ⇒ (context, List()))
   }
 
   val unmatched : SubsystemConverter = {
@@ -209,17 +212,18 @@ object SystemConverting {
     combinedConverter
   }
 
-  def subsystemDirectProcessor(procs:Map[String, RuntimeComponentHeavy]):RuntimeComponentHeavy = {
-    case (context, outerSignal) =>
-      outerSignal match {
-        case Signal(SubsystemSpecialContact, SubsystemDirectSignal(subsystemName, signal)) ⇒
-          procs.get(subsystemName).
-            map(proc => proc(context, signal)).
-            getOrElse((context, List()))
-        case _ =>
-          throw new IllegalArgumentException(s"Wrong data on contact SubsystemSpecialContact: $outerSignal.")
-      }
-  }
+  def subsystemDirectProcessor(procs:Map[String, RuntimeComponentHeavy]):RuntimeComponentHeavy =
+    RuntimeComponentHeavy{
+      case (context, outerSignal) =>
+        outerSignal match {
+          case Signal(SubsystemSpecialContact, SubsystemDirectSignal(subsystemName, signal)) ⇒
+            procs.get(subsystemName).
+              map(proc => proc.f(context, signal)).
+              getOrElse((context, List()))
+          case _ =>
+            throw new IllegalArgumentException(s"Wrong data on contact SubsystemSpecialContact: $outerSignal.")
+        }
+    }
 	def systemToRuntimeSystem( path:List[String],
                                 system: StaticSystem,
                                 converter: ComponentConverter,
@@ -275,7 +279,7 @@ object SystemConverting {
       def receive0(st: system.StateType, resSignals: List[Signal[_]], signals: List[Signal[_]]): (system.StateType, List[Signal[_]]) = signals match {
         case Nil ⇒ (st, resSignals)
         case head :: tail ⇒
-          val (newState, newSignals) = proc(st, head)
+          val (newState, newSignals) = proc.f(st, head)
           receive0(newState, newSignals reverse_::: resSignals, tail)
       }
       val result = receive0(state, Nil, signal :: Nil)

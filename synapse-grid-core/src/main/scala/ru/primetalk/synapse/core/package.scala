@@ -117,10 +117,16 @@ package object core {
 
   type ContextUpdater = List[(Contact[_], _)]
 
+
+  /**
+    * The most general processing element.
+    * Is very similar to the most generic link — StateFlatMap. */
+  sealed trait RuntimeComponent
+
+  case class RuntimeComponentLightweight(f: (Context, Signal[_]) => (ContextUpdater, List[Signal[_]])) extends RuntimeComponent
   /** The most general processing element.
     * Is very similar to the most generic link — StateFlatMap. */
-  type RuntimeComponent = (Context, Signal[_]) => (ContextUpdater, List[Signal[_]])
-  type RuntimeComponentHeavy = (Context, Signal[_]) => TrellisElement
+  case class RuntimeComponentHeavy(f: (Context, Signal[_]) => TrellisElement) extends RuntimeComponent
   /** The simplest signal processor. Corresponds to FlatMap.*/
   type SimpleSignalProcessor = Signal[_] => List[Signal[_]]
 
@@ -137,7 +143,7 @@ package object core {
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step.*/
     def toRuntimeComponentHeavy = {
       val step = TrellisProducerSpeedy(runtimeSystem)
-      TrellisProducerLoopy(step, runtimeSystem.stopContacts):RuntimeComponentHeavy
+      RuntimeComponentHeavy(TrellisProducerLoopy(step, runtimeSystem.stopContacts))
     }
 //    def toSingleStepTrellisProducer = {
 //      val step = TrellisProducerSpeedy(runtimeSystem)

@@ -48,8 +48,8 @@ class StaticSystemActor(systemPath:List[String], system: StaticSystem) extends E
 		MDC.put("akkaSource", "" + self.path)
 		val results = ls.flatMap {
 			signal: Signal[_] =>
-				val res = processor(systemState, signal)
-        systemState = res._1
+				val res = processor.f(systemState, signal)
+        systemState = systemState ++res._1
         res._2
 		}
 		if (!results.isEmpty)
@@ -95,16 +95,16 @@ class StaticSystemActor(systemPath:List[String], system: StaticSystem) extends E
 object StaticSystemActor {
 
 
-	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(path:List[String], system: StaticSystem): RuntimeComponent = {
+	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(path:List[String], system: StaticSystem): RuntimeComponentHeavy = {
 		val actorInnerSubsystemConverter: SubsystemConverter = {
 			case (path1, _, ActorInnerSubsystem(subsystem)) =>
 				val actorRef = actorRefFactory.actorOf(Props(
 					new StaticSystemActor(path1,subsystem)),
 					subsystem.name)
-				(context: Context, signal) => {
+				RuntimeComponentHeavy((context: Context, signal) => {
 					actorRef.tell(signal, self)
 					(context, List())
-				}
+				})
 		}
 
 
@@ -116,7 +116,7 @@ object StaticSystemActor {
 //		val signalProcessors =
     val rs = SystemConverting.systemToRuntimeSystem(path, system, converter, system.outputContacts)
 //    val rs = RuntimeSystem(system.name, signalProcessors, system.outputContacts)
-		val proc = rs.toRuntimeComponent// new SignalProcessor(rs, system.inputContacts).processInnerSignals
+		val proc = rs.toRuntimeComponentHeavy// new SignalProcessor(rs, system.inputContacts).processInnerSignals
 		proc
 	}
 
