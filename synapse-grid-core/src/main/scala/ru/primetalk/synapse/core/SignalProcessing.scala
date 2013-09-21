@@ -59,7 +59,7 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
       for (proc ← signalProcessors(c)) {
         try {
           val (ctx, signals) = proc(newState, signal)
-          newState = ctx
+          newState = newState++ ctx
           newSignals ++= signals //reverse_::: newSignals
         } catch {
           case e: Exception => throw new RuntimeException(
@@ -74,7 +74,7 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
 /** Generates trellis until there are some data on nonStop contacts.
   * Can also process signals from child subsystems (not constrained only to input contacts).*/
 case class TrellisProducerLoopy(trellisProducer: TrellisProducer,
-                                stopContacts: Set[Contact[_]]) extends RuntimeComponent {
+                                stopContacts: Set[Contact[_]]) extends RuntimeComponentHeavy {
 	private def from(t0: TrellisElement): Stream[TrellisElement] =
 		t0 #:: from(trellisProducer(t0))
 

@@ -113,22 +113,35 @@ package object core {
   /** The context for system is a map from state handles to values.*/
   type Context = Map[Contact[_], _]
 
+  type TrellisElement = (Context, List[Signal[_]])
+
+  type ContextUpdater = List[(Contact[_], _)]
+
   /** The most general processing element.
     * Is very similar to the most generic link — StateFlatMap. */
-  type RuntimeComponent = (Context, Signal[_]) => (Context, List[Signal[_]])
+  type RuntimeComponent = (Context, Signal[_]) => (ContextUpdater, List[Signal[_]])
+  type RuntimeComponentHeavy = (Context, Signal[_]) => TrellisElement
   /** The simplest signal processor. Corresponds to FlatMap.*/
   type SimpleSignalProcessor = Signal[_] => List[Signal[_]]
 
-  type TrellisElement = (Context, List[Signal[_]])
+  type TrellisElementUpdater = (ContextUpdater, List[Signal[_]])
+  def updateTrellisElement(te:TrellisElement, upd:TrellisElementUpdater):TrellisElement =
+    ((te._1 /: upd._1.reverse)((ctx, u) => ctx + u) , upd._2)
+
 	/** A function that makes single(?) step over time. */
 	type TrellisProducer = TrellisElement => TrellisElement
 
-  type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
+  type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponentHeavy]]
 
   implicit class RichRuntimeSystem(runtimeSystem:RuntimeSystem){
-    def toRuntimeComponent = {
+    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step.*/
+    def toRuntimeComponentHeavy = {
       val step = TrellisProducerSpeedy(runtimeSystem)
-      TrellisProducerLoopy(step, runtimeSystem.stopContacts):RuntimeComponent
+      TrellisProducerLoopy(step, runtimeSystem.stopContacts):RuntimeComponentHeavy
     }
+//    def toSingleStepTrellisProducer = {
+//      val step = TrellisProducerSpeedy(runtimeSystem)
+//      TrellisProducerLoopy(step, runtimeSystem.stopContacts):RuntimeComponentHeavy
+//    }
   }
 }
