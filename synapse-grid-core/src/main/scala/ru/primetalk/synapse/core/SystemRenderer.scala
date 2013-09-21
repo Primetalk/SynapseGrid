@@ -29,8 +29,8 @@ trait SystemRenderer {
 			s"$id [label=${"\""+name+"\""}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
 		case (Link(_,_,NopLink(_)), _) ⇒
 			s"$id [label=${"\"Δt\""}, shape=square]"
-		case (Link(_,_,linkInfo:StatefulMapLink[_,_,_]), _) ⇒
-			s"$id [label=${"\""+linkInfo.name+"\""}, $stateLegacyModification]"
+//		case (Link(_,_,linkInfo:StatefulMapLink[_,_,_]), _) ⇒
+//			s"$id [label=${"\""+linkInfo.name+"\""}, $stateLegacyModification]"
 		case (Link(_,_,linkInfo:StatefulFlatMapLink[_,_,_,_]), _) ⇒
 			s"$id [label=${"\""+linkInfo.name+"\""}, $stateLegacyModification]"
 		case (Link(_,_,StateZipLink(st, name)), _) ⇒
@@ -129,8 +129,8 @@ trait SystemRenderer {
 			c match {
 				case Link(_, _, StateZipLink(st, _)) ⇒
 					elements += slinkToString(getId(st, StateNode), id, st, c)
-				case Link(_, _, StatefulMapLink(_, st, _)) ⇒
-					elements += slinkToString(getId(st, StateNode), id, st, c)
+//				case Link(_, _, StatefulMapLink(_, st, _)) ⇒
+//					elements += slinkToString(getId(st, StateNode), id, st, c)
 				case Link(_, _, StatefulFlatMapLink(_, st, _)) ⇒
 					elements += slinkToString(getId(st, StateNode), id, st, c)
 				case InnerSystem(_, st, _) ⇒

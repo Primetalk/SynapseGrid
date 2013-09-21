@@ -76,9 +76,9 @@ object SystemConverting {
   }
 
   val linkToSignalProcessor1 : SimpleComponentConverter = {
-		case Link(from, to, MapLink(f, _)) ⇒
-			(context, signal) ⇒
-				(context, List(new Signal(to, f.asInstanceOf[Any ⇒ Any](signal.data))))
+//		case Link(from, to, MapLink(f, _)) ⇒
+//			(context, signal) ⇒
+//				(context, List(new Signal(to, f.asInstanceOf[Any ⇒ Any](signal.data))))
 		case Link(from, to, FlatMapLink(f, _)) ⇒ {
 			(context, signal) ⇒
 				val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
@@ -93,14 +93,14 @@ object SystemConverting {
 		case Link(from, to, NopLink(_)) ⇒
 			(context, signal) ⇒
 				(context, List(new Signal(to, signal.data)))
-		// Deprecated. Use StateZipLink
-		case Link(from, to, StatefulMapLink(f, pe, _)) ⇒
-			(context, signal) ⇒ {
-				val stateHandle = pe: Contact[_]
-				val oldState = context(stateHandle)
-				val (nState, nData) = f.asInstanceOf[(Any, Any) ⇒ (Any, Any)](oldState, signal.data)
-				(context updated(stateHandle, nState), List(new Signal(to, nData)))
-			}
+//		// Deprecated. Use StateZipLink
+//		case Link(from, to, StatefulMapLink(f, pe, _)) ⇒
+//			(context, signal) ⇒ {
+//				val stateHandle = pe: Contact[_]
+//				val oldState = context(stateHandle)
+//				val (nState, nData) = f.asInstanceOf[(Any, Any) ⇒ (Any, Any)](oldState, signal.data)
+//				(context updated(stateHandle, nState), List(new Signal(to, nData)))
+//			}
 		// Deprecated. Use StateZipLink
 		case Link(from, to, StatefulFlatMapLink(f, pe, _)) ⇒
 			(context, signal) ⇒ {

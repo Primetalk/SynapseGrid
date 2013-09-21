@@ -28,11 +28,11 @@ case class Link[T1, T2, -TL1 >: T1, +TL2 <: T2 ](from:Contact[T1], to:Contact[T2
 }
 
 trait LinkInfo[-T1, +T2] extends Named
-/**
- * The kind of link that does functional transformation of data.
- */
-case class MapLink[T1, T2](f: T1 ⇒ T2, override val name: String)
-	extends LinkInfo[T1, T2]
+///**
+// * The kind of link that does functional transformation of data.
+// */
+//case class MapLink[T1, T2](f: T1 ⇒ T2, override val name: String)
+//	extends LinkInfo[T1, T2]
 /**
  * The kind of link that does sequential transformation of data.
  */
@@ -48,11 +48,11 @@ case class StatefulFlatMapLink[S, T1, T2, TSeq <: GenTraversableOnce[T2]](
 	stateHolder: StateHandle[S],
 	override val name: String)
 		extends LinkInfo[T1, T2] 
-case class StatefulMapLink[S, T1, T2](f: (S, T1) ⇒ (S, T2),
-	stateHolder:StateHandle[S],
-	override val name: String)
-		extends LinkInfo[T1, T2] 
-
+//case class StatefulMapLink[S, T1, T2](f: (S, T1) ⇒ (S, T2),
+//	stateHolder:StateHandle[S],
+//	override val name: String)
+//		extends LinkInfo[T1, T2]
+//
 case class StateZipLink[S, T1, T2 >:T1](stateHolder:StateHandle[S], override val name: String)
 		extends LinkInfo[T1, (S, T2)] 
 

@@ -159,10 +159,10 @@ trait SystemBuilder extends BasicSystemBuilder {
     }
 
     def map(f: T1 ⇒ T2, name: String = ""): Contact[T2] =
-      addLink(c._1, c._2, new MapLink(f, nextLabel(name, "" + f)))
+      addLink(c._1, c._2, new FlatMapLink[T1, T2](x=>Seq(f(x)), nextLabel(name, "" + f)))
 
     def const(value: T2, name: String = ""): Contact[T2] =
-      addLink(c._1, c._2, new MapLink((t: T1) => value, nextLabel(name, "⇒" + value)))
+      addLink(c._1, c._2, new FlatMapLink[T1, T2]((t: T1) => Seq(value), nextLabel(name, "⇒" + value)))
 
     def flatMap[TSeq](f: T1 ⇒ GenTraversableOnce[T2], name: String = "") =
       addLink(c._1, c._2, new FlatMapLink[T1, T2](f, nextLabel(name, "" + f)))
@@ -197,8 +197,11 @@ trait SystemBuilder extends BasicSystemBuilder {
   }
 
   implicit class ImplStateLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) {
-    def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, T2)) =
-      addLink(c._1, c._2, new StatefulMapLink(f, stateHandle,
+    def stateMap[S](stateHandle: StateHandle[S], name: String = "")
+                   (f: (S, T1) ⇒ (S, T2)) =
+      addLink(c._1, c._2,
+        new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](
+        (s, t) => {val r = f(s,t);(r._1, Seq(r._2))}, stateHandle,
         nextLabel(name, "sm")))
     def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, GenTraversableOnce[T2])) =
       addLink(c._1, c._2, new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](f, stateHandle, nextLabel(name, "sfm")))
@@ -207,7 +210,9 @@ trait SystemBuilder extends BasicSystemBuilder {
 
   class ContactWithState[T1, S](val c1:Contact[T1], val stateHandle:StateHandle[S]) {
     def stateMap[T2](f: (S, T1) ⇒ (S, T2), name:String ="") =
-      addLink(c1, auxContact[T2], new StatefulMapLink(f, stateHandle,
+      addLink(c1, auxContact[T2],
+        new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](
+          (s, t) => {val r = f(s,t);(r._1, Seq(r._2))}, stateHandle,
         nextLabel(name, "sm")))
     def stateFlatMap[T2, TSeq <: GenTraversableOnce[T2]](f: (S, T1) ⇒ (S, TSeq), name:String ="") =
       addLink(c1, auxContact[T2], new StatefulFlatMapLink[S,T1, T2, TSeq](f, stateHandle,
@@ -217,7 +222,9 @@ trait SystemBuilder extends BasicSystemBuilder {
 
   implicit class ImplStateLinkBuilder2[T1, T2, S](p:(ContactWithState[T1, S], Contact[T2])) {
     def stateMap(f: (S, T1) ⇒ (S, T2), name:String ="") =
-      addLink(p._1.c1, p._2, new StatefulMapLink(f, p._1.stateHandle,
+      addLink(p._1.c1, p._2,
+        new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](
+          (s, t) => {val r = f(s,t);(r._1, Seq(r._2))}, p._1.stateHandle,
         nextLabel(name, "sm")))
     def stateFlatMap[TSeq <: GenTraversableOnce[T2]](f: (S, T1) ⇒ (S, TSeq), name:String ="") =
       addLink(p._1.c1, p._2, new StatefulFlatMapLink[S,T1, T2, TSeq](f, p._1.stateHandle,
@@ -252,7 +259,8 @@ trait SystemBuilder extends BasicSystemBuilder {
     }
 
     def stock(f: T ⇒ Any, name: String = "") {
-      addLink(c, devNull, new MapLink(f, nextLabel(name, ">>null")))
+      addLink(c, devNull, new FlatMapLink[T, Any](x=>Seq(f(x)), nextLabel(name, ">>null")))
+
     }
 
 
@@ -278,7 +286,7 @@ trait SystemBuilder extends BasicSystemBuilder {
       new ImplLinkBuilder(c, auxContact[T2]).map(f, nextLabel(name, "map(" + f + ")"))
 
     def const[T2](value: T2, name: String = ""): Contact[T2] =
-      addLink(c, auxContact[T2], new MapLink((t: T) => value, nextLabel(name, "⇒" + value)))
+      addLink(c, auxContact[T2], new FlatMapLink[T, T2]((t: T) => Seq(value), nextLabel(name, "⇒" + value)))
 
     def castFilter2[T3](implicit t3Class: ClassTag[T3]) =
       new ImplLinkBuilder(c, auxContact[T3]).castFilter(t3Class.runtimeClass.asInstanceOf[Class[T3]])
@@ -321,13 +329,13 @@ trait SystemBuilder extends BasicSystemBuilder {
       flatMap(t => ev(t), nextLabel(name, "split"))
 
     def foreach(body: T ⇒ Any, name: String = "") = {
-      addLink(c, devNull, new MapLink(body, nextLabel(name, "foreach")))
+      addLink(c, devNull, new FlatMapLink[T, Any](x=>{body(x);Seq()}, nextLabel(name, "foreach")))
       c
     }
 
     def exec(body: ⇒ Any, name: String = "") = {
-      addLink(c, auxContact[T], new MapLink((t: T) => {
-        body; t
+      addLink(c, auxContact[T], new FlatMapLink[T, T]((t: T) => {
+        body; Seq(t)
       }, nextLabel(name, "exec")))
     }
 
