@@ -14,6 +14,7 @@ package ru.primetalk.synapse.core
 
 import scala.util.Try
 import scala.language.implicitConversions
+import scala.language.existentials
 
 /**
   * Toolkit for conversion of StaticSystem to RuntimeSystems.
@@ -143,17 +144,21 @@ object SystemConverting {
                                          subsystemStateHandle1:Contact[_],
                                          proc:RuntimeComponentHeavy,
                                          sharedStateHandles: List[StateHandle[_]]) = {
-//    val sharedStateHandlersSet = sharedStateHandles.toSet[Contact[_]]
+    val sharedStateHandlersSet = sharedStateHandles.toSet[Contact[_]]
     (context: Context, signal:Signal[_]) =>
     val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
     val sharedStates = sharedStateHandles.map(ssh ⇒ (ssh, context(ssh)))
     val oldStateWithShared = oldState ++ sharedStates
-    val (delta, signals) = proc.f(oldStateWithShared, signal)
-//    val (sharedStateValues, newStateWithoutShared) =   delta.partition(ssh ⇒ sharedStateHandlersSet.contains(ssh._1))
+    val (delta:Context, signals) = proc.f(oldStateWithShared, signal)
+    val newChildContext = delta.toList
+    val (sharedStateValues, newStateWithoutShared) =
+      newChildContext.partition{ case (sh, _) ⇒ sharedStateHandlersSet.contains(sh)}
+
 //    val newStateWithoutShared = delta.filter(ssh ⇒ !sharedStateHandlersSet.contains(ssh._1))
 //    val sharedStateValues = delta.filter(ssh ⇒ sharedStateHandlersSet.contains(ssh._1))
-//    ((context updated(subsystemStateHandle1, newStateWithoutShared)) ++ sharedStateValues, signals)
-      (delta, signals)
+
+    ((context updated(subsystemStateHandle1, newStateWithoutShared)) ++ sharedStateValues, signals)
+//      (delta, signals)
   }
 
   def innerSystemToSignalProcessor(converterRecursive: ComponentConverter): SubsystemConverter = {

@@ -63,8 +63,9 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
         try {
 
           proc match {
-            case RuntimeComponentHeavy(_, f) =>
+            case r@ RuntimeComponentHeavy(_, f) =>
               val (ctx, signals) = f(newState, signal)
+              assert(ctx.keySet == newState.keySet, s"RuntimeComponentHeavy $r has changed the set of keys.\nWas\n$ctx\nBecome\nnewState")
               newState = ctx
               newSignals ++= signals //reverse_::: newSignals
             case RuntimeComponentLightweight(_, f) =>

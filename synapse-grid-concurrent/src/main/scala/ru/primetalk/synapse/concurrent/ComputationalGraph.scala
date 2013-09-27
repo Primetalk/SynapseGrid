@@ -91,8 +91,6 @@ class ComputationState(rs: RuntimeSystem,
     state0.map{ case (sh, initialValue) => (sh, new SafeVariable(initialValue))}.toMap
 
 
-  // The trellis instance doesn't escape the scope of this class.
-  //  private var trellis = initialTrellis
   /** Absolute past. No signal can appear before this time. */
   private var pastTimeBoundary = 0
   private var outputs = List[AtTime[Signal[_]]]()
@@ -120,18 +118,13 @@ class ComputationState(rs: RuntimeSystem,
     }
   }
 
-  @inline
-  private
-  def available(stateHandle:Contact[_]):Boolean =
-    variables(stateHandle).lock.available
-
   /** Simple check. It can also search through graph and allow look ahead state-based
     * calculations.*/
   private
   def checkRequirement(stateRequirement: StateRequirement): Boolean = {
     stateRequirement.stateHandles.isEmpty ||(
       stateRequirement.time.trellisTime == pastTimeBoundary &&
-      stateRequirement.stateHandles.forall(available)
+      stateRequirement.stateHandles.forall( variables(_).lock.available)
     )
   }
 
