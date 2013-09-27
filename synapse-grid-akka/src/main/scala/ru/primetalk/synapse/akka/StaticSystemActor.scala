@@ -101,7 +101,7 @@ object StaticSystemActor {
 				val actorRef = actorRefFactory.actorOf(Props(
 					new StaticSystemActor(path1,subsystem)),
 					subsystem.name)
-				RuntimeComponentHeavy((context: Context, signal) => {
+				RuntimeComponentHeavy(List(), (context: Context, signal) => {
 					actorRef.tell(signal, self)
 					(context, List())
 				})
@@ -116,7 +116,7 @@ object StaticSystemActor {
 //		val signalProcessors =
     val rs = SystemConverting.systemToRuntimeSystem(path, system, converter, system.outputContacts)
 //    val rs = RuntimeSystem(system.name, signalProcessors, system.outputContacts)
-		val proc = rs.toRuntimeComponentHeavy// new SignalProcessor(rs, system.inputContacts).processInnerSignals
+		val proc = rs.toRuntimeComponentHeavy(List())// new SignalProcessor(rs, system.inputContacts).processInnerSignals
 		proc
 	}
 

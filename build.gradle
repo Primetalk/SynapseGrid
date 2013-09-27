@@ -209,3 +209,10 @@ project(':synapse-grid-shapeless') {
     }
 }
 
+project(':synapse-grid-concurrent') {
+    dependencies {
+        compile project(':synapse-grid-core')
+        compile shapelessDep
+    }
+}
+

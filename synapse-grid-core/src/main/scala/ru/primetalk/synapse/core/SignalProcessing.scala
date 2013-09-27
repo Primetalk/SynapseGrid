@@ -37,7 +37,10 @@ object SubsystemSpecialContact extends Contact[SubsystemDirectSignal]
   * organized by Contacts and is ready for direct processing of TrellisElement.*/
 case class RuntimeSystem(name:String,
                          signalProcessors: ContactToSubscribersMap,
-                         stopContacts: Set[Contact[_]])
+                         stopContacts: Set[Contact[_]]
+//                         ,
+//                         stateHandles:List[Contact[_]]
+                          )
 
 /** A component that does single step along the trellis.*/
 case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
@@ -58,12 +61,26 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
     else
       for (proc ← signalProcessors(c)) {
         try {
-          val (ctx, signals) = proc.f(newState, signal)
-          newState = newState ++ ctx
-          newSignals ++= signals //reverse_::: newSignals
+
+          proc match {
+            case RuntimeComponentHeavy(_, f) =>
+              val (ctx, signals) = f(newState, signal)
+              newState = ctx
+              newSignals ++= signals //reverse_::: newSignals
+            case RuntimeComponentLightweight(_, f) =>
+              val signals = f(signal)
+//              newState = newState ++ upd
+              newSignals ++= signals //reverse_::: newSignals
+            case RuntimeComponentStateful(_, sh, f) =>
+              val s = newState(sh)
+              val (ns, signals) = f(s, signal)
+              newState = newState.updated(sh, ns)
+              newSignals ++= signals //reverse_::: newSignals
+
+          }
         } catch {
           case e: Exception => throw new RuntimeException(
-		        s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.\n" +
+            s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.\n" +
               s"Context value before processing:\n"+newState.mkString("\n"),e)
         }
       }

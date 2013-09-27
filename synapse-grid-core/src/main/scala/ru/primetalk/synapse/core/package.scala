@@ -66,6 +66,7 @@ package object core {
     def toDot = SystemRenderer.staticSystem2ToDot(system)
     def toDotAtLevel(level:Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
     def toDynamicSystem = SystemConverting.toDynamicSystem(List(),system)
+    def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts)
   }
   implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
     extends RichStaticSystem(systemBuilder.toStaticSystem){
@@ -118,15 +119,6 @@ package object core {
   type ContextUpdater = List[(Contact[_], _)]
 
 
-  /**
-    * The most general processing element.
-    * Is very similar to the most generic link — StateFlatMap. */
-  sealed trait RuntimeComponent
-
-  case class RuntimeComponentLightweight(f: (Context, Signal[_]) => (ContextUpdater, List[Signal[_]])) extends RuntimeComponent
-  /** The most general processing element.
-    * Is very similar to the most generic link — StateFlatMap. */
-  case class RuntimeComponentHeavy(f: (Context, Signal[_]) => TrellisElement) extends RuntimeComponent
   /** The simplest signal processor. Corresponds to FlatMap.*/
   type SimpleSignalProcessor = Signal[_] => List[Signal[_]]
 
@@ -137,13 +129,13 @@ package object core {
 	/** A function that makes single(?) step over time. */
 	type TrellisProducer = TrellisElement => TrellisElement
 
-  type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponentHeavy]]
+  type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
 
   implicit class RichRuntimeSystem(runtimeSystem:RuntimeSystem){
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step.*/
-    def toRuntimeComponentHeavy = {
+    def toRuntimeComponentHeavy(stateHandles:List[Contact[_]]) = {
       val step = TrellisProducerSpeedy(runtimeSystem)
-      RuntimeComponentHeavy(TrellisProducerLoopy(step, runtimeSystem.stopContacts))
+      RuntimeComponentHeavy(stateHandles, TrellisProducerLoopy(step, runtimeSystem.stopContacts))
     }
 //    def toSingleStepTrellisProducer = {
 //      val step = TrellisProducerSpeedy(runtimeSystem)
