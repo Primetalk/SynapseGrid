@@ -51,7 +51,7 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
     //			val (outputs, inners) = t._2.partition(s ⇒ system.isOutputContact(s._1))
     val toProcess = new Signal(TrellisContact, signals) :: signals //inners
 
-    var newState = t._1
+    var currentState = t._1
     val newSignals = mutable.ListBuffer[Signal[_]]() // : Signals
     for {
       signal ← toProcess
@@ -61,38 +61,41 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
     else
       for (proc ← signalProcessors(c)) {
         try {
-
           proc match {
-            case r@ RuntimeComponentHeavy(_, f) =>
-              val (ctx, signals) = f(newState, signal)
-              assert(ctx.keySet == newState.keySet, s"RuntimeComponentHeavy $r has changed the set of keys.\nWas\n$ctx\nBecome\nnewState")
-              newState = ctx
-              newSignals ++= signals //reverse_::: newSignals
-            case RuntimeComponentLightweight(_, f) =>
+            case r@ RuntimeComponentMultiState(_, f) =>
+              val (ctx, signals) = f(currentState, signal)
+              assert(ctx.keySet == currentState.keySet, s"RuntimeComponentHeavy $r has changed the set of keys.\nWas\n$ctx\nBecome\nnewState")
+              currentState = ctx
+              newSignals ++= signals
+            case RuntimeComponentFlatMap(_, _, f) =>
               val signals = f(signal)
-//              newState = newState ++ upd
-              newSignals ++= signals //reverse_::: newSignals
-            case RuntimeComponentStateful(_, sh, f) =>
-              val s = newState(sh)
-              val (ns, signals) = f(s, signal)
-              newState = newState.updated(sh, ns)
-              newSignals ++= signals //reverse_::: newSignals
-
+              newSignals ++= signals
+            case RuntimeComponentStateFlatMap(_, _, sh, f) =>
+              val s = currentState.asInstanceOf[Map[Contact[Any], Any]](sh)
+              val (ns, signals) = f.asInstanceOf[Function2[Any, Signal[_], (Any, List[Signal[_]])]](s, signal)
+              currentState = currentState.updated(sh, ns)
+              newSignals ++= signals
           }
         } catch {
           case e: Exception => throw new RuntimeException(
             s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.\n" +
-              s"Context value before processing:\n"+newState.mkString("\n"),e)
+              s"Context value before processing:\n"+currentState.mkString("\n"),e)
         }
       }
 
-    (newState, newSignals.toList)
+    (currentState, newSignals.toList)
   }
 }
 /** Generates trellis until there are some data on nonStop contacts.
-  * Can also process signals from child subsystems (not constrained only to input contacts).*/
+  * Can also process signals from child subsystems (not constrained only to input contacts).
+  * Processes one signal at a time.
+  * Has the same interface as RuntimeComponentMultiState.
+  *
+  * It works as follows. Constructs a lazy evaluated Stream of TrellisElement s (method `from`).
+  * Then searches within the stream for a first element that contains only signals at stop contacts.
+  * */
 case class TrellisProducerLoopy(trellisProducer: TrellisProducer,
-                                stopContacts: Set[Contact[_]]) extends ((Context, Signal[_])=>TrellisElement) {
+                                stopContacts: Set[Contact[_]]) extends TotalTrellisProducer {
 	private def from(t0: TrellisElement): Stream[TrellisElement] =
 		t0 #:: from(trellisProducer(t0))
 

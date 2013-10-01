@@ -75,7 +75,7 @@ case class InnerSystem[S](
   def name = s.name
   def toStaticSystem:StaticSystem = s
 }
-/** Special component that atomically updates state.*/
+/** Special component that atomically updates state. It doesn't have any output contact.*/
 case class StateUpdate[S, T2](
                                from : Contact[T2],
                                stateHandle : StateHandle[S],

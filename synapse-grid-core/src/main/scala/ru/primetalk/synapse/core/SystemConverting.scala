@@ -3,7 +3,7 @@
 // Все права принадлежат компании ООО «Праймтолк».           //
 ///////////////////////////////////////////////////////////////
 /**
- * ${PROJECT_NAME}
+ * SynapseGrid
  * © Primetalk Ltd., 2013.
  * All rights reserved.
  * Authors: A.Zhizhelev, A.Nehaev, P. Popov
@@ -80,109 +80,99 @@ object SystemConverting {
     def convertToRuntimeSystem(system:StaticSystem,
                                stopContacts: Set[Contact[_]]):RuntimeSystem = {
       systemToRuntimeSystem(List(),system, this, stopContacts)
-//      val mapContactsToProcessors =
-//        systemToSignalProcessors(List(),system, this)
-//      RuntimeSystem(system.name, mapContactsToProcessors, stopContacts)
     }
   }
 
   val linkToSignalProcessor1 : SimpleComponentConverter = {
-//		case Link(from, to, MapLink(f, _)) ⇒
-//			(context, signal) ⇒
-//				(context, List(new Signal(to, f.asInstanceOf[Any ⇒ Any](signal.data))))
-		case Link(from, to, FlatMapLink(f, _)) ⇒ RuntimeComponentLightweight(List(to), {
-      (signal) ⇒
-				val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
-				val res = fun(signal.data)
-				res.map(new Signal(to, _)).toList
-		})
+		case Link(from, to, FlatMapLink(f, _)) ⇒
+      RuntimeComponentFlatMap(List(from), List(to), {
+        (signal) ⇒
+          val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
+          val res = fun(signal.data)
+          res.map(new Signal(to, _)).toList
+      })
+    case Link(from, to, StatefulFlatMapLink(f, pe, _)) ⇒
+      RuntimeComponentStateFlatMap[Any](List(from), List(to), pe, {(value, signal) ⇒
+        val fun = f.asInstanceOf[(Any, Any) ⇒ (Any, Seq[Any])]
+        val (nState, nDataSeq) = fun(value, signal.data)
+        (nState, nDataSeq.toList.map(new Signal(to, _)))
+      })
+    case Link(from, to, NopLink(_)) ⇒
+      RuntimeComponentFlatMap(List(from), List(to), {(signal) ⇒
+        List(new Signal(to, signal.data))
+      })
 		case Link(from, to, StateZipLink(pe, _)) ⇒
-			RuntimeComponentStateful[Any](List(to), pe, {(value, signal) ⇒
-//				val stateHandle = pe: Contact[_]
+			RuntimeComponentStateFlatMap[Any](List(from), List(to), pe, {(value, signal) ⇒
 				(value, List(new Signal(to, (value, signal.data))))
       })
-
-		case Link(from, to, NopLink(_)) ⇒
-      RuntimeComponentLightweight(List(to), {(signal) ⇒
-				List(new Signal(to, signal.data))
-      })
-//		// Deprecated. Use StateZipLink
-//		case Link(from, to, StatefulMapLink(f, pe, _)) ⇒
-//			(context, signal) ⇒ {
-//				val stateHandle = pe: Contact[_]
-//				val oldState = context(stateHandle)
-//				val (nState, nData) = f.asInstanceOf[(Any, Any) ⇒ (Any, Any)](oldState, signal.data)
-//				(context updated(stateHandle, nState), List(new Signal(to, nData)))
-//			}
-		// Deprecated. Use StateZipLink
-		case Link(from, to, StatefulFlatMapLink(f, pe, _)) ⇒
-      RuntimeComponentStateful[Any](List(to), pe, {(value, signal) ⇒
-//				val stateHandle = pe: Contact[_]
-//				val oldState = context(stateHandle)
-				val (nState, nDataSeq) = f.asInstanceOf[(Any, Any) ⇒ (Any, Seq[Any])](value, signal.data)
-				(nState, nDataSeq.toList.map(new Signal(to, _)))
-			})
-		case StateUpdate(from, pe, _, f) ⇒ RuntimeComponentStateful[Any](List(), pe, {
+		case StateUpdate(from, pe, _, f) ⇒ RuntimeComponentStateFlatMap[Any](List(from), List(), pe, {
       (value, signal) ⇒
-//				val stateHandle = pe: Contact[_]
         val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data)
         (result, List())
-
 		})
   }
 
   def innerSystemSignalHandlerWithoutShared(
-    subsystemStateHandle1:Contact[_], proc:RuntimeComponentHeavy)(
-    context: Context, signal:Signal[_]):(Context, List[Signal[_]]) = {
+          subsystemStateHandle1:Contact[_],
+          proc:TotalTrellisProducer
+          )(context: Context,
+          signal:Signal[_]):(Context, List[Signal[_]]) =
+  {
     val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
-    val oldStateWithShared = oldState
-    val (newState, signals) = proc.f(oldStateWithShared, signal)
-    val newStateWithoutShared = newState
-    (oldState +( (subsystemStateHandle1, newStateWithoutShared)), signals)
+    val (newState, signals) = proc(oldState, signal)
+    (oldState.updated(subsystemStateHandle1, newState), signals)
   }
+
   def innerSystemSignalHandlerWithShared(
                                          subsystemStateHandle1:Contact[_],
-                                         proc:RuntimeComponentHeavy,
-                                         sharedStateHandles: List[StateHandle[_]]) = {
+                                         proc:TotalTrellisProducer,
+                                         sharedStateHandles: List[Contact[_]]) =
+  {
     val sharedStateHandlersSet = sharedStateHandles.toSet[Contact[_]]
-    (context: Context, signal:Signal[_]) =>
-    val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
-    val sharedStates = sharedStateHandles.map(ssh ⇒ (ssh, context(ssh)))
-    val oldStateWithShared = oldState ++ sharedStates
-    val (delta:Context, signals) = proc.f(oldStateWithShared, signal)
-    val newChildContext = delta.toList
-    val (sharedStateValues, newStateWithoutShared) =
-      newChildContext.partition{ case (sh, _) ⇒ sharedStateHandlersSet.contains(sh)}
 
-//    val newStateWithoutShared = delta.filter(ssh ⇒ !sharedStateHandlersSet.contains(ssh._1))
-//    val sharedStateValues = delta.filter(ssh ⇒ sharedStateHandlersSet.contains(ssh._1))
+    {(context: Context, signal:Signal[_]) =>
+      val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
+      val sharedStates = sharedStateHandles.map(ssh ⇒ (ssh, context(ssh)))
+      val oldStateWithShared = oldState ++ sharedStates
+      val (newChildContext:Context, signals) = proc(oldStateWithShared, signal)
+      val (sharedStateValues, newStateWithoutShared) =
+        newChildContext.toList.partition{ case (sh, _) ⇒ sharedStateHandlersSet.contains(sh)}
 
-    ((context updated(subsystemStateHandle1, newStateWithoutShared)) ++ sharedStateValues, signals)
-//      (delta, signals)
+  //    val newStateWithoutShared = delta.filter(ssh ⇒ !sharedStateHandlersSet.contains(ssh._1))
+  //    val sharedStateValues = delta.filter(ssh ⇒ sharedStateHandlersSet.contains(ssh._1))
+
+      ((context updated(subsystemStateHandle1, newStateWithoutShared)) ++ sharedStateValues, signals)
+    }
   }
 
   def innerSystemToSignalProcessor(converterRecursive: ComponentConverter): SubsystemConverter = {
+    case (path, _, InnerSystem(subsystem, subsystemStateHandle, Nil)) ⇒
+      val rs = systemToRuntimeSystem(subsystem.name::path,
+        subsystem,
+        converterRecursive,
+        subsystem.outputContacts)
+      val proc = rs.toTotalTrellisProducer
+      RuntimeComponentStateFlatMap(subsystem.inputs, subsystem.outputs, subsystemStateHandle,
+        {(context: Context, signal:Signal[_]) =>
+            val oldState = context(subsystemStateHandle.asInstanceOf[Contact[_]]).asInstanceOf[Map[Contact[_], _]]
+            val (newState, signals) = proc(oldState, signal)
+            (oldState.updated(subsystemStateHandle.asInstanceOf[Contact[_]], newState), signals)
+        })
+//        innerSystemSignalHandlerWithoutShared(subsystemStateHandle, proc))
     case (path, _, InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles)) ⇒
-      //      val mapContactsToProcessors =
-      //        systemToSignalProcessors(subsystem.name::path,
-      //          subsystem,
-      //          converterRecursive)
-      //      val proc = RuntimeSystem(subsystem.name, mapContactsToProcessors, subsystem.outputContacts).toRuntimeComponent
-      val rs = systemToRuntimeSystem(subsystem.name::path,subsystem, converterRecursive, subsystem.outputContacts)
+      val rs = systemToRuntimeSystem(subsystem.name::path,
+        subsystem,
+        converterRecursive,
+        subsystem.outputContacts)
+      val proc = rs.toTotalTrellisProducer
       val stateHandles = subsystemStateHandle :: sharedStateHandles
-      val proc = rs.toRuntimeComponentHeavy(stateHandles)
-      RuntimeComponentHeavy(stateHandles,
-        if (sharedStateHandles.isEmpty)
-          innerSystemSignalHandlerWithoutShared(subsystemStateHandle, proc)
-        else
-          innerSystemSignalHandlerWithShared(subsystemStateHandle, proc, sharedStateHandles)
-      )
+      RuntimeComponentMultiState(stateHandles,innerSystemSignalHandlerWithShared(subsystemStateHandle, proc, sharedStateHandles))
   }
 
   def redLinkToSignalProcessor(converterWithoutRedLinks:ComponentConverter) : SubsystemConverter = {
 		case (path, system, Link(from, to, RedMapLink(stopContacts, label))) ⇒
       val rs = systemToRuntimeSystem(path,system, converterWithoutRedLinks, stopContacts)
-      val proc = rs.toRuntimeComponentHeavy(system.privateStateHandles)
+      val proc = rs.toTotalTrellisProducer// toRuntimeComponentHeavy(system.privateStateHandles)
 
 //			val mapContactsToProcessors =
 //        systemToSignalProcessors(path, system,
@@ -190,11 +180,11 @@ object SystemConverting {
 //        )
 //      val rs = RuntimeSystem(system.name+"RedMapLink("+label+")", mapContactsToProcessors, stopContacts)
 //			val proc = rs.toRuntimeComponent//new SignalProcessor(rs, Set(to))
-			RuntimeComponentHeavy(system.privateStateHandles, (context, signal) ⇒ proc.f(context, Signal(to, signal.data)))
+			RuntimeComponentMultiState(system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
 	}
   val redLinkDummy:SubsystemConverter = {
     case (path, system, Link(from, to, RedMapLink(stopContacts, label))) ⇒
-      RuntimeComponentHeavy(system.privateStateHandles, (context, signal) ⇒ (context, List()))
+      RuntimeComponentMultiState(system.privateStateHandles, (context, signal) ⇒ (context, List()))
   }
 
   val unmatched : SubsystemConverter = {
@@ -220,18 +210,18 @@ object SystemConverting {
   }
 
   def subsystemDirectProcessor(procs:Map[String, RuntimeComponent]):RuntimeComponent =
-    RuntimeComponentHeavy(List(), {
+    RuntimeComponentMultiState(List(), {
       case (context, outerSignal) =>
         outerSignal match {
           case Signal(SubsystemSpecialContact, SubsystemDirectSignal(subsystemName, signal)) ⇒
             procs.get(subsystemName).
               map {
-                case RuntimeComponentHeavy(_, f) =>
+                case RuntimeComponentMultiState(_, f) =>
                   f(context, signal)
-                case RuntimeComponentLightweight(_, f) =>
+                case RuntimeComponentFlatMap(_, _, f) =>
                   val r = f(signal)
                   (context, r)
-                case RuntimeComponentStateful(_, sh, f) =>
+                case RuntimeComponentStateFlatMap(_, _, sh, f) =>
                   val s = context(sh)
                   val r = f(s, signal)
                   (context.updated(sh, r._1), r._2)
@@ -286,7 +276,7 @@ object SystemConverting {
     var state = system.s0
 
     val rs = systemToRuntimeSystem(path,system, componentToSignalProcessor, system.outputContacts)
-    val proc = rs.toRuntimeComponentHeavy(List())
+    val proc = rs.toTotalTrellisProducer
 //		val mapContactsToProcessors =
 //      systemToSignalProcessors(path, system,
 //        componentToSignalProcessor)
@@ -296,7 +286,7 @@ object SystemConverting {
       def receive0(st: system.StateType, resSignals: List[Signal[_]], signals: List[Signal[_]]): (system.StateType, List[Signal[_]]) = signals match {
         case Nil ⇒ (st, resSignals)
         case head :: tail ⇒
-          val (newState, newSignals) = proc.f(st, head)
+          val (newState, newSignals) = proc(st, head)
           receive0(newState, newSignals reverse_::: resSignals, tail)
       }
       val result = receive0(state, Nil, signal :: Nil)

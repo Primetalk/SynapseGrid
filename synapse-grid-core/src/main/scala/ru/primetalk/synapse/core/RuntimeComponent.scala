@@ -14,23 +14,38 @@
  */
 package ru.primetalk.synapse.core
 
-/**
- * The most general processing element.
- * Is very similar to the most generic link — StateFlatMap. */
 sealed trait RuntimeComponent
 
-case class RuntimeComponentLightweight(outputContacts:List[Contact[_]],
+sealed trait RuntimeComponentTransparent extends RuntimeComponent {
+  val inputContacts:List[Contact[_]]
+  val outputContacts:List[Contact[_]]
+}
+/**
+ * The most popular runtime component. Transforms a signal into other signals.
+ * This component is not only FlatMap link. It can represent almost any stateless part of a system.
+ * @param outputContacts - the list of contacts that can be influenced by this component.
+ * @param f - the actual transformation
+ */
+case class RuntimeComponentFlatMap(
+  inputContacts:List[Contact[_]],
+  outputContacts:List[Contact[_]],
   f: Signal[_] =>
-      List[Signal[_]]) extends RuntimeComponent
+      List[Signal[_]]) extends RuntimeComponentTransparent
 
-case class RuntimeComponentStateful[S](outputContacts:List[Contact[_]],
+/**
+  * Is very similar to the most generic link — StateFlatMap.
+  * This component refers a single stateHandle.*/
+case class RuntimeComponentStateFlatMap[S](
+  inputContacts:List[Contact[_]],
+  outputContacts:List[Contact[_]],
   stateHandle:Contact[S],
   f: (S, Signal[_]) //(state, signal)
     =>
     (S, List[Signal[_]])//(state, signals)
-                                     ) extends RuntimeComponent
-/** The most general processing element.
-  * Is very similar to the most generic link — StateFlatMap. */
-case class RuntimeComponentHeavy(
+  ) extends RuntimeComponentTransparent
+
+/**
+ * The most general processing element.*/
+case class RuntimeComponentMultiState(
   stateHandles:List[Contact[_]],
   f: (Context, Signal[_]) => TrellisElement) extends RuntimeComponent

@@ -16,10 +16,10 @@ import ru.primetalk.synapse.core._
 import scala.concurrent.{Await, Future, ExecutionContext}
 import scala.language.existentials
 import ru.primetalk.synapse.core.Signal
-import ru.primetalk.synapse.core.RuntimeComponentStateful
+import ru.primetalk.synapse.core.RuntimeComponentStateFlatMap
 import ru.primetalk.synapse.core.DynamicSystem
-import ru.primetalk.synapse.core.RuntimeComponentLightweight
-import ru.primetalk.synapse.core.RuntimeComponentHeavy
+import ru.primetalk.synapse.core.RuntimeComponentFlatMap
+import ru.primetalk.synapse.core.RuntimeComponentMultiState
 import ru.primetalk.synapse.core.RuntimeSystem
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -48,11 +48,11 @@ case class StateRequirement(stateHandles: List[Contact[_]], time:HTime) //extend
 case class UnitOfComputation(signalAtTime: AtTime[Signal[_]], // the signal that triggered the computation.
                              rc: RuntimeComponent){
   val stateRequirement = rc match {
-    case RuntimeComponentLightweight(_, f) =>
+    case RuntimeComponentFlatMap(_, _, f) =>
       StateRequirement(List(),signalAtTime.time)
-    case RuntimeComponentStateful(_, sh, f) =>
+    case RuntimeComponentStateFlatMap(_, _, sh, f) =>
       StateRequirement(List(sh), signalAtTime.time)
-    case RuntimeComponentHeavy(stateHandles, f) =>
+    case RuntimeComponentMultiState(stateHandles, f) =>
       StateRequirement(stateHandles, signalAtTime.time)
   }
 }
@@ -146,12 +146,12 @@ class ComputationState(rs: RuntimeSystem,
     val signal = signalAtTime.value
     val time = signalAtTime.time
     val future = rc match {
-      case RuntimeComponentLightweight(_, f) =>
+      case RuntimeComponentFlatMap(_, _, f) =>
         Future {
           val signals = f(signal)
           ComputationCompleted(t, AtTime.placeAfter(time, signals), List())
         }
-      case RuntimeComponentStateful(_, sh, f) =>
+      case RuntimeComponentStateFlatMap(_, _, sh, f) =>
         val v = variables(sh).asInstanceOf[SafeVariable[Any]]
         val f2 = f.asInstanceOf[((Any, Signal[_]) => (Any, List[Signal[_]]))] //(state, signal)=>(state, signals)
         Future {
@@ -160,7 +160,7 @@ class ComputationState(rs: RuntimeSystem,
           }
           ComputationCompleted(t, AtTime.placeAfter(time, signals), List(AtTime(signalAtTime.time.next(-1), sh)))
         }
-      case RuntimeComponentHeavy(stateHandles, f) =>
+      case RuntimeComponentMultiState(stateHandles, f) =>
         val f2 = f.asInstanceOf[((Context, Signal[_]) => (Context, List[Signal[_]]))] //(state, signal)=>(state, signals)
         Future {
           val context = stateHandles.map(sh =>
@@ -209,13 +209,15 @@ class ComputationState(rs: RuntimeSystem,
   private
   def checkPlan() {
     this.synchronized {
-      val time1 =
-        computationQueue.map(_.signalAtTime.time.trellisTime).min//
+      val times =
+        runningCalculations.map(_.u.signalAtTime.time.trellisTime) ++
+        computationQueue.map(_.signalAtTime.time.trellisTime)
+      pastTimeBoundary =
+        if(times.isEmpty)
+          Int.MaxValue
+        else
+          times.min//
 //        (Int.MaxValue /: computationQueue){case (m, UnitOfComputation(_,atTime, _)) => math.min(m,atTime.time.trellisTime)}
-      val time2 =
-        runningCalculations.map(_.u.signalAtTime.time.trellisTime).min
-//        (Int.MaxValue /: runningCalculations){case (m, RunningUnitOfComputation(UnitOfComputation(_,atTime, _),_)) => math.min(m,atTime.time.trellisTime)}
-      pastTimeBoundary = math.min(time1, time2)
       val delayed = computationQueue.filterNot(checkTaskAndStartIfPossible)
       computationQueue = delayed
     }

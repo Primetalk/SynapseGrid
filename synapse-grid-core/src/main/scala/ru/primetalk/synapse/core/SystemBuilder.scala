@@ -218,6 +218,10 @@ trait SystemBuilder extends BasicSystemBuilder {
       addLink(c1, auxContact[T2], new StatefulFlatMapLink[S,T1, T2, TSeq](f, stateHandle,
         nextLabel(name, "sfm")))
 
+    def updateState(name: String = "")(fun: (S, T1) ⇒ S) {
+      addComponent(new StateUpdate[S, T1](c1, stateHandle, nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
+    }
+
   }
 
   implicit class ImplStateLinkBuilder2[T1, T2, S](p:(ContactWithState[T1, S], Contact[T2])) {

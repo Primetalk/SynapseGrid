@@ -128,14 +128,18 @@ package object core {
 
 	/** A function that makes single(?) step over time. */
 	type TrellisProducer = TrellisElement => TrellisElement
-
+  /** A function that takes a single signal on input and returns the last trellis element.*/
+  type TotalTrellisProducer = ((Context, Signal[_])=>TrellisElement)
   type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
 
   implicit class RichRuntimeSystem(runtimeSystem:RuntimeSystem){
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step.*/
-    def toRuntimeComponentHeavy(stateHandles:List[Contact[_]]) = {
+    def toTotalTrellisProducer:TotalTrellisProducer = {
       val step = TrellisProducerSpeedy(runtimeSystem)
-      RuntimeComponentHeavy(stateHandles, TrellisProducerLoopy(step, runtimeSystem.stopContacts))
+      val loopy = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
+//      RuntimeComponentStateFlatMap(
+        loopy
+//      )
     }
 //    def toSingleStepTrellisProducer = {
 //      val step = TrellisProducerSpeedy(runtimeSystem)
