@@ -152,19 +152,19 @@ object SystemConverting {
         converterRecursive,
         subsystem.outputContacts)
       val proc = rs.toTotalTrellisProducer
-      RuntimeComponentStateFlatMap(subsystem.inputs, subsystem.outputs, subsystemStateHandle,
-        {(context: Context, signal:Signal[_]) =>
+      RuntimeComponentStateFlatMap(subsystem.inputs, subsystem.outputs, subsystemStateHandle,proc)
+//        {(subsystemContext: Context, signal:Signal[_]) =>
 //          if(!context.contains(subsystemStateHandle.asInstanceOf[Contact[_]]))
 //            throw new IllegalArgumentException(s"The context $context does not contain system state under the key $subsystemStateHandle")
-          val oldStateTry = Try{context(subsystemStateHandle.asInstanceOf[Contact[_]]).asInstanceOf[Map[Contact[_], _]]}
-          if(oldStateTry.isFailure)
-            throw new IllegalArgumentException(
-              s"The context $context does not contain system state under the key $subsystemStateHandle",
-              oldStateTry.failed.get)
-          val oldState = oldStateTry.get
-          val (newState, signals) = proc(oldState, signal)
-          (oldState.updated(subsystemStateHandle.asInstanceOf[Contact[_]], newState), signals)
-        })
+//          val oldStateTry = Try{context(subsystemStateHandle.asInstanceOf[Contact[_]]).asInstanceOf[Map[Contact[_], _]]}
+//          if(oldStateTry.isFailure)
+//            throw new IllegalArgumentException(
+//              s"The context $context does not contain system state under the key $subsystemStateHandle",
+//              oldStateTry.failed.get)
+//          val oldState = oldStateTry.get
+//          val (newState, signals) = proc(subsystemContext, signal)
+//          (oldState.updated(subsystemStateHandle.asInstanceOf[Contact[_]], newState), signals)
+//        })
 //        innerSystemSignalHandlerWithoutShared(subsystemStateHandle, proc))
     case (path, _, InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles)) ⇒
       val rs = systemToRuntimeSystem(subsystem.name::path,
