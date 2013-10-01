@@ -112,17 +112,17 @@ object SystemConverting {
 		})
   }
 
-  def innerSystemSignalHandlerWithoutShared(
-          subsystemStateHandle1:Contact[_],
-          proc:TotalTrellisProducer
-          )(context: Context,
-          signal:Signal[_]):(Context, List[Signal[_]]) =
-  {
-    val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
-    val (newState, signals) = proc(oldState, signal)
-    (oldState.updated(subsystemStateHandle1, newState), signals)
-  }
-
+//  def innerSystemSignalHandlerWithoutShared(
+//          subsystemStateHandle1:Contact[_],
+//          proc:TotalTrellisProducer
+//          )(context: Context,
+//          signal:Signal[_]):(Context, List[Signal[_]]) =
+//  {
+//    val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
+//    val (newState, signals) = proc(oldState, signal)
+//    (oldState.updated(subsystemStateHandle1, newState), signals)
+//  }
+//
   def innerSystemSignalHandlerWithShared(
                                          subsystemStateHandle1:Contact[_],
                                          proc:TotalTrellisProducer,
@@ -154,9 +154,16 @@ object SystemConverting {
       val proc = rs.toTotalTrellisProducer
       RuntimeComponentStateFlatMap(subsystem.inputs, subsystem.outputs, subsystemStateHandle,
         {(context: Context, signal:Signal[_]) =>
-            val oldState = context(subsystemStateHandle.asInstanceOf[Contact[_]]).asInstanceOf[Map[Contact[_], _]]
-            val (newState, signals) = proc(oldState, signal)
-            (oldState.updated(subsystemStateHandle.asInstanceOf[Contact[_]], newState), signals)
+//          if(!context.contains(subsystemStateHandle.asInstanceOf[Contact[_]]))
+//            throw new IllegalArgumentException(s"The context $context does not contain system state under the key $subsystemStateHandle")
+          val oldStateTry = Try{context(subsystemStateHandle.asInstanceOf[Contact[_]]).asInstanceOf[Map[Contact[_], _]]}
+          if(oldStateTry.isFailure)
+            throw new IllegalArgumentException(
+              s"The context $context does not contain system state under the key $subsystemStateHandle",
+              oldStateTry.failed.get)
+          val oldState = oldStateTry.get
+          val (newState, signals) = proc(oldState, signal)
+          (oldState.updated(subsystemStateHandle.asInstanceOf[Contact[_]], newState), signals)
         })
 //        innerSystemSignalHandlerWithoutShared(subsystemStateHandle, proc))
     case (path, _, InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles)) ⇒
