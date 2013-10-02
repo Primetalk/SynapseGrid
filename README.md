@@ -10,6 +10,8 @@ A few words about what SynapseGrid is:
 - it resembles other modern event-driven architectures (Akka, Storm, Hadoop).
 - it is probably one of the finest grained frameworks. The building block is as simple as a function!
 
+[Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
+
 Feature highlights
 ------------------
 
@@ -43,6 +45,8 @@ See also (English)
 2. [Motivation for SynapseGrid](docs/SpeechPortalMotivation.RU.md).
 3. [License (BSD-like)](LICENSE.md).
 4. [Subsystems](docs/Subsystems.EN.md).
+5. [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
+
 
 См. также (See also in Russian)
 ---------
@@ -50,3 +54,4 @@ See also (English)
 2. [Actors support (in Russian)](docs/Actors.RU.md).
 3. [Лицензия](docs/LICENSE.RU.md).
 4. [Работа с подсистемами](docs/Subsystems.RU.md).
+5. [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)

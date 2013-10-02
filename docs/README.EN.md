@@ -336,12 +336,23 @@ The signals that comes to subsystem's inputs are completely processed during sin
 
 For a better approach to subsystems see [Subsystems](Subsystems.EN.md)
 
-Akka Actors usage
------------------
+Concurrency
+-----------
 
 All systems, described above, are single-threaded. There are a few possible ways to achieve parallel execution.
+
 One of them is to create an actor-based system, that is fully compatible with Akka.
-When Actor receives a Signal message, then it is proceed in the most obvious way: signal is sent to the embedded DynamicSystem.
+When Actor receives a Signal message, then it is proceed in the obvious way:
+signal is sent to the embedded DynamicSystem.
+
+The other way is to run a system over an <code>ExecutionContext</code>. Every single function in this
+case can run in parallel. This approach only requires to keep an eye on states. The access to states
+should be serialized with the principle "happen-before". So the calculations that can
+influence the state should complete before we start. And the calculations that depend on the state
+should not start until we finish. Thus we get a dependency lattice on calculations.
+
+Akka Actors usage
+-----------------
 
 Making a subsystem a separate Actor is easy. Just add it with <code>addActorSubsystem</code>:
 
@@ -362,3 +373,25 @@ the second – the message itself.
 
 
 [Read more about Actor support](Actors.EN.md).
+
+Running a system over an ExecutionContext
+-----------------------------------------
+
+No changes need to be done on the system. We should only provide an instance of
+<code>ExecutionContext</code> and use a special "parrallel" converter:
+
+<pre>
+   import scala.concurrent.ExecutionContext.Implicits.global
+   val f = system.toStaticSystem. toParallelSimpleSignalProcessor. toMapTransducer(input, output)
+   val y = f(x)
+</pre>
+
+You may compare the results with the results of running a system in a single thread:
+
+<pre>
+   val g = system.toStaticSystem. toSimpleSignalProcessor. toMapTransducer(input, output)
+   val y2 = g(x)
+   assert(y === y2)
+</pre>
+
+As you see the only difference is using another converter.

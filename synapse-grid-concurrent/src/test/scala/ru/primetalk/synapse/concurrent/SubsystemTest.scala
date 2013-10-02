@@ -59,7 +59,7 @@ class SubsystemTest extends FunSuite{
   test("Two states ordered"){
     import scala.concurrent.ExecutionContext.Implicits.global
     val d = new OuterSystem
-    val f = d.toStaticSystem.toParallelDynamicSystem.toMapTransducer(d.outerInput1, d.outerOutput1)
+    val f = d.toStaticSystem.toParallelSimpleSignalProcessor.toMapTransducer(d.outerInput1, d.outerOutput1)
     val n = 50
     val m = f(n)
     val g = d.toStaticSystem.toDynamicSystem.toMapTransducer(d.outerInput1, d.outerOutput1)
