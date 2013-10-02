@@ -20,10 +20,19 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 ext {
     aGroup = 'ru.primetalk'
-    aVersion = '1.3.0-SNAPSHOT'
+// to publish to maven central,
+// first change version — remove SNAPSHOT.
+// then issue
+//     gradle uploadArchives
+// then login to oss sonatype and do migration.
+
+    aVersion = '1.3.1-SNAPSHOT'
     enableSigning = false
 //    aVersion = '1.3.0'//'1.2.0-SNAPSHOT'
 //    enableSigning = true
+
+
+
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.2"
     akkaVersion = '2.1.4'
