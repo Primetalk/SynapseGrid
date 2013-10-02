@@ -24,7 +24,8 @@ ext {
 // first change version — remove SNAPSHOT. and put _${scalaMajorVersion} in artifact names.
 // then issue
 //     gradle uploadArchives
-// then login to oss sonatype and do migration.
+// then login to oss sonatype and do migration: remove examples from repository,
+// close it, and then release. Te artifacts will appear in Maven Central.
 
     aVersion = '1.3.1-SNAPSHOT'
     enableSigning = false
