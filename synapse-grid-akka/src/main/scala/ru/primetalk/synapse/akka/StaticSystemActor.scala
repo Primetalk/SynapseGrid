@@ -95,13 +95,18 @@ class StaticSystemActor(systemPath:List[String], system: StaticSystem) extends E
 object StaticSystemActor {
 
 
-	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory, self: ActorRef = Actor.noSender)(path:List[String], system: StaticSystem): TotalTrellisProducer = {
+	def toSingleSignalProcessor(actorRefFactory: ActorRefFactory,
+                              self: ActorRef = Actor.noSender
+                               )(
+                                  path:List[String],
+                                  system: StaticSystem): TotalTrellisProducer =
+  {
 		val actorInnerSubsystemConverter: SubsystemConverter = {
 			case (path1, _, ActorInnerSubsystem(subsystem)) =>
 				val actorRef = actorRefFactory.actorOf(Props(
 					new StaticSystemActor(path1,subsystem)),
 					subsystem.name)
-				RuntimeComponentMultiState(List(), (context: Context, signal) => {
+				RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal) => {
 					actorRef.tell(signal, self)
 					(context, List())
 				})
@@ -109,7 +114,7 @@ object StaticSystemActor {
 
 
     val converter = {
-      val c = SystemConverting.componentToSignalProcessor
+      val c = SystemConverting.componentToSignalProcessor(_.toTotalTrellisProducer)
       c += actorInnerSubsystemConverter
       c
     }

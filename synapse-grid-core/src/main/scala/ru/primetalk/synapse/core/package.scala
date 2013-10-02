@@ -65,29 +65,28 @@ package object core {
   implicit class RichStaticSystem(system: StaticSystem) {
     def toDot = SystemRenderer.staticSystem2ToDot(system)
     def toDotAtLevel(level:Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
-    def toDynamicSystem = SystemConverting.toDynamicSystem(List(),system)
-    def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts)
+    def toDynamicSystem = SystemConverting.toDynamicSystem(List(),system, _.toTotalTrellisProducer)
+    def toSimpleSignalProcessor = SystemConverting.toSimpleSignalProcessor(List(),system, _.toTotalTrellisProducer)
+    def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts, _.toTotalTrellisProducer)
   }
   implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
     extends RichStaticSystem(systemBuilder.toStaticSystem){
     def system = systemBuilder.toStaticSystem
   }
 
-  implicit class RichDynamicSystem(system: DynamicSystem) {
-
+  implicit class RichSimpleSignalProcessor(sp:SimpleSignalProcessor){
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
       data: TInput =>
         val inputSignal = Signal(input, data)
-        val outputSignals = system.receive(inputSignal)
+        val outputSignals = sp(inputSignal)
         outputSignals.collect {
           case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
         }
     }
-
     def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
       data: TInput =>
         val inputSignal = Signal(input, data)
-        val outputSignals = system.receive(inputSignal)
+        val outputSignals = sp(inputSignal)
         val outputs = outputSignals.collect {
           case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
         }
@@ -95,6 +94,34 @@ package object core {
           throw new IllegalStateException(s"Cannot convert output results $outputs from $output to List(data).")
         outputs.head
     }
+
+  }
+
+  implicit class RichDynamicSystem(system: DynamicSystem) {
+
+    def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+      system.receive.toTransducer(input, output)
+//    {  data: TInput =>
+//        val inputSignal = Signal(input, data)
+//        val outputSignals = system.receive(inputSignal)
+//        outputSignals.collect {
+//          case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
+//        }
+//    }
+
+    def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+      system.receive.toMapTransducer(input, output)
+//    {
+//      data: TInput =>
+//        val inputSignal = Signal(input, data)
+//        val outputSignals = system.receive(inputSignal)
+//        val outputs = outputSignals.collect {
+//          case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
+//        }
+//        if (outputs.length != 1)
+//          throw new IllegalStateException(s"Cannot convert output results $outputs from $output to List(data).")
+//        outputs.head
+//    }
 
   }
 
@@ -132,6 +159,7 @@ package object core {
   type TotalTrellisProducer = ((Context, Signal[_])=>TrellisElement)
   type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
 
+  type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem=>TotalTrellisProducer
   implicit class RichRuntimeSystem(runtimeSystem:RuntimeSystem){
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step.*/
     def toTotalTrellisProducer:TotalTrellisProducer = {
@@ -145,5 +173,17 @@ package object core {
 //      val step = TrellisProducerSpeedy(runtimeSystem)
 //      TrellisProducerLoopy(step, runtimeSystem.stopContacts):RuntimeComponentHeavy
 //    }
+  }
+
+  implicit class RichTotalTrellisProducer(ttp:TotalTrellisProducer){
+    /** Creates hidden state that will be maintained between different signals.*/
+    def toSimpleSignalProcessor(s0:Context):SimpleSignalProcessor = {
+      var state:Map[Contact[_], _] = s0
+      (signal:Signal[_]) => {
+        val r = ttp(state, signal)
+        state = r._1
+        r._2
+      }
+    }
   }
 }

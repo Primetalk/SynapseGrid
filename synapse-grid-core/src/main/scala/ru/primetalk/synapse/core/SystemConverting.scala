@@ -84,32 +84,36 @@ object SystemConverting {
   }
 
   val linkToSignalProcessor1 : SimpleComponentConverter = {
-		case Link(from, to, FlatMapLink(f, _)) ⇒
-      RuntimeComponentFlatMap(List(from), List(to), {
-        (signal) ⇒
+		case Link(from, to, FlatMapLink(f, name)) ⇒
+      RuntimeComponentFlatMap(name, List(from), List(to),
+      {(signal) ⇒
           val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
           val res = fun(signal.data)
           res.map(new Signal(to, _)).toList
       })
-    case Link(from, to, StatefulFlatMapLink(f, pe, _)) ⇒
-      RuntimeComponentStateFlatMap[Any](List(from), List(to), pe, {(value, signal) ⇒
+    case Link(from, to, StatefulFlatMapLink(f, pe, name)) ⇒
+      RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe,
+      {(value, signal) ⇒
         val fun = f.asInstanceOf[(Any, Any) ⇒ (Any, Seq[Any])]
         val (nState, nDataSeq) = fun(value, signal.data)
         (nState, nDataSeq.toList.map(new Signal(to, _)))
       })
-    case Link(from, to, NopLink(_)) ⇒
-      RuntimeComponentFlatMap(List(from), List(to), {(signal) ⇒
+    case Link(from, to, NopLink(name)) ⇒
+      RuntimeComponentFlatMap(name, List(from), List(to),
+      {(signal) ⇒
         List(new Signal(to, signal.data))
       })
-		case Link(from, to, StateZipLink(pe, _)) ⇒
-			RuntimeComponentStateFlatMap[Any](List(from), List(to), pe, {(value, signal) ⇒
+		case Link(from, to, StateZipLink(pe, name)) ⇒
+			RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe,
+      {(value, signal) ⇒
 				(value, List(new Signal(to, (value, signal.data))))
       })
-		case StateUpdate(from, pe, _, f) ⇒ RuntimeComponentStateFlatMap[Any](List(from), List(), pe, {
-      (value, signal) ⇒
-        val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data)
-        (result, List())
-		})
+		case StateUpdate(from, pe, name, f) ⇒
+      RuntimeComponentStateFlatMap[Any](name, List(from), List(), pe,
+        {(value, signal) ⇒
+          val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data)
+          (result, List())
+        })
   }
 
 //  def innerSystemSignalHandlerWithoutShared(
@@ -145,14 +149,14 @@ object SystemConverting {
     }
   }
 
-  def innerSystemToSignalProcessor(converterRecursive: ComponentConverter): SubsystemConverter = {
+  def innerSystemToSignalProcessor(converterRecursive: ComponentConverter, rsToTtp:RuntimeSystemToTotalTrellisProducerConverter): SubsystemConverter = {
     case (path, _, InnerSystem(subsystem, subsystemStateHandle, Nil)) ⇒
       val rs = systemToRuntimeSystem(subsystem.name::path,
         subsystem,
         converterRecursive,
         subsystem.outputContacts)
-      val proc = rs.toTotalTrellisProducer
-      RuntimeComponentStateFlatMap(subsystem.inputs, subsystem.outputs, subsystemStateHandle,proc)
+      val proc = rsToTtp(rs)//rs.toTotalTrellisProducer
+      RuntimeComponentStateFlatMap(subsystem.name, subsystem.inputs, subsystem.outputs, subsystemStateHandle,proc)
 //        {(subsystemContext: Context, signal:Signal[_]) =>
 //          if(!context.contains(subsystemStateHandle.asInstanceOf[Contact[_]]))
 //            throw new IllegalArgumentException(s"The context $context does not contain system state under the key $subsystemStateHandle")
@@ -171,9 +175,9 @@ object SystemConverting {
         subsystem,
         converterRecursive,
         subsystem.outputContacts)
-      val proc = rs.toTotalTrellisProducer
+      val proc = rsToTtp(rs)//rs.toTotalTrellisProducer
       val stateHandles = subsystemStateHandle :: sharedStateHandles
-      RuntimeComponentMultiState(stateHandles,innerSystemSignalHandlerWithShared(subsystemStateHandle, proc, sharedStateHandles))
+      RuntimeComponentMultiState(subsystem.name, stateHandles,innerSystemSignalHandlerWithShared(subsystemStateHandle, proc, sharedStateHandles))
   }
 
   def redLinkToSignalProcessor(converterWithoutRedLinks:ComponentConverter) : SubsystemConverter = {
@@ -187,11 +191,11 @@ object SystemConverting {
 //        )
 //      val rs = RuntimeSystem(system.name+"RedMapLink("+label+")", mapContactsToProcessors, stopContacts)
 //			val proc = rs.toRuntimeComponent//new SignalProcessor(rs, Set(to))
-			RuntimeComponentMultiState(system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
+			RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
 	}
   val redLinkDummy:SubsystemConverter = {
     case (path, system, Link(from, to, RedMapLink(stopContacts, label))) ⇒
-      RuntimeComponentMultiState(system.privateStateHandles, (context, signal) ⇒ (context, List()))
+      RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ (context, List()))
   }
 
   val unmatched : SubsystemConverter = {
@@ -201,9 +205,9 @@ object SystemConverting {
   }
 
 	/** Converts components to a function that will do the work when the data appears on one of the contacts. */
-	def componentToSignalProcessor : MutableComponentConverter = {
+	def componentToSignalProcessor(rsToTtp:RuntimeSystemToTotalTrellisProducerConverter) : MutableComponentConverter = {
     val combinedConverter = new MutableComponentConverter
-    val inner = innerSystemToSignalProcessor(combinedConverter )
+    val inner = innerSystemToSignalProcessor(combinedConverter, rsToTtp )
 
     val converterWithoutRedLinks = new MutableComponentConverter
     converterWithoutRedLinks += redLinkDummy
@@ -216,19 +220,20 @@ object SystemConverting {
     combinedConverter
   }
 
+  // TODO: replace with dispatching red links
   def subsystemDirectProcessor(procs:Map[String, RuntimeComponent]):RuntimeComponent =
-    RuntimeComponentMultiState(List(), {
+    RuntimeComponentMultiState("subsystemDirectProcessor", List(), {
       case (context, outerSignal) =>
         outerSignal match {
           case Signal(SubsystemSpecialContact, SubsystemDirectSignal(subsystemName, signal)) ⇒
             procs.get(subsystemName).
               map {
-                case RuntimeComponentMultiState(_, f) =>
+                case RuntimeComponentMultiState(_, _, f) =>
                   f(context, signal)
-                case RuntimeComponentFlatMap(_, _, f) =>
+                case RuntimeComponentFlatMap(_, _, _, f) =>
                   val r = f(signal)
                   (context, r)
-                case RuntimeComponentStateFlatMap(_, _, sh, f) =>
+                case RuntimeComponentStateFlatMap(_, _, _, sh, f) =>
                   val s = context(sh)
                   val r = f(s, signal)
                   (context.updated(sh, r._1), r._2)
@@ -275,20 +280,24 @@ object SystemConverting {
 
   def toRuntimeSystem(system:StaticSystem,
                     //inContacts: Set[Contact[_]],
-                      stopContacts: Set[Contact[_]]):RuntimeSystem = {
-    componentToSignalProcessor.convertToRuntimeSystem(system, stopContacts)
+                      stopContacts: Set[Contact[_]],
+                       rsToTtp:RuntimeSystemToTotalTrellisProducerConverter):RuntimeSystem = {
+    componentToSignalProcessor(rsToTtp).convertToRuntimeSystem(system, stopContacts)
   }
-	def toDynamicSystem(path:List[String], system: StaticSystem) = {
+  def toSimpleSignalProcessor(path:List[String],
+                              system: StaticSystem,
+                              rsToTtp:RuntimeSystemToTotalTrellisProducerConverter):SimpleSignalProcessor = {
     /** The state of the system. */
     var state = system.s0
 
-    val rs = systemToRuntimeSystem(path,system, componentToSignalProcessor, system.outputContacts)
-    val proc = rs.toTotalTrellisProducer
-//		val mapContactsToProcessors =
-//      systemToSignalProcessors(path, system,
-//        componentToSignalProcessor)
-//    val rs = RuntimeSystem(system.name, mapContactsToProcessors, system.outputContacts)
-//    val proc = rs.toRuntimeComponent//new SignalProcessor(rs, system.inputContacts)
+    val rs = systemToRuntimeSystem(path,system,
+      componentToSignalProcessor(rsToTtp), system.outputContacts)
+    val proc = rsToTtp(rs)// rs.toTotalTrellisProducer
+    //		val mapContactsToProcessors =
+    //      systemToSignalProcessors(path, system,
+    //        componentToSignalProcessor)
+    //    val rs = RuntimeSystem(system.name, mapContactsToProcessors, system.outputContacts)
+    //    val proc = rs.toRuntimeComponent//new SignalProcessor(rs, system.inputContacts)
     def receive(signal: Signal[_]): List[Signal[_]] = {
       def receive0(st: system.StateType, resSignals: List[Signal[_]], signals: List[Signal[_]]): (system.StateType, List[Signal[_]]) = signals match {
         case Nil ⇒ (st, resSignals)
@@ -300,7 +309,12 @@ object SystemConverting {
       state = result._1
       result._2.reverse
     }
-    new DynamicSystem(system.inputContacts, system.outputContacts, system.name, receive)
+    receive
   }
+	def toDynamicSystem(path:List[String],
+                      system: StaticSystem,
+                      rsToTtp:RuntimeSystemToTotalTrellisProducerConverter) =
+    new DynamicSystem(system.inputContacts, system.outputContacts, system.name, toSimpleSignalProcessor(path, system, rsToTtp))
+
 
 }

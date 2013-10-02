@@ -21,7 +21,7 @@ class SubsystemTest extends FunSuite{
 
   class TwoStatesInnerSubsystem(name:String) extends BaseTypedSystem{
     import sb._
-    setSystemName("Two states ordered")
+    setSystemName("TwoStatesInnerSubsystem")
     val i1 = input[Int]("i1")
     val integral1 = state[Int]("integral1", 0)
     val integral2 = state[Int]("integral2", 0)
@@ -29,41 +29,40 @@ class SubsystemTest extends FunSuite{
     val m2 = contact[Int]("m2")
     val integralSum = state[Int]("integralSum", 0)
     val o1 = output[Int]("o1")
-    val inputs = i1.flatMap(0.until)
+//    val inputs = i1.flatMap(0.until)
 
     def integrate(n:String):((Int, Int) => (Int, Int)) = {
       case (s:Int, i:Int) =>
         // in std.out n=1 and n=2 should appear in random order. However within each n the data should appear in order.
-//        println(s"$n($s+$i)")
+        println(s"$n($s+$i)")
         (s+i, s+i)
     }
-    inputs.withState(integral1).stateMap(integrate("1")) >> m1
-    inputs.withState(integral2).stateMap(integrate("2")) >> m2
+    i1.flatMap(0.until).withState(integral1).stateMap(integrate("1")) >> m1
+    i1.flatMap(0.until).withState(integral2).stateMap(integrate("2")) >> m2
 
     m1.withState(integralSum).updateState()(_ + _)
     m2.withState(integralSum).updateState()(_ - _)
 
-    inputs.delay(3).getState(integralSum) >> o1
+    i1.delay(3).getState(integralSum) >> o1
   }
 
   class OuterSystem extends BaseTypedSystem {
     import sb._
-    setSystemName("Two states ordered")
-
+    setSystemName("OuterSystem")
+    val outerInput1 = input[Int]("outerInput1")
+    val outerOutput1 = output[Int]("outerOutput1")
+    private val inner = new TwoStatesInnerSubsystem("inner")
+    addSubsystem(inner)
+    outerInput1 >> inner.i1
+    inner.o1 >> outerOutput1
   }
   test("Two states ordered"){
-//    import scala.concurrent.ExecutionContext.Implicits.global
-//    val d = new TwoStates
-//    val f = d.toStaticSystem.toParallelDynamicSystem.toTransducer(d.i1, d.o1)
-//    val n = 5
-//    val list = f(n)
-////    println(list)
-//    assert(list.size === n)
-//    val set = list.toSet
-//    assert(set.contains(0))
-//    //      "With proper order of signals plus and minus should come to integralSum in order.")
-//    assert(set === Set(0))
-//    val g = d.toStaticSystem.toDynamicSystem.toTransducer(d.i1, d.o1)
-//    assert(list === g(n))
+    import scala.concurrent.ExecutionContext.Implicits.global
+    val d = new OuterSystem
+    val f = d.toStaticSystem.toParallelDynamicSystem.toMapTransducer(d.outerInput1, d.outerOutput1)
+    val n = 50
+    val m = f(n)
+    val g = d.toStaticSystem.toDynamicSystem.toMapTransducer(d.outerInput1, d.outerOutput1)
+    assert(m === g(n))
   }
 }

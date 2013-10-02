@@ -14,7 +14,7 @@
  */
 package ru.primetalk.synapse.core
 
-sealed trait RuntimeComponent
+sealed trait RuntimeComponent extends Named
 
 sealed trait RuntimeComponentTransparent extends RuntimeComponent {
   val inputContacts:List[Contact[_]]
@@ -27,6 +27,7 @@ sealed trait RuntimeComponentTransparent extends RuntimeComponent {
  * @param f - the actual transformation
  */
 case class RuntimeComponentFlatMap(
+  name:String,
   inputContacts:List[Contact[_]],
   outputContacts:List[Contact[_]],
   f: Signal[_] =>
@@ -36,6 +37,7 @@ case class RuntimeComponentFlatMap(
   * Is very similar to the most generic link — StateFlatMap.
   * This component refers a single stateHandle.*/
 case class RuntimeComponentStateFlatMap[S](
+  name:String,
   inputContacts:List[Contact[_]],
   outputContacts:List[Contact[_]],
   stateHandle:Contact[S],
@@ -47,5 +49,6 @@ case class RuntimeComponentStateFlatMap[S](
 /**
  * The most general processing element.*/
 case class RuntimeComponentMultiState(
+  name:String,
   stateHandles:List[Contact[_]],
   f: (Context, Signal[_]) => TrellisElement) extends RuntimeComponent

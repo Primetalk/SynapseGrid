@@ -62,18 +62,18 @@ case class TrellisProducerSpeedy(runtimeSystem:RuntimeSystem)
       for (proc ← signalProcessors(c)) {
         try {
           proc match {
-            case r@ RuntimeComponentMultiState(_, f) =>
+            case r@ RuntimeComponentMultiState(_, _, f) =>
               val (ctx, signals) = f(currentState, signal)
               assert(ctx.keySet == currentState.keySet, s"RuntimeComponentHeavy $r has changed the set of keys.\nWas\n$ctx\nBecome\nnewState")
               currentState = ctx
               newSignals ++= signals
-            case RuntimeComponentFlatMap(_, _, f) =>
+            case RuntimeComponentFlatMap(_, _, _, f) =>
               val signals = f(signal)
               newSignals ++= signals
-            case RuntimeComponentStateFlatMap(_, _, sh, f) =>
+            case RuntimeComponentStateFlatMap(_, _, _, sh, f) =>
               val s = currentState.asInstanceOf[Map[Contact[Any], Any]](sh)
               val (ns, signals) = f.asInstanceOf[Function2[Any, Signal[_], (Any, List[Signal[_]])]](s, signal)
-              currentState = currentState.updated(sh, ns)
+              currentState = currentState.asInstanceOf[Map[Contact[Any], Any]].updated(sh, ns).asInstanceOf[Context]
               newSignals ++= signals
           }
         } catch {

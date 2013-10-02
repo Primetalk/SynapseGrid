@@ -34,30 +34,34 @@ class TwoStateTest extends FunSuite{
     def integrate(n:String):((Int, Int) => (Int, Int)) = {
       case (s:Int, i:Int) =>
         // in std.out n=1 and n=2 should appear in random order. However within each n the data should appear in order.
-//        println(s"$n($s+$i)")
+        println(s"$n($s+$i)")
         (s+i, s+i)
     }
-    inputs.withState(integral1).stateMap(integrate("1")) >> m1
-    inputs.withState(integral2).stateMap(integrate("2")) >> m2
+    val ccc1 = contact[Int]("ccc1")
+    val ccc2 = contact[Int]("ccc2")
+    i1.flatMap(0.until)>>ccc1
+    ccc1.withState(integral1).stateMap(integrate("1"), "sm-i1") >> m1
+    i1.flatMap(0.until)>>ccc2
+    ccc2.withState(integral2).stateMap(integrate("2"), "sm-i2") >> m2
 
     m1.withState(integralSum).updateState()(_ + _)
     m2.withState(integralSum).updateState()(_ - _)
 
-    inputs.delay(3).getState(integralSum) >> o1
+    i1.delay(3).getState(integralSum) >> o1
   }
   test("Two states ordered"){
     import scala.concurrent.ExecutionContext.Implicits.global
     val d = new TwoStates
-    val f = d.toStaticSystem.toParallelDynamicSystem.toTransducer(d.i1, d.o1)
-    val n = 5
-    val list = f(n)
+    val f = d.toStaticSystem.toParallelSimpleSignalProcessor.toMapTransducer(d.i1, d.o1)
+    val n = 50
+    val m = f(n)
 //    println(list)
-    assert(list.size === n)
-    val set = list.toSet
-    assert(set.contains(0))
+    assert(m === 0)
+//    val set = list.toSet
+//    assert(set.contains(0))
     //      "With proper order of signals plus and minus should come to integralSum in order.")
-    assert(set === Set(0))
-    val g = d.toStaticSystem.toDynamicSystem.toTransducer(d.i1, d.o1)
-    assert(list === g(n))
+//    assert(set === Set(0))
+    val g = d.toStaticSystem.toDynamicSystem.toMapTransducer(d.i1, d.o1)
+    assert(m === g(n))
   }
 }
