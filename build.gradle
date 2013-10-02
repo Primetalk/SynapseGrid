@@ -21,7 +21,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 ext {
     aGroup = 'ru.primetalk'
 // to publish to maven central,
-// first change version — remove SNAPSHOT.
+// first change version — remove SNAPSHOT. and put _${scalaMajorVersion} in artifact names.
 // then issue
 //     gradle uploadArchives
 // then login to oss sonatype and do migration.
