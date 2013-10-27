@@ -85,7 +85,7 @@ object SystemConverting {
 
   val linkToSignalProcessor1 : SimpleComponentConverter = {
 		case Link(from, to, FlatMapLink(f, name)) ⇒
-      RuntimeComponentFlatMap(name, List(from), List(to),
+      RuntimeComponentFlatMap(name, from, to,
       {(signal) ⇒
           val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
           val res = fun(signal.data)
@@ -99,7 +99,7 @@ object SystemConverting {
         (nState, nDataSeq.toList.map(new Signal(to, _)))
       })
     case Link(from, to, NopLink(name)) ⇒
-      RuntimeComponentFlatMap(name, List(from), List(to),
+      RuntimeComponentFlatMap(name, from, to,
       {(signal) ⇒
         List(new Signal(to, signal.data))
       })

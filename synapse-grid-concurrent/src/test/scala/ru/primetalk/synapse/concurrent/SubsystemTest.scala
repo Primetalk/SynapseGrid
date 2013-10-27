@@ -34,7 +34,7 @@ class SubsystemTest extends FunSuite{
     def integrate(n:String):((Int, Int) => (Int, Int)) = {
       case (s:Int, i:Int) =>
         // in std.out n=1 and n=2 should appear in random order. However within each n the data should appear in order.
-        println(s"$n($s+$i)")
+//        println(s"$n($s+$i)")
         (s+i, s+i)
     }
     i1.flatMap(0.until).withState(integral1).stateMap(integrate("1")) >> m1
@@ -54,9 +54,11 @@ class SubsystemTest extends FunSuite{
     private val inner = new TwoStatesInnerSubsystem("inner")
     addSubsystem(inner)
     outerInput1 >> inner.i1
+//    inner.o1.foreach(println)
     inner.o1 >> outerOutput1
+
   }
-  test("Two states ordered"){
+  def performTest() {
     import scala.concurrent.ExecutionContext.Implicits.global
     val d = new OuterSystem
     val f = d.toStaticSystem.toParallelSimpleSignalProcessor.toMapTransducer(d.outerInput1, d.outerOutput1)
@@ -64,5 +66,11 @@ class SubsystemTest extends FunSuite{
     val m = f(n)
     val g = d.toStaticSystem.toDynamicSystem.toMapTransducer(d.outerInput1, d.outerOutput1)
     assert(m === g(n))
+
+  }
+  test("Two states ordered"){
+    for(i <- 0 until 10)
+      performTest()
+
   }
 }

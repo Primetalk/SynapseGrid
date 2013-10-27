@@ -163,7 +163,8 @@ package object core {
   implicit class RichRuntimeSystem(runtimeSystem:RuntimeSystem){
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step.*/
     def toTotalTrellisProducer:TotalTrellisProducer = {
-      val step = TrellisProducerSpeedy(runtimeSystem)
+      val rsftp = new RuntimeSystemForTrellisProcessing(runtimeSystem)
+      val step = TrellisProducerSpeedy(rsftp)
       val loopy = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
 //      RuntimeComponentStateFlatMap(
         loopy

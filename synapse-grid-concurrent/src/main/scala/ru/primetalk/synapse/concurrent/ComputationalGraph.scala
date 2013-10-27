@@ -81,19 +81,33 @@ case class RunningUnitOfComputation(u: UnitOfComputation, future: Future[Computa
   */
 class ComputationState(rs: RuntimeSystem,
                        state0:Map[Contact[_], _])(implicit val executionContext: ExecutionContext) {
-  // whenever a signal appear, we create a plan
-  private var runningCalculations = Vector[RunningUnitOfComputation]()
-  private var computationQueue = mutable.Queue[UnitOfComputation]()
 
-
-
-  private[concurrent] val variables:Map[Contact[_], SafeVariable[_]] =
-    state0.map{ case (sh, initialValue) => (sh, new SafeVariable(initialValue))}.toMap
-
+  private var runningCalculationsSorted = List[RunningUnitOfComputation]()
+  private var computationQueueSorted = List[UnitOfComputation]()
 
   /** Absolute past. No signal can appear before this time. */
   private var pastTimeBoundary = 0
   private var outputs = List[AtTime[Signal[_]]]()
+
+  private var failure: Option[Throwable] = None
+
+  private
+  def addComputations(units:List[UnitOfComputation]){
+    this.synchronized{
+      computationQueueSorted = units ::: computationQueueSorted
+      computationQueueSorted = computationQueueSorted.sortBy(_.signalAtTime.time)
+    }
+  }
+
+  private
+  def addRunningComputation(r:RunningUnitOfComputation){
+    runningCalculationsSorted = r +: runningCalculationsSorted
+    runningCalculationsSorted = runningCalculationsSorted.sortBy(_.u.signalAtTime.time)
+  }
+
+  private[concurrent] val variables:Map[Contact[_], SafeVariable[_]] =
+    state0.map{ case (sh, initialValue) => (sh, new SafeVariable(initialValue))}.toMap
+
 
   /** Changes context to the given value*/
   def resetContext(context:Context){
@@ -119,8 +133,7 @@ class ComputationState(rs: RuntimeSystem,
     * Adds them to running. Those computations that cannot be started immediately
     * will be put to the computation plan. */
   def addSignal(signalAtTime: AtTime[Signal[_]]) {
-    val signal = signalAtTime.value
-    val contact = signal.contact
+    val AtTime(time, Signal(contact, _)) = signalAtTime
     if (rs.stopContacts.contains(contact))
       this.synchronized {
         outputs = signalAtTime :: outputs
@@ -129,36 +142,41 @@ class ComputationState(rs: RuntimeSystem,
       val components = rs.signalProcessors(contact)
       val computationUnits = components.zipWithIndex.map{ case (c, i) =>
         val signalForComponent = //AtTime.placeAfter(signalAtTime.time,  signalAtTime.value)//
-         signalAtTime.copy(time = signalAtTime.time.next(i))
+         signalAtTime.copy(time = time.next(i))
         UnitOfComputation(signalForComponent, c)
       }
-      this.synchronized {
-        computationUnits.foreach(computationQueue.enqueue(_))
-        fastCheckPlan()
-      }
+      val (stateful, stateless) = computationUnits.partition(_.rc.isStateful)
+      stateless.foreach(start)
+      addComputations(stateful)
+//      fastCheckPlan()
     }
   }
 
-  /** Simple check. It can also search through graph and allow look ahead state-based
-    * calculations.*/
-  private
-  def checkRequirement(stateRequirement: StateRequirement): Boolean = {
-    stateRequirement.stateHandles.isEmpty ||(
-      stateRequirement.time.trellisTime == pastTimeBoundary &&
-      stateRequirement.stateHandles.forall( variables(_).lock.available)
-    )
+  def addSignals(signalsAtTime:List[ AtTime[Signal[_]]]){
+    signalsAtTime.foreach(addSignal)
   }
-
-  private
-  def checkTaskAndStartIfPossible(t:UnitOfComputation) = {
-    val starting = checkRequirement(t.stateRequirement)
-    if(starting)
-      start(t)
-    starting
-  }
+//  /** Simple check. It can also search through graph and allow look ahead state-based
+//    * calculations.*/
+//  private
+//  def checkRequirement(stateRequirement: StateRequirement): Boolean = {
+//    stateRequirement.stateHandles.isEmpty ||(
+//      stateRequirement.time.trellisTime == pastTimeBoundary &&
+//      stateRequirement.stateHandles.forall( variables(_).lock.available)
+//    )
+//  }
+//
+//  private
+//  def checkTaskAndStartIfPossible(t:UnitOfComputation) = {
+//    val starting = checkRequirement(t.stateRequirement)
+//    if(starting)
+//      start(t)
+//    starting
+//  }
   private
   def start(t: UnitOfComputation) {
     this.synchronized{
+      if(failure.isDefined)
+        return
       import t._
       t.stateRequirement.stateHandles.foreach{stateHandle=>
         variables(stateHandle).lock.acquire()
@@ -195,17 +213,33 @@ class ComputationState(rs: RuntimeSystem,
       future.onSuccess {
         case cc => computationCompleted(cc)
       }
-      runningCalculations = RunningUnitOfComputation(t, future) +: runningCalculations
+      future.onFailure{
+        case exception => computationFailed(t, exception)
+      }
+      addRunningComputation(RunningUnitOfComputation(t, future) )
     }
   }
 
   private
   def computationCompleted(computationCompleted:ComputationCompleted) {
     import computationCompleted._
+    addSignals(newSignals)// can be non blocking.
     this.synchronized{ // TODO O(n)->O(1) (map)
-      runningCalculations = runningCalculations.filterNot(_.u eq computation)
+      runningCalculationsSorted = runningCalculationsSorted.filterNot(_.u eq computation)
       statesToRelease.foreach(stateHandleAtTime=>variables(stateHandleAtTime.value).lock.release())
-      newSignals.foreach(addSignal)
+    }
+    if(!statesToRelease.isEmpty)
+      fastCheckPlan()// check plan only if there were states.
+  }
+  private
+  def computationFailed(u:UnitOfComputation, e:Throwable){
+    this.synchronized{
+      val rt = new RuntimeException(s"Exception during $u processing.", e)
+      rt.fillInStackTrace()
+      if(failure.isEmpty)
+        failure = Some(rt)
+//      else
+//        failure =
     }
   }
   /**
@@ -232,11 +266,11 @@ class ComputationState(rs: RuntimeSystem,
   private
   def checkPlan() {
     this.synchronized {
-      computationQueue = computationQueue.sortBy(_.signalAtTime.time)
-      runningCalculations = runningCalculations.sortBy(_.u.signalAtTime.time)
+//      computationQueue = computationQueue.sortBy(_.signalAtTime.time)
+//      runningCalculations = runningCalculations.sortBy(_.u.signalAtTime.time)
       val times = Int.MaxValue ::
-        runningCalculations.headOption.toList.map(_.u.signalAtTime.time.trellisTime) :::
-          computationQueue.headOption.toList.map(_.signalAtTime.time.trellisTime)
+        runningCalculationsSorted.headOption.toList.map(_.u.signalAtTime.time.trellisTime) :::
+          computationQueueSorted.headOption.toList.map(_.signalAtTime.time.trellisTime)
       pastTimeBoundary = times.min
       fastCheckPlan()
     }
@@ -246,31 +280,32 @@ class ComputationState(rs: RuntimeSystem,
   private
   def fastCheckPlan() {
     this.synchronized {
-      val delayed = mutable.Queue[UnitOfComputation]()
-      var alreadyRequiredStates = runningCalculations.flatMap(_.u.stateRequirement.stateHandles).toSet//Set[Contact[_]]()
-      computationQueue = computationQueue.sortBy(_.signalAtTime.time)
-      for{unit <- computationQueue}{// the queue is sorted accordingly
-        val stateRequirement = unit.stateRequirement
-        if(stateRequirement.stateHandles.isEmpty)
+      val delayed = mutable.ListBuffer[UnitOfComputation]()
+      var alreadyRequiredStates = runningCalculationsSorted.flatMap(_.u.stateRequirement.stateHandles).toSet
+      for{unit <- computationQueueSorted}{
+        import unit._
+        import stateRequirement._
+//        val stateRequirement = unit.stateRequirement
+        if(stateHandles.isEmpty)
           start(unit)
         else{
-          if(stateRequirement.time.trellisTime != pastTimeBoundary)
-            delayed.enqueue(unit)
+          if(time.trellisTime != pastTimeBoundary)
+            delayed += unit
           else{
-             if(
-                stateRequirement.stateHandles.forall(sh =>
-                  !alreadyRequiredStates.contains(sh) &&
+            if (
+              stateHandles.forall(sh =>
+                !alreadyRequiredStates.contains(sh) &&
                   variables(sh).lock.available)
-              )
+            )
               start(unit)
-            else{
-              alreadyRequiredStates = alreadyRequiredStates ++ stateRequirement.stateHandles
-              delayed.enqueue(unit)
-             }
+            else {
+              alreadyRequiredStates = alreadyRequiredStates ++ stateHandles
+              delayed += unit
+            }
           }
         }
       }
-      computationQueue = delayed
+      computationQueueSorted = delayed.toList
     }
   }
 
@@ -279,26 +314,31 @@ class ComputationState(rs: RuntimeSystem,
   def waitUntilCompleted(atMostPerAwaitableFuture:Duration = Duration.Inf) {
     @tailrec
     def waitUntilCompleted0():Unit = {
-      val head = this.synchronized(runningCalculations.headOption)
-      if(head.isEmpty){
-        if(this.synchronized(computationQueue.isEmpty))
-          ()// finished
-        else {
+      val (failureIsDefined, runningHeadOpt, computationQueueIsEmpty) = this.synchronized{
+        (failure.isDefined, runningCalculationsSorted.headOption, computationQueueSorted.isEmpty)
+      }
+      if(failureIsDefined || (runningHeadOpt.isEmpty && computationQueueIsEmpty))
+        ()
+      else {
+        if(!runningHeadOpt.isEmpty)
+          Await.result(runningHeadOpt.get.future, atMostPerAwaitableFuture)
+        else
           checkPlan()
-          waitUntilCompleted0()
-        }
-      }else
-      {
-        Await.result(head.get.future, atMostPerAwaitableFuture)
         waitUntilCompleted0()
       }
     }
     waitUntilCompleted0()
+    this.synchronized{
+      if(failure.isDefined)
+        throw new RuntimeException("Exception in parallel processor", failure.get)
+    }
   }
 
   def runUntilAllOutputSignals:List[Signal[_]] = {
     waitUntilCompleted()
-    outputs.sorted.map(_.value)
+    this.synchronized{ // access to internals should be synchronized anyway
+      outputs.sorted.map(_.value)
+    }
   }
 }
 

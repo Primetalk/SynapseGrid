@@ -14,24 +14,34 @@
  */
 package ru.primetalk.synapse.core
 
-sealed trait RuntimeComponent extends Named
+import scala.language.existentials
+
+sealed trait RuntimeComponent extends Named {
+  def isStateful:Boolean
+}
 
 sealed trait RuntimeComponentTransparent extends RuntimeComponent {
   val inputContacts:List[Contact[_]]
+  /**
+   * outputContacts - the list of contacts that can be influenced by this component.
+   */
   val outputContacts:List[Contact[_]]
 }
 /**
  * The most popular runtime component. Transforms a signal into other signals.
  * This component is not only FlatMap link. It can represent almost any stateless part of a system.
- * @param outputContacts - the list of contacts that can be influenced by this component.
  * @param f - the actual transformation
  */
 case class RuntimeComponentFlatMap(
   name:String,
-  inputContacts:List[Contact[_]],
-  outputContacts:List[Contact[_]],
+  input:Contact[_],
+  output:Contact[_],
   f: Signal[_] =>
-      List[Signal[_]]) extends RuntimeComponentTransparent
+      List[Signal[_]]) extends RuntimeComponentTransparent{
+  val inputContacts = List[Contact[_]](input)
+  val outputContacts = List[Contact[_]](output)
+  def isStateful:Boolean = false
+}
 
 /**
   * Is very similar to the most generic link — StateFlatMap.
@@ -44,11 +54,15 @@ case class RuntimeComponentStateFlatMap[S](
   f: (S, Signal[_]) //(state, signal)
     =>
     (S, List[Signal[_]])//(state, signals)
-  ) extends RuntimeComponentTransparent
+  ) extends RuntimeComponentTransparent {
+  def isStateful:Boolean = true
+}
 
 /**
  * The most general processing element.*/
 case class RuntimeComponentMultiState(
   name:String,
   stateHandles:List[Contact[_]],
-  f: (Context, Signal[_]) => TrellisElement) extends RuntimeComponent
+  f: (Context, Signal[_]) => TrellisElement) extends RuntimeComponent {
+  def isStateful:Boolean = true
+}
