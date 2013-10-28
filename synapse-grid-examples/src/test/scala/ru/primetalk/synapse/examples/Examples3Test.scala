@@ -20,7 +20,9 @@ import ru.primetalk.synapse.examples.Examples3.SuperSystemBuilder
 
 class Examples3Test extends FunSuite {
   test("Dump"){
-    new SuperSystemBuilder().toDotAtLevel(2).saveTo("SuperSystem.dot")
+    val ss = new SuperSystemBuilder()
+    assert(orphanContactsRec(ss) === List())
+    ss.toDotAtLevel(2).saveTo("SuperSystem.dot")
   }
 
 }

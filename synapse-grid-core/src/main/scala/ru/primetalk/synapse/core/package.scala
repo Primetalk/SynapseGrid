@@ -16,6 +16,7 @@ package ru.primetalk.synapse
 import java.io.{File, PrintWriter}
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
+import scala.annotation.tailrec
 
 package object core {
 
@@ -68,6 +69,8 @@ package object core {
     def toDynamicSystem = SystemConverting.toDynamicSystem(List(),system, _.toTotalTrellisProducer)
     def toSimpleSignalProcessor = SystemConverting.toSimpleSignalProcessor(List(),system, _.toTotalTrellisProducer)
     def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts, _.toTotalTrellisProducer)
+
+
   }
   implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
     extends RichStaticSystem(systemBuilder.toStaticSystem){
@@ -187,4 +190,48 @@ package object core {
       }
     }
   }
+
+  /**
+   * Some additional information about the system. In particular,
+   * one may find orphan contacts.
+   */
+  implicit class StaticAnalysis(system:StaticSystem){
+
+    val allInputContacts =
+      system.components.flatMap(_.inputContacts).toSet ++ system.outputContacts
+
+    val allOutputContacts =
+      system.components.flatMap(_.outputContacts).toSet ++ system.inputContacts
+    /** Component inputs that do not get data from anywhere. */
+    val orphanComponentInputs = allInputContacts -- allOutputContacts
+
+    /** Component outputs that are not connected anywhere. */
+    val orphanComponentOutputs = allOutputContacts -- allInputContacts
+
+    /** Contacts that has only one connection either in or out. */
+    val orphanContacts:Set[Contact[_]] =
+      orphanComponentInputs ++
+        orphanComponentOutputs
+  }
+
+
+  /** Recursively finds all subsystems of the system.
+    * The system is the first element of the result with path = "".*/
+  def subsystems(system:StaticSystem):List[(String, StaticSystem)] = {
+    def subsystems0(system:StaticSystem, path:String):List[(String, StaticSystem)] = {
+      val path2 = path+"."+system.name
+      (path2, system) :: system.staticSubsystems.flatMap(s=>subsystems0(s, path2))
+    }
+    subsystems0(system, "")
+  }
+
+  /**
+    * Recursively finds unconnected contacts
+    * within the subsystems of the system.
+    */
+  def orphanContactsRec(system:StaticSystem):List[(String, Set[Contact[_]])] =
+    subsystems(system).
+      map(p => (p._1, p._2.orphanContacts)).
+      filterNot(_._2.isEmpty)
+
 }

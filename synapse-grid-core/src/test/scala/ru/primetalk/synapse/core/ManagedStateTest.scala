@@ -193,5 +193,8 @@ class ManagedStateTest extends FunSuite {
 		assert(outSigs5.size === 1)
 		assert(ABCOutput.filterFunction(outSigs5).head.data === 20)
 	}
+  test("no orphans"){
+    assert(orphanContactsRec(abcShortSystem)===List())
+  }
 	
 }
