@@ -201,12 +201,18 @@ package object core {
       system.components.flatMap(_.inputContacts).toSet ++ system.outputContacts
 
     val allOutputContacts =
-      system.components.flatMap(_.outputContacts).toSet ++ system.inputContacts
+      system.components.
+        flatMap(_.outputContacts).toSet ++
+        system.inputContacts
+
+    val nullContacts = allOutputContacts.filter(_.contactStyle == DevNullContact)
+
     /** Component inputs that do not get data from anywhere. */
     val orphanComponentInputs = allInputContacts -- allOutputContacts
 
     /** Component outputs that are not connected anywhere. */
-    val orphanComponentOutputs = allOutputContacts -- allInputContacts
+    val orphanComponentOutputs = allOutputContacts -- allInputContacts -- nullContacts
+
 
     /** Contacts that has only one connection either in or out. */
     val orphanContacts:Set[Contact[_]] =
@@ -216,7 +222,7 @@ package object core {
 
 
   /** Recursively finds all subsystems of the system.
-    * The system is the first element of the result with path = "".*/
+    * The system is the first element of the result with path = ".$systemName".*/
   def subsystems(system:StaticSystem):List[(String, StaticSystem)] = {
     def subsystems0(system:StaticSystem, path:String):List[(String, StaticSystem)] = {
       val path2 = path+"."+system.name

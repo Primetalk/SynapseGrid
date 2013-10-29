@@ -37,11 +37,18 @@ trait AutomataBuilder[State] extends SystemBuilder {
 	}
   /** The only way to change automaton state is to save new state value into saveToState.*/
 	val saveToState = contact[State]("saveToState")
-  val onTransition = contact[(State, State)]("onTransition")
+  lazy val onTransition = {
+    val c1= contact[(State, State)]("onTransition")
+    (saveToState -> c1).stateMap(automatonState){(oldState, newState) => (newState, (oldState, newState))}
+    c1
+  }
 //  saveToState.updateState(automatonState, "State!")((old, s) ⇒ s)
-  (saveToState -> onTransition).stateMap(automatonState){(oldState, newState) => (newState, (oldState, newState))}
-  val onAutomatonStateChanged = contact[(State, State)]("onStateChanged")
-  onTransition.labelNext("hasChanged?") -> onAutomatonStateChanged filter { case (oldState, newState) => newState != oldState }
+  lazy val onAutomatonStateChanged = {
+    val c2 = contact[(State, State)]("onStateChanged")
+    onTransition.labelNext("hasChanged?") -> c2 filter { case (oldState, newState) => newState != oldState }
+    c2
+  }
+
 
   private val switchToStateCache = scala.collection.mutable.Map[ State, Contact[Any]]()
   def switchToState(s:State):Contact[Any] =

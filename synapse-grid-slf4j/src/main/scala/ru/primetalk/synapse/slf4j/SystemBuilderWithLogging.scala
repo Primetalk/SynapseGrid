@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 ///////////////////////////////////////////////////////////////
 trait SystemBuilderWithLogging extends SystemBuilder {
 
-    val loggerNamePrefix = getClass.getName.replaceAllLiterally("$", "_") //"ru.primetalk.system2.contacts."
+  val loggerNamePrefix = getClass.getName.replaceAllLiterally("$", "_") //"ru.primetalk.system2.contacts."
 
 
   implicit class LoggingContact[T](val c: Contact[T]) {
@@ -51,4 +51,11 @@ trait SystemBuilderWithLogging extends SystemBuilder {
 
   }
 
+}
+
+class SystemBuilderWithLoggingC(name:String) extends SystemBuilderWithLogging{
+  setSystemName(name)
+
+  override
+  val loggerNamePrefix = name
 }

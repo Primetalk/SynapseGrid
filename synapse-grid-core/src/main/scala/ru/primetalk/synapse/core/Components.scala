@@ -46,7 +46,7 @@ case class StaticSystem(
   } yield (stateHandle, stateHandle.s0)).toMap[Contact[_], Any]
 
   lazy val staticSubsystems =
-    components.collect{case s:StaticSystem => s}
+    components.collect{case InnerSystem(s:StaticSystem, _, _) => s}
 }
 //case class MappedSystem(system:StaticSystem,
 //                        inputMappings : Map[Contact[_], Contact[_]],

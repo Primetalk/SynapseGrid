@@ -33,4 +33,21 @@ class OrphanTest extends FunSuite {
     val s = new DisconnectedSystemBuilder
     assert(orphanContactsRec(s) === List((".DisconnectedSystem", Set(s.c1, s.c2))))
   }
+  class SuperSystem extends BaseTypedSystem{
+    import sb._
+    setSystemName("DisconnectedSuperSystem")
+    val pi1 = input[Int]("pi1")
+    val po1 = output[Int]("po1")
+    val subsystem1 = new DisconnectedSystemBuilder
+    pi1 >> subsystem1.i1
+    subsystem1.o1 >> po1
+    addSubsystem(subsystem1)
+  }
+  test("orphan contacts in subsystem"){
+    val s = new SuperSystem
+    assert(subsystems(s).size === 2)
+    assert(orphanContactsRec(s) ===
+      List((".DisconnectedSuperSystem.DisconnectedSystem",
+        Set(s.subsystem1.c1, s.subsystem1.c2))))
+  }
 }
