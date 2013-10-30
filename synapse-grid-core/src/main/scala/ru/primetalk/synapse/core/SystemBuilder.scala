@@ -349,9 +349,24 @@ trait SystemBuilder extends BasicSystemBuilder {
       addComponent(new StateUpdate[S, T](c, stateHandle, nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
     }
 
-    def inc[S](stateHandle: StateHandle[S], name: String = "")(implicit ev: S <:< Numeric[S], n : Numeric[S]) {
+    def inc[S:Numeric](stateHandle: StateHandle[S], name: String = "") {//(implicit ev: S <:< Numeric[S], n : Numeric[S])
+      val n = implicitly[Numeric[S]]
       addComponent(new StateUpdate[S, T](c, stateHandle,
         nextLabel(name, "inc(" + stateHandle + ")"), (s, _) => n.plus(s , n.one)))
+    }
+
+    def dec[S:Numeric](stateHandle: StateHandle[S], name: String = "") {
+      val n = implicitly[Numeric[S]]
+      addComponent(new StateUpdate[S, T](c, stateHandle,
+        nextLabel(name, "dec(" + stateHandle + ")"), (s, _) => n.minus(s , n.one)))
+    }
+
+    def addTo[S](stateHandle: StateHandle[S], name: String = "")(implicit n:Numeric[S], ev:T <:< S) {
+//      val n = implicitly[Numeric[S]]
+      addComponent(new StateUpdate[S, T](c, stateHandle,
+        nextLabel(name, "addTo(" + stateHandle + ")"),
+          (s, a) =>n.plus(s , a)
+          ))
     }
     def withState[S](stateHandle: StateHandle[S]) = new ContactWithState[T, S](c, stateHandle)
 
