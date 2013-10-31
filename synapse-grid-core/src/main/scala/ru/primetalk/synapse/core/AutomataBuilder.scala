@@ -37,8 +37,8 @@ trait AutomataBuilder[State] extends SystemBuilder {
 	}
   /** The only way to change automaton state is to save new state value into saveToState.*/
 	val saveToState = contact[State]("saveToState")
-  lazy val onTransition = {
-    val c1= contact[(State, State)]("onTransition")
+  val onTransition = {
+    val c1 = contact[(State, State)]("onTransition")
     (saveToState -> c1).stateMap(automatonState){(oldState, newState) => (newState, (oldState, newState))}
     c1
   }
