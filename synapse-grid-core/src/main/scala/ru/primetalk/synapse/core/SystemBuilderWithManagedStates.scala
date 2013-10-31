@@ -12,7 +12,7 @@
  */
 package ru.primetalk.synapse.core
 
-trait SystemBuilderWithManagedStates extends SystemBuilder { //WithLogging {
+trait SystemBuilderWithManagedStates extends SystemBuilder {
 	
 	class ManagedStateSnippet[S](val name: String, initialValue: Option[S] = None) {
 		
@@ -20,10 +20,6 @@ trait SystemBuilderWithManagedStates extends SystemBuilder { //WithLogging {
 		val onUpdated = contact[S](name + ".onUpdated")
 		val update = contact[S](name + ".update")
 		update.labelNext("Option(_)").map(Option(_)).saveTo(state)
-		//		def enableTracing(maxLength:Int = 20) {
-		////			update.map( {(v:Any) => val s = v.toString; s.substring(0, math.min(maxLength, s.length))}, "abbreviate").
-		////				trace(a=>s"$name := $a")
-		//		}
 		update.delay(2) >> onUpdated
 
 	}

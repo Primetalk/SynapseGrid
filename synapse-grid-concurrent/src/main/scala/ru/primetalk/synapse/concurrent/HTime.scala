@@ -33,13 +33,11 @@ object HTime {
         case (HTime(Some(px),ix),HTime(Some(py),iy)) if px eq py=>
           ix-iy
         case (HTime(Some(px),ix),HTime(Some(py),iy)) =>
-//          compare(px, py)
           val pc = compare(px, py)
           if(pc != 0)
             pc
           else
             throw new IllegalStateException("Impossible case")
-//            ix-iy
         case _ =>
           throw new IllegalStateException(s"Times are incomparable ($x, $y")
       }

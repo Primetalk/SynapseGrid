@@ -16,7 +16,6 @@ package ru.primetalk.synapse
 import java.io.{File, PrintWriter}
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
-import scala.annotation.tailrec
 
 package object core {
 
@@ -104,27 +103,9 @@ package object core {
 
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
       system.receive.toTransducer(input, output)
-//    {  data: TInput =>
-//        val inputSignal = Signal(input, data)
-//        val outputSignals = system.receive(inputSignal)
-//        outputSignals.collect {
-//          case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
-//        }
-//    }
 
     def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
       system.receive.toMapTransducer(input, output)
-//    {
-//      data: TInput =>
-//        val inputSignal = Signal(input, data)
-//        val outputSignals = system.receive(inputSignal)
-//        val outputs = outputSignals.collect {
-//          case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
-//        }
-//        if (outputs.length != 1)
-//          throw new IllegalStateException(s"Cannot convert output results $outputs from $output to List(data).")
-//        outputs.head
-//    }
 
   }
 
@@ -169,14 +150,8 @@ package object core {
       val rsftp = new RuntimeSystemForTrellisProcessing(runtimeSystem)
       val step = TrellisProducerSpeedy(rsftp)
       val loopy = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
-//      RuntimeComponentStateFlatMap(
         loopy
-//      )
     }
-//    def toSingleStepTrellisProducer = {
-//      val step = TrellisProducerSpeedy(runtimeSystem)
-//      TrellisProducerLoopy(step, runtimeSystem.stopContacts):RuntimeComponentHeavy
-//    }
   }
 
   implicit class RichTotalTrellisProducer(ttp:TotalTrellisProducer){
@@ -195,7 +170,7 @@ package object core {
    * Some additional information about the system. In particular,
    * one may find orphan contacts.
    */
-  implicit class StaticAnalysis(system:StaticSystem){
+  implicit class OrphanContactsAnalysis(system:StaticSystem){
 
     val allInputContacts =
       system.components.flatMap(_.inputContacts).toSet ++ system.outputContacts

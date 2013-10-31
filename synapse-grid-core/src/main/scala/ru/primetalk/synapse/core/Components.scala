@@ -25,7 +25,6 @@ object StaticSystem {
   type State = Map[Contact[_], Any]
 }
 case class StaticSystem(
-                          //		contacts: Seq[Contact[_]],
                           /** A subset of contacts */
                           inputs: List[Contact[_]],
                           outputs: List[Contact[_]],
@@ -48,13 +47,6 @@ case class StaticSystem(
   lazy val staticSubsystems =
     components.collect{case InnerSystem(s:StaticSystem, _, _) => s}
 }
-//case class MappedSystem(system:StaticSystem,
-//                        inputMappings : Map[Contact[_], Contact[_]],
-//                        outputMappings : Map[Contact[_], Contact[_]],
-//                        name: String) extends Named with Component {
-//  lazy val inputContacts = system.inputContacts -- inputMappings.values ++ inputMappings.keys
-//  lazy val outputContacts = system.outputContacts -- outputMappings.keys ++ outputMappings.values
-//}
 
 /** Dynamic system. The state is kept inside the system. All complex logic
   * is implemented within receive function. */

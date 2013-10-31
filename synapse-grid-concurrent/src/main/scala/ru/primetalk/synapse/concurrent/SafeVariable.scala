@@ -26,7 +26,6 @@ class SafeVariable[T](initialValue:T) {
   def update2[T2](u:T=>(T, T2)):T2 =
     this.synchronized{
       val (newValue, result) = u(value)
-//      println(s"s=$value; lock="+lock.available)
       value = newValue
       result
     }

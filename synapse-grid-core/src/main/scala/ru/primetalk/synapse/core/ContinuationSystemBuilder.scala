@@ -86,9 +86,5 @@ sealed trait Continuation[T1, T2] {
  * entering expectation state
  */
 case class ContinuationCalcWithResult[T1, T2](f : T1 ⇒ Continuation[T1, T2], result : Seq[T2]) extends Continuation[T1, T2]
-//	/**
-//	 * a continuation with calculations. Returns empty result before
-//	 * entering expectation state.
-//	 */
-//	class ContinuationCalcNoResult[T1, T2](override val f : T1 ⇒ Continuation[T1, T2]) extends ContinuationCalcWithResult[T1, T2](f, Seq[T2]())
+
 case class Done[T1, T2](result : Seq[T2]) extends Continuation[T1, T2]

@@ -148,30 +148,12 @@ class ComputationState(rs: RuntimeSystem,
       val (stateful, stateless) = computationUnits.partition(_.rc.isStateful)
       stateless.foreach(start)
       addComputations(stateful)
-//      fastCheckPlan()
     }
   }
 
   def addSignals(signalsAtTime:List[ AtTime[Signal[_]]]){
     signalsAtTime.foreach(addSignal)
   }
-//  /** Simple check. It can also search through graph and allow look ahead state-based
-//    * calculations.*/
-//  private
-//  def checkRequirement(stateRequirement: StateRequirement): Boolean = {
-//    stateRequirement.stateHandles.isEmpty ||(
-//      stateRequirement.time.trellisTime == pastTimeBoundary &&
-//      stateRequirement.stateHandles.forall( variables(_).lock.available)
-//    )
-//  }
-//
-//  private
-//  def checkTaskAndStartIfPossible(t:UnitOfComputation) = {
-//    val starting = checkRequirement(t.stateRequirement)
-//    if(starting)
-//      start(t)
-//    starting
-//  }
   private
   def start(t: UnitOfComputation) {
     this.synchronized{
@@ -183,7 +165,7 @@ class ComputationState(rs: RuntimeSystem,
       }
       val signal = signalAtTime.value
       val time = signalAtTime.time
-//      def threadPrint() {println(Thread.currentThread().getName+": "+t)}
+
       val future = rc match {
         case RuntimeComponentFlatMap(name, _, _, f) =>
           Future {
@@ -238,8 +220,6 @@ class ComputationState(rs: RuntimeSystem,
       rt.fillInStackTrace()
       if(failure.isEmpty)
         failure = Some(rt)
-//      else
-//        failure =
     }
   }
   /**
@@ -266,8 +246,6 @@ class ComputationState(rs: RuntimeSystem,
   private
   def checkPlan() {
     this.synchronized {
-//      computationQueue = computationQueue.sortBy(_.signalAtTime.time)
-//      runningCalculations = runningCalculations.sortBy(_.u.signalAtTime.time)
       val times = Int.MaxValue ::
         runningCalculationsSorted.headOption.toList.map(_.u.signalAtTime.time.trellisTime) :::
           computationQueueSorted.headOption.toList.map(_.signalAtTime.time.trellisTime)
@@ -285,7 +263,6 @@ class ComputationState(rs: RuntimeSystem,
       for{unit <- computationQueueSorted}{
         import unit._
         import stateRequirement._
-//        val stateRequirement = unit.stateRequirement
         if(stateHandles.isEmpty)
           start(unit)
         else{

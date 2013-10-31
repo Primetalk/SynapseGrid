@@ -42,7 +42,7 @@ trait AutomataBuilder[State] extends SystemBuilder {
     (saveToState -> c1).stateMap(automatonState){(oldState, newState) => (newState, (oldState, newState))}
     c1
   }
-//  saveToState.updateState(automatonState, "State!")((old, s) ⇒ s)
+
   lazy val onAutomatonStateChanged = {
     val c2 = contact[(State, State)]("onStateChanged")
     onTransition.labelNext("hasChanged?") -> c2 filter { case (oldState, newState) => newState != oldState }
@@ -58,11 +58,6 @@ trait AutomataBuilder[State] extends SystemBuilder {
       c
     })
 
-  //  {
-//		val c = contact[(State, State)]("onTransition")
-//		saveToState -> c zipWithState automatonState
-//		c
-//	}
 	implicit class StateContact[T](c : Contact[T]) {
 
     def zipWithAutomatonState:Contact[(State, T)] =
@@ -91,12 +86,10 @@ trait AutomataBuilder[State] extends SystemBuilder {
 		def update(fun:(State,T)=>State, name : String = "") = {
 			c.updateState(automatonState, nextLabel(name, "update automaton"))(fun)
 			c
-//			zipped(c) -> saveToState map (p=>fun(p._1, p._2), nextLabel(name, "update"))
 		}
 		/** Updates state unconditionally (ignores input data).*/
 		def updateUnconditionally(fun:State=>State, name : String = ""){
 			c.updateState(automatonState, nextLabel(name, "update uncoditionally"))((s, t) =>fun(s))
-//			zipped(c) -> saveToState map (p=>fun(p._1), nextLabel(name, "update uncoditionally"))
 		}
 
 	}
@@ -115,14 +108,9 @@ trait AutomataBuilder[State] extends SystemBuilder {
 			currentConstructingState = initialState
 		}
 	}
-//	implicit class StateConstructor(s : State) {
-	def on[T](c:Contact[T]): Contact[T] = {new StateContact(c).when(currentConstructingState)}
-//	}
 
-//	def wait[T](c:Contact[T])(implicit s : State): Function1[()=>State, Unit] = (f:()=>State)=>{
-//		(new StateContact(c).when(s) -> saveToState).map(m => f())//.toState(s)
-//	}
-//	}
+	def on[T](c:Contact[T]): Contact[T] = {new StateContact(c).when(currentConstructingState)}
+
   implicit class WhenState(val s:State){
     def on[T](c:Contact[T]): Contact[T] = new StateContact(c).when(s)
     def onEntered =

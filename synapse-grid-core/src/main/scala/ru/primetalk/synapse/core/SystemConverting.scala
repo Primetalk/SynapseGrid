@@ -35,10 +35,6 @@ object SystemConverting {
     case (_, _, comp) if cvt.isDefinedAt(comp) =>
       val rc = cvt(comp)
     rc
-//        (ctx, signals) => {
-//          val (upd, newSignals) = rc.f(ctx, signals)
-//          ( (ctx /: upd)(_ + _), newSignals)
-//        }
   }
 
 
@@ -116,17 +112,6 @@ object SystemConverting {
         })
   }
 
-//  def innerSystemSignalHandlerWithoutShared(
-//          subsystemStateHandle1:Contact[_],
-//          proc:TotalTrellisProducer
-//          )(context: Context,
-//          signal:Signal[_]):(Context, List[Signal[_]]) =
-//  {
-//    val oldState = context(subsystemStateHandle1).asInstanceOf[Map[Contact[_], _]]
-//    val (newState, signals) = proc(oldState, signal)
-//    (oldState.updated(subsystemStateHandle1, newState), signals)
-//  }
-//
   def innerSystemSignalHandlerWithShared(
                                          subsystemStateHandle1:Contact[_],
                                          proc:TotalTrellisProducer,
@@ -142,9 +127,6 @@ object SystemConverting {
       val (sharedStateValues, newStateWithoutShared) =
         newChildContext.toList.partition{ case (sh, _) ⇒ sharedStateHandlersSet.contains(sh)}
 
-  //    val newStateWithoutShared = delta.filter(ssh ⇒ !sharedStateHandlersSet.contains(ssh._1))
-  //    val sharedStateValues = delta.filter(ssh ⇒ sharedStateHandlersSet.contains(ssh._1))
-
       ((context updated(subsystemStateHandle1, newStateWithoutShared)) ++ sharedStateValues, signals)
     }
   }
@@ -157,19 +139,6 @@ object SystemConverting {
         subsystem.outputContacts)
       val proc = rsToTtp(rs)//rs.toTotalTrellisProducer
       RuntimeComponentStateFlatMap(subsystem.name, subsystem.inputs, subsystem.outputs, subsystemStateHandle,proc)
-//        {(subsystemContext: Context, signal:Signal[_]) =>
-//          if(!context.contains(subsystemStateHandle.asInstanceOf[Contact[_]]))
-//            throw new IllegalArgumentException(s"The context $context does not contain system state under the key $subsystemStateHandle")
-//          val oldStateTry = Try{context(subsystemStateHandle.asInstanceOf[Contact[_]]).asInstanceOf[Map[Contact[_], _]]}
-//          if(oldStateTry.isFailure)
-//            throw new IllegalArgumentException(
-//              s"The context $context does not contain system state under the key $subsystemStateHandle",
-//              oldStateTry.failed.get)
-//          val oldState = oldStateTry.get
-//          val (newState, signals) = proc(subsystemContext, signal)
-//          (oldState.updated(subsystemStateHandle.asInstanceOf[Contact[_]], newState), signals)
-//        })
-//        innerSystemSignalHandlerWithoutShared(subsystemStateHandle, proc))
     case (path, _, InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles)) ⇒
       val rs = systemToRuntimeSystem(subsystem.name::path,
         subsystem,
@@ -184,13 +153,6 @@ object SystemConverting {
 		case (path, system, Link(from, to, RedMapLink(stopContacts, label))) ⇒
       val rs = systemToRuntimeSystem(path,system, converterWithoutRedLinks, stopContacts)
       val proc = rs.toTotalTrellisProducer// toRuntimeComponentHeavy(system.privateStateHandles)
-
-//			val mapContactsToProcessors =
-//        systemToSignalProcessors(path, system,
-//          converterWithoutRedLinks
-//        )
-//      val rs = RuntimeSystem(system.name+"RedMapLink("+label+")", mapContactsToProcessors, stopContacts)
-//			val proc = rs.toRuntimeComponent//new SignalProcessor(rs, Set(to))
 			RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
 	}
   val redLinkDummy:SubsystemConverter = {
@@ -247,8 +209,6 @@ object SystemConverting {
                                 system: StaticSystem,
                                 converter: ComponentConverter,
                                 stopContacts:Set[Contact[_]]):RuntimeSystem = {
-//  Map[Contact[_], List[RuntimeComponent]] = {
-
     val processors = for {
       component ← system.components
       proc = converter(path, system, component):RuntimeComponent
@@ -274,8 +234,6 @@ object SystemConverting {
 		val signalProcessors = lst.toMap[Contact[_], List[RuntimeComponent]].withDefault(c ⇒ List())
 
     RuntimeSystem(system.name, signalProcessors, stopContacts)
-
-//    signalProcessors
 	}
 
   def toRuntimeSystem(system:StaticSystem,
@@ -293,11 +251,7 @@ object SystemConverting {
     val rs = systemToRuntimeSystem(path,system,
       componentToSignalProcessor(rsToTtp), system.outputContacts)
     val proc = rsToTtp(rs)// rs.toTotalTrellisProducer
-    //		val mapContactsToProcessors =
-    //      systemToSignalProcessors(path, system,
-    //        componentToSignalProcessor)
-    //    val rs = RuntimeSystem(system.name, mapContactsToProcessors, system.outputContacts)
-    //    val proc = rs.toRuntimeComponent//new SignalProcessor(rs, system.inputContacts)
+
     def receive(signal: Signal[_]): List[Signal[_]] = {
       def receive0(st: system.StateType, resSignals: List[Signal[_]], signals: List[Signal[_]]): (system.StateType, List[Signal[_]]) = signals match {
         case Nil ⇒ (st, resSignals)

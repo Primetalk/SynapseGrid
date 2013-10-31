@@ -141,16 +141,11 @@ trait SystemBuilder extends BasicSystemBuilder {
     /** Converts data to pair with current state value. */
     def unzipWithState(stateHandle : StateHandle[S], name:String = "") : Contact[T] = {
       (c -> auxContact[T]) .stateMap(stateHandle, nextLabel(name, "unzip to "+stateHandle)) ((s, p:(S, T)) ⇒ (p._1, p._2))
-//      (new LinkWithState(c, auxContact[T], stateHandle)).stateMap((s, p) ⇒ (p._1, p._2), nextLabel(name, "unzip to "+stateHolder))
     }
     /** Switches based on the first element of the pair.*/
     def Case(CaseValue:S):Contact[T] = {
       c -> auxContact[T] collect ({ case (CaseValue, value) => value },s"Case($CaseValue)")
     }
-    //		/** Switches based on the first element of the pair.*/
-    //		def Case2[T2<:T : ClassTag](CaseValue:S,c2:Contact[T2]):Contact[T2] = {
-    //			c -> c2 collect { case (CaseValue, value) if classOf[T2].runtimeClass.isInstance(value) => value .asInstanceOf[T2]}
-    //		}
   }
   implicit class ImplLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) {
     def labelNext(label: String*) = {
@@ -283,7 +278,6 @@ trait SystemBuilder extends BasicSystemBuilder {
 
 
     def mapTo[T2](f: T ⇒ T2, auxContact1: Contact[T2] = auxContact[T2]): Contact[T2] =
-    //			val auxContact = addContact(new Contact[T2](nextContactName, AuxiliaryContact))
       new ImplLinkBuilder(c, auxContact1).map(f, nextLabel("", "mapTo(" + f + ")"))
 
     def map[T2](f: T ⇒ T2, name: String = ""): Contact[T2] =
@@ -310,14 +304,7 @@ trait SystemBuilder extends BasicSystemBuilder {
     }
     def passIfEnabled(stateHandle : StateHandle[Boolean], name: String = "") =
       passByStateCondition(stateHandle, nextLabel(name, "pass if "+stateHandle.name+"?")) (identity)
-//      new LinkWithState(c, auxContact[T], stateHolder).
-//        stateFlatMap(
-//        (flag, v) ⇒
-//          if (flag)
-//            (flag, Seq(v))
-//          else
-//            (flag, Seq()),
-//        "pass if "+stateHolder.name+"?")
+
     def activate(stateHolder: StateHandle[Boolean], isActive: Boolean = true) {
       labelNext("⇒" + isActive).map(_ ⇒ isActive).saveTo(stateHolder)
     }
@@ -362,7 +349,6 @@ trait SystemBuilder extends BasicSystemBuilder {
     }
 
     def addTo[S](stateHandle: StateHandle[S], name: String = "")(implicit n:Numeric[S], ev:T <:< S) {
-//      val n = implicitly[Numeric[S]]
       addComponent(new StateUpdate[S, T](c, stateHandle,
         nextLabel(name, "addTo(" + stateHandle + ")"),
           (s, a) =>n.plus(s , a)
@@ -415,8 +401,6 @@ trait SystemBuilder extends BasicSystemBuilder {
     def zipWithState[S](stateHolder: StateHandle[S], name: String = ""): Contact[(S, T)] =
       addLink(c, auxContact[(S, T)], StateZipLink[S, T, T](stateHolder, nextLabel(name, "(" + stateHolder + ", _)")))
 
-    // Old way of zipWithState:
-    //			(new LinkWithState(c, auxContact, stateHolder)).stateMap((s, t) ⇒ (s, (s, t)), nextLabel(name, "zip("+stateHolder+")"))
     def from[S](stateHolder: StateHandle[S], name: String = ""): Contact[(S, T)] =
       zipWithState(stateHolder, nextLabel(name, "from " + stateHolder))
 

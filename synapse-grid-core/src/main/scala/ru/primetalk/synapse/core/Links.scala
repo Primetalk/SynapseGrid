@@ -28,11 +28,7 @@ case class Link[T1, T2, -TL1 >: T1, +TL2 <: T2 ](from:Contact[T1], to:Contact[T2
 }
 
 trait LinkInfo[-T1, +T2] extends Named
-///**
-// * The kind of link that does functional transformation of data.
-// */
-//case class MapLink[T1, T2](f: T1 ⇒ T2, override val name: String)
-//	extends LinkInfo[T1, T2]
+
 /**
  * The kind of link that does sequential transformation of data.
  */
@@ -43,13 +39,13 @@ case class FlatMapLink[T1, T2](f: T1 ⇒ GenTraversableOnce[T2], override val na
  * The kind of link that does sequential transformation of data.
  * The function itself has state that is transformed every time.
  * Prefer to use StateZipLink (?)
-
  */
 case class StatefulFlatMapLink[S, T1, T2, TSeq <: GenTraversableOnce[T2]](
 	f: (S, T1) ⇒ (S, TSeq),
 	stateHolder: StateHandle[S],
 	override val name: String)
 		extends LinkInfo[T1, T2]
+
 /** Zips state value with the inner data and */
 case class StateZipLink[S, T1, T2 >:T1](stateHolder:StateHandle[S], override val name: String)
 		extends LinkInfo[T1, (S, T2)] 
