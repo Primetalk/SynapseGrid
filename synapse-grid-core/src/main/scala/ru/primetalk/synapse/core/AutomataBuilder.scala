@@ -14,7 +14,7 @@
 package ru.primetalk.synapse.core
 
 /** The builder creates a state machine with `State` type of state.*/
-trait AutomataBuilder[State] extends SystemBuilder {
+abstract class AutomataBuilder[State] extends SystemBuilder {
 	
 	def initialState: State
 	
