@@ -28,11 +28,11 @@
     <orderEntry type="library" exported="" name="shapeless_2.10-1.2.4" level="project" />
     <orderEntry type="library" scope="TEST" name="junit-4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="scala-reflect-2.10.0" level="project" />
-    <orderEntry type="library" exported="" name="scala-library-2.10.2" level="project" />
     <orderEntry type="library" scope="TEST" name="hamcrest-core-1.3" level="project" />
     <orderEntry type="library" scope="TEST" name="scala-actors-2.10.0" level="project" />
     <orderEntry type="library" scope="TEST" name="scalatest_2.10-1.9.1" level="project" />
     <orderEntry type="module" module-name="synapse-grid-core" exported="" />
+    <orderEntry type="library" exported="" name="scala-library-2.10.3" level="project" />
   </component>
 </module>
 

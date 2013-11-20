@@ -14,6 +14,7 @@
 package ru.primetalk.synapse.core
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
  * This builder supports step-by-step creation of contact system. At the end
@@ -29,7 +30,7 @@ trait BasicSystemBuilder {
     this.name = name
   }
 
-  import scala.collection.mutable
+
 
   protected val contacts = mutable.ListBuffer[Contact[_]]()
   protected val privateStateHandles = mutable.ListBuffer[StateHandle[_]]()
@@ -38,6 +39,7 @@ trait BasicSystemBuilder {
   protected val inputContacts = mutable.Set[Contact[_]]()
   protected val outputContacts = mutable.Set[Contact[_]]()
 
+  protected val extensions = mutable.Map[SystemBuilderExtensionId[_], Any]()
   /** Constructs new version of static system. */
   def toStaticSystem = StaticSystem(
     /** A subset of contacts */
@@ -78,14 +80,36 @@ trait BasicSystemBuilder {
     assertWritable()
     addStateHandle( StateHandle[S](name, initialValue))
   }
+  
+  def inputs(lc: Contact[_]*) {
+    inputContacts ++= lc
+  }
+
+  def outputs(lc: Contact[_]*) {
+    assertWritable()
+    for (c <- lc) {
+      if (links.exists(link => link.from == c))
+        throw new IllegalArgumentException(s"The contact $c cannot be added because there is a link such that link.from is this contact.")
+      if (components.exists(component => component.inputContacts.contains(c)))
+        throw new IllegalArgumentException(s"The contact $c cannot be added because there is a component such that component.inputContacts contains this contact.")
+
+      outputContacts += c
+    }
+  }
+
+
   /**
    * Add StateHandle to the system
    */
   def addStateHandle[S](sh : StateHandle[S]) : StateHandle[S] = {
     assertWritable()
-    if(!privateStateHandles.contains(sh))
-      privateStateHandles += sh
-    sh
+    privateStateHandles.
+    	find(sh0 =>  sh0.name == sh.name && sh0.s0 == sh.s0).
+    	getOrElse{privateStateHandles += sh; sh}.
+    	asInstanceOf[StateHandle[S]]
+//    if(!privateStateHandles.contains(sh))
+//      privateStateHandles += sh
+//    sh
   }
   def addLink[T1, T2](from:Contact[T1], to:Contact[T2], info: LinkInfo[T1, T2]):Contact[T2] = {
     val link = Link(from, to, info)
@@ -119,7 +143,7 @@ trait BasicSystemBuilder {
   }
   /** Adds a few subsystems at once. Useful for super systems construction.*/
   def addSubsystems(subsystems:StaticSystem*) {
-    subsystems.foreach(subsystem => addSubsystem(subsystem))
+    subsystems.foreach(subsystem => addSubsystem(subsystem)(identity))
   }
 
 
@@ -130,6 +154,12 @@ trait BasicSystemBuilder {
     val linkSuccessors = links.toList.filter(_.from == c).map(_.to)
     val compSuccessors = components.toList.filter(_.inputContacts.contains(c)).flatMap(_.outputContacts)
     (linkSuccessors ++ compSuccessors).distinct
+  }
+  /** returns one step successors from the given contact */
+  def predecessors(c:Contact[_]):List[Contact[_]] = {  	
+    val linkPredecessors = links.toList.filter(_.to == c).map(_.from)
+    val compPredecessors = components.toList.filter(_.outputContacts.contains(c)).flatMap(_.inputContacts)
+    (linkPredecessors ++ compPredecessors).distinct
   }
   /** Calculates the number of transitions from c1 to that contact. If the contact is not reachable
     *  then the distance is equals = -1*/
@@ -146,4 +176,10 @@ trait BasicSystemBuilder {
     minDistance(Set(c1), Set())
   }
 
+  def extend[T<:SystemBuilderExtension](extensionInstance:SystemBuilderExtensionId[T]):T =
+  	extensions.
+  		getOrElseUpdate(extensionInstance, 
+  				extensionInstance.extend(this)).
+  		asInstanceOf[T]
+  
 }

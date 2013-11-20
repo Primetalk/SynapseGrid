@@ -21,6 +21,11 @@ package object core {
 
   def contact[T](name:String) = new Contact[T](name)
 
+  def extendBasicSystemBuilder[T<:SystemBuilderExtension](
+  		implicit sb:BasicSystemBuilder, 
+  			extensionInstance:SystemBuilderExtensionId[T]):T = 
+  	sb.extend(extensionInstance)
+
   /**
    * Extractor of contacts' data from result.
    */

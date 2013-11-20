@@ -27,7 +27,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="synapse-grid-slf4j" exported="" />
     <orderEntry type="library" exported="" name="protobuf-java-2.4.1" level="project" />
-    <orderEntry type="library" exported="" name="scala-library-2.10.2" level="project" />
     <orderEntry type="library" exported="" name="slf4j-api-1.7.2" level="project" />
     <orderEntry type="library" exported="" name="config-1.0.0" level="project" />
     <orderEntry type="library" scope="TEST" name="junit-4.11" level="project" />
@@ -40,6 +39,7 @@
     <orderEntry type="library" exported="" name="akka-slf4j_2.10-2.1.4" level="project" />
     <orderEntry type="library" exported="" name="akka-remote_2.10-2.1.4" level="project" />
     <orderEntry type="library" exported="" name="uncommons-maths-1.2.2a" level="project" />
+    <orderEntry type="library" exported="" name="scala-library-2.10.3" level="project" />
   </component>
 </module>
 

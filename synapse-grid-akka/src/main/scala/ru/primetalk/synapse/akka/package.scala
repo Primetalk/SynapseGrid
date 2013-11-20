@@ -19,6 +19,9 @@ import scala.language.implicitConversions
  */
 package object akka {
   implicit class RichStaticSystemSystem(s:StaticSystem){
-    def toActorTree(actorRefFactory: ActorRefFactory) = StaticSystemActor.toActorTree(actorRefFactory)(List(),s)
+    def toActorTree(implicit actorRefFactory: ActorRefFactory) = StaticSystemActor.toActorTree(actorRefFactory)(List(),s)
   }
+  
+  implicit def toActorSystemBuilder[T<:BasicSystemBuilder](sb:T) = new ActorSystemBuilderOps()(sb) 
+  
 }

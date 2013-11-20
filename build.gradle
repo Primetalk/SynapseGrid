@@ -35,7 +35,7 @@ ext {
 
 
     scalaMajorVersion = '2.10'
-    scalaFullVersion = "${scalaMajorVersion}.2"
+    scalaFullVersion = "${scalaMajorVersion}.3"
     akkaVersion = '2.1.4'
     slf4j = "org.slf4j:slf4j-api:1.7.2"
     shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:1.2.4"
@@ -45,7 +45,7 @@ allprojects {
     apply plugin: 'idea'
 
     repositories {
-        //mavenLocal()
+//        mavenLocal()
         mavenCentral()
     }
 }
@@ -114,7 +114,7 @@ subprojects {
             }
         }
     }
- */
+*/
     
     configurations {
 		deployerJars

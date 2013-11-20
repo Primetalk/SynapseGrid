@@ -85,22 +85,6 @@ trait SystemBuilder extends BasicSystemBuilder {
    */
   lazy val devNull = new Contact[Any]("devNull", DevNullContact)
 
-  def inputs(lc: Contact[_]*) {
-    inputContacts ++= lc
-  }
-
-  def outputs(lc: Contact[_]*) {
-    assertWritable()
-    for (c <- lc) {
-      if (links.exists(link => link.from == c))
-        throw new IllegalArgumentException(s"The contact $c cannot be added because there is a link such that link.from is this contact.")
-      if (components.exists(component => component.inputContacts.contains(c)))
-        throw new IllegalArgumentException(s"The contact $c cannot be added because there is a component such that component.inputContacts contains this contact.")
-
-      outputContacts += c
-    }
-  }
-
   /** Declares the first contact as input and creates link to the second*/
   def mappedInput[T, T2 >: T](c1:Contact[T], c2:Contact[T2]) = {
     inputs(c1)
@@ -286,7 +270,7 @@ trait SystemBuilder extends BasicSystemBuilder {
     def const[T2](value: T2, name: String = ""): Contact[T2] =
       addLink(c, auxContact[T2], new FlatMapLink[T, T2]((t: T) => Seq(value), nextLabel(name, "⇒" + value)))
 
-    def castFilter2[T3](implicit t3Class: ClassTag[T3]) =
+    def castFilter2[T3<: T](implicit t3Class: ClassTag[T3]) =
       new ImplLinkBuilder(c, auxContact[T3]).castFilter(t3Class.runtimeClass.asInstanceOf[Class[T3]])
 
     def castFilter[T3](t3Class: Class[T3], name: String = "") =
