@@ -1,0 +1,15 @@
+.gradle
+out
+.idea
+.settings
+.cache
+.classpath
+.project
+*.dot
+**/.classpath
+**/.project
+**/.settings
+**/.cache
+**/build
+**/bin
+**/target
