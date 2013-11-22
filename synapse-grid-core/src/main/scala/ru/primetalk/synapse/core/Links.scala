@@ -40,8 +40,8 @@ case class FlatMapLink[T1, T2](f: T1 ⇒ GenTraversableOnce[T2], override val na
  * The function itself has state that is transformed every time.
  * Prefer to use StateZipLink (?)
  */
-case class StatefulFlatMapLink[S, T1, T2, TSeq <: GenTraversableOnce[T2]](
-	f: (S, T1) ⇒ (S, TSeq),
+case class StatefulFlatMapLink[S, T1, T2](
+	f: (S, T1) ⇒ (S, GenTraversableOnce[T2]),
 	stateHolder: StateHandle[S],
 	override val name: String)
 		extends LinkInfo[T1, T2]

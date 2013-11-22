@@ -29,7 +29,7 @@ trait SystemRenderer {
 			s"$id [label=${"\""+name+"\""}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
 		case (Link(_,_,NopLink(_)), _) ⇒
 			s"$id [label=${"\"Δt\""}, shape=square]"
-		case (Link(_,_,linkInfo:StatefulFlatMapLink[_,_,_,_]), _) ⇒
+		case (Link(_,_,linkInfo:StatefulFlatMapLink[_,_,_]), _) ⇒
 			s"$id [label=${"\""+linkInfo.name+"\""}, $stateLegacyModification]"
 		case (Link(_,_,StateZipLink(st, name)), _) ⇒
 			s"$id [label=${"\""+name+"\""}, shape=none]"

@@ -179,22 +179,22 @@ trait SystemBuilder extends BasicSystemBuilder {
     def stateMap[S](stateHandle: StateHandle[S], name: String = "")
                    (f: (S, T1) ⇒ (S, T2)) =
       addLink(c._1, c._2,
-        new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](
+        new StatefulFlatMapLink[S, T1, T2](
         (s, t) => {val r = f(s,t);(r._1, Seq(r._2))}, stateHandle,
         nextLabel(name, "sm")))
     def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, GenTraversableOnce[T2])) =
-      addLink(c._1, c._2, new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](f, stateHandle, nextLabel(name, "sfm")))
+      addLink(c._1, c._2, new StatefulFlatMapLink[S, T1, T2](f, stateHandle, nextLabel(name, "sfm")))
 
   }
 
   class ContactWithState[T1, S](val c1:Contact[T1], val stateHandle:StateHandle[S]) {
     def stateMap[T2](f: (S, T1) ⇒ (S, T2), name:String ="") =
       addLink(c1, auxContact[T2],
-        new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](
+        new StatefulFlatMapLink[S, T1, T2](
           (s, t) => {val r = f(s,t);(r._1, Seq(r._2))}, stateHandle,
         nextLabel(name, "sm")))
-    def stateFlatMap[T2, TSeq <: GenTraversableOnce[T2]](f: (S, T1) ⇒ (S, TSeq), name:String ="") =
-      addLink(c1, auxContact[T2], new StatefulFlatMapLink[S,T1, T2, TSeq](f, stateHandle,
+    def stateFlatMap[T2](f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name:String ="") =
+      addLink(c1, auxContact[T2], new StatefulFlatMapLink[S,T1, T2](f, stateHandle,
         nextLabel(name, "sfm")))
 
     def updateState(name: String = "")(fun: (S, T1) ⇒ S) {
@@ -206,11 +206,11 @@ trait SystemBuilder extends BasicSystemBuilder {
   implicit class ImplStateLinkBuilder2[T1, T2, S](p:(ContactWithState[T1, S], Contact[T2])) {
     def stateMap(f: (S, T1) ⇒ (S, T2), name:String ="") =
       addLink(p._1.c1, p._2,
-        new StatefulFlatMapLink[S, T1, T2, GenTraversableOnce[T2]](
+        new StatefulFlatMapLink[S, T1, T2](
           (s, t) => {val r = f(s,t);(r._1, Seq(r._2))}, p._1.stateHandle,
         nextLabel(name, "sm")))
-    def stateFlatMap[TSeq <: GenTraversableOnce[T2]](f: (S, T1) ⇒ (S, TSeq), name:String ="") =
-      addLink(p._1.c1, p._2, new StatefulFlatMapLink[S,T1, T2, TSeq](f, p._1.stateHandle,
+    def stateFlatMap(f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name:String ="") =
+      addLink(p._1.c1, p._2, new StatefulFlatMapLink[S,T1, T2](f, p._1.stateHandle,
         nextLabel(name, "sfm")))
   }
   implicit class ImplRichContact[T](val c: Contact[T]) {
@@ -284,6 +284,11 @@ trait SystemBuilder extends BasicSystemBuilder {
     def passByStateCondition[S](stateHandle : StateHandle[S], name: String = "")(condition:S=>Boolean):Contact[T] = {
       val res = auxContact[T]
       (c -> res).stateFlatMap(stateHandle, nextLabel(name, "pass if condition on "+stateHandle.name))( (s,t) => if(condition(s))(s,Seq(t))else(s,Seq()) )
+      res
+    }
+    def passByStateConditionAndUpdateState[S](stateHandle : StateHandle[S], name: String = "")(condition:(S, T)=>Option[S]):Contact[T] = {
+      val res = auxContact[T]
+      (c -> res).stateFlatMap(stateHandle, nextLabel(name, "pass if condition on "+stateHandle.name)){ (s,t) => val v = condition(s, t); if(v.isDefined)(v.get,Seq(t))else(s,Seq()) }
       res
     }
     def passIfEnabled(stateHandle : StateHandle[Boolean], name: String = "") =
