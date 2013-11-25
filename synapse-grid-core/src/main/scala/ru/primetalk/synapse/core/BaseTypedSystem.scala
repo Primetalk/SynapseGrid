@@ -14,6 +14,7 @@ package ru.primetalk.synapse.core
 
 trait BaseTypedSystem {
   protected val sb = new SystemBuilder {}
+  sb.setSystemName(getClass.getSimpleName)
   protected def defineSystem() {}
   private lazy val system = {
     defineSystem()
