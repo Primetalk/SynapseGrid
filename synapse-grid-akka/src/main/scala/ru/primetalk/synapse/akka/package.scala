@@ -1,6 +1,6 @@
 package ru.primetalk.synapse
 
-import _root_.akka.actor.ActorRefFactory
+import _root_.akka.actor.{ActorRefFactory,ActorRef}
 import ru.primetalk.synapse.core._
 import scala.language.implicitConversions
 
@@ -19,7 +19,9 @@ import scala.language.implicitConversions
  */
 package object akka {
   implicit class RichStaticSystemSystem(s:StaticSystem){
-    def toActorTree(implicit actorRefFactory: ActorRefFactory) = StaticSystemActor.toActorTree(actorRefFactory)(List(),s)
+  	/** @param threadSafeOutputFun - a function that will receive output signals of the actor. Should be thread safe!!!*/
+    def toActorTree(threadSafeOutputFun:Option[InternalSignals => Any] = None)(implicit actorRefFactory: ActorRefFactory):ActorRef = StaticSystemActor.toActorTree(actorRefFactory)(List(),s, threadSafeOutputFun)
+    def toActorTree(implicit actorRefFactory: ActorRefFactory):ActorRef = toActorTree(None)(actorRefFactory)
   }
   
   implicit def toActorSystemBuilder[T<:BasicSystemBuilder](sb:T) = new ActorSystemBuilderOps()(sb) 

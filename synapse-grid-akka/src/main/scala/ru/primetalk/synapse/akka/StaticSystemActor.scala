@@ -37,7 +37,7 @@ trait EscalatingActor extends Actor {
   *
   * @param systemPath the list of intermediate systems from parent actor to the system of this actor
   */
-class StaticSystemActor(systemPath:List[String], system: StaticSystem) extends EscalatingActor {
+class StaticSystemActor(systemPath:List[String], system: StaticSystem, outputFun:Option[InternalSignals => Any] = None) extends EscalatingActor {
 	val log = Logging(context.system, this)
 
 //	var emptyContext = system.s0// Map[Contact[_], Any]()
@@ -52,8 +52,11 @@ class StaticSystemActor(systemPath:List[String], system: StaticSystem) extends E
         systemState = systemState ++res._1
         res._2
 		}
-		if (!results.isEmpty)
-			context.parent ! InternalSignals(systemPath, results)
+		if (!results.isEmpty){
+			val sigs = InternalSignals(systemPath, results)
+			outputFun.foreach(_(sigs))
+			context.parent ! sigs
+		}
 	}
 
 	val processSignals =
@@ -124,8 +127,8 @@ object StaticSystemActor {
 	}
 
 	/** Converts top level system to top level actor. */
-	def toActorTree(actorRefFactory: ActorRefFactory)(path:List[String], system: StaticSystem): ActorRef =
+	def toActorTree(actorRefFactory: ActorRefFactory)(path:List[String], system: StaticSystem, outputFun:Option[InternalSignals => Any] = None): ActorRef =
 		actorRefFactory.actorOf(Props(
-			new StaticSystemActor(path,system)),
+			new StaticSystemActor(path,system, outputFun)),
 			system.name)
 }
