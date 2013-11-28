@@ -22,7 +22,7 @@ trait CollectionSystemBuilder extends SystemBuilder {
     val in = contact[T](name)
     val seqOut = contact[List[T]](name + "List")
     val collection = state[List[T]](name, Nil)
-    new ImplStateLinkBuilder(trigger -> seqOut).stateMap(collection, "trigger") {
+    new LinkBuilderOps(trigger -> seqOut)(sb).stateMap(collection, "trigger") {
       (s: List[T], input: TTrigger) ⇒
         val s2 = Nil: List[T]
         (s2, s)

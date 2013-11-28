@@ -13,8 +13,9 @@
  */
 package ru.primetalk.synapse.slf4j
 
-import ru.primetalk.synapse.core.{Contact, SystemBuilder, Signal}
+import ru.primetalk.synapse.core.{Contact, SystemBuilderAdv, SystemBuilder, Signal}
 import org.slf4j.LoggerFactory
+import ru.primetalk.synapse.core.BasicSystemBuilder
 
 ///////////////////////////////////////////////////////////////
 // © ООО «Праймтолк», 2011-2013                              //
@@ -25,12 +26,15 @@ trait SystemBuilderWithLogging extends SystemBuilder {
   val loggerNamePrefix = getClass.getName.replaceAllLiterally("$", "_") //"ru.primetalk.system2.contacts."
 
 
-  implicit class LoggingContact[T](val c: Contact[T]) {
+  implicit def contactToLoggingContact[T](c:Contact[T])=new LoggingContact(c, loggerNamePrefix)(this)
+}
+class LoggingContact[T](val c: Contact[T], loggerNamePrefix:String)(implicit sb:SystemBuilderAdv) {
     require(c.name != null, "Contact name == null")
     require(c.name != "", "Contact name == \"\"")
     lazy val loggerName = loggerNamePrefix + "." + c.name
     lazy val logger = LoggerFactory.getLogger(loggerName)
 
+    import sb._
     /** Enables tracing on the contact. */
     def info(f: Signal[T] ⇒ String = "" + _) = {
       c.foreach(data ⇒ logger.info(f(Signal(c, data))), "INFO: " + loggerName)
@@ -51,10 +55,8 @@ trait SystemBuilderWithLogging extends SystemBuilder {
 
   }
 
-}
-
 class SystemBuilderWithLoggingC(name:String) extends SystemBuilderWithLogging{
-  setSystemName(name)
+  systemName = name
 
   override
   val loggerNamePrefix = name

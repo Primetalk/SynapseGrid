@@ -88,9 +88,9 @@ trait ActorSystemBuilder extends ActorContainerBuilder {
 			c from self tellToActor (actor, name)
 		}
 	}
-	class ImplRichContactActor[T](c : Contact[ T]) extends ImplRichContact[T](c) {
+	class ImplRichContactActor[T](c : Contact[ T]) {
 		def toActorIndirect (actorRefState:StateHandle[ActorRef], name:String = "") = {
-			from(self).
+			c.from(self).
 			labelNext ("to @" + actorRefState).
 			zipWithState(actorRefState). 
 				labelNext ("tell") foreach {

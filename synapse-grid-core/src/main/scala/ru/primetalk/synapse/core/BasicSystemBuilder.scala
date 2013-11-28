@@ -29,15 +29,19 @@ trait BasicSystemBuilder {
   def setSystemName(name : String) {
     this.name = name
   }
+  def systemName = name
+  def systemName_=(name : String) {
+    this.name = name
+  }
 
 
 
-  protected val contacts = mutable.ListBuffer[Contact[_]]()
-  protected val privateStateHandles = mutable.ListBuffer[StateHandle[_]]()
-  protected val links = mutable.ListBuffer[Link[_, _, Nothing, Any]]()
-  protected val components = mutable.ListBuffer[Component]()
-  protected val inputContacts = mutable.Set[Contact[_]]()
-  protected val outputContacts = mutable.Set[Contact[_]]()
+  private[core] val contacts = mutable.ListBuffer[Contact[_]]()
+  private[core] val privateStateHandles = mutable.ListBuffer[StateHandle[_]]()
+  private[core] val links = mutable.ListBuffer[Link[_, _, Nothing, Any]]()
+  private[core] val components = mutable.ListBuffer[Component]()
+  private[core] val inputContacts = mutable.Set[Contact[_]]()
+  private[core] val outputContacts = mutable.Set[Contact[_]]()
 
   protected val extensions = mutable.Map[SystemBuilderExtensionId[_], Any]()
   /** Constructs new version of static system. */
@@ -59,7 +63,7 @@ trait BasicSystemBuilder {
 
   private var isReadOnly = false
 
-  protected def assertWritable() {
+  private[core] def assertWritable() {
     if (isReadOnly)
       throw new IllegalStateException(s"The system builder '$name' is in read only mode.")
   }
@@ -176,10 +180,10 @@ trait BasicSystemBuilder {
     minDistance(Set(c1), Set())
   }
 
-  def extend[T<:SystemBuilderExtension](extensionInstance:SystemBuilderExtensionId[T]):T =
+  def extend[T<:SystemBuilderExtension](implicit extensionId:SystemBuilderExtensionId[T]):T =
   	extensions.
-  		getOrElseUpdate(extensionInstance, 
-  				extensionInstance.extend(this)).
+  		getOrElseUpdate(extensionId, 
+  				extensionId.extend(this)).
   		asInstanceOf[T]
   
 }

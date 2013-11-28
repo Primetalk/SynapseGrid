@@ -54,7 +54,7 @@ trait ContinuationSystemBuilder extends SystemBuilder {
 	implicit class ImplContLinkBuilder[T1, T2](c : (Contact[T1], Contact[T2])){
 		def expectingFlatMap(function : Continuation[T1, T2], name : String = "") = {
 			val stateHolder = state[Continuation[T1, T2]](name, function)
-			new ImplStateLinkBuilder(c).stateFlatMap[Continuation[T1, T2]](stateHolder, nextLabel(name, "expect")){
+			new LinkBuilderOps(c)(sb).stateFlatMap[Continuation[T1, T2]](stateHolder, nextLabel(name, "expect")){
 				(s0 : Continuation[T1, T2], d : T1) ⇒
 					s0 match {
 						case Done(result) ⇒ (s0, result)

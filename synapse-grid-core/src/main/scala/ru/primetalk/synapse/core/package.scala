@@ -19,13 +19,28 @@ import scala.language.reflectiveCalls
 
 package object core {
 
-  def contact[T](name:String) = new Contact[T](name)
+	def contact[T](name: String) = new Contact[T](name)
 
-  def extendBasicSystemBuilder[T<:SystemBuilderExtension](
-  		implicit sb:BasicSystemBuilder, 
-  			extensionInstance:SystemBuilderExtensionId[T]):T = 
-  	sb.extend(extensionInstance)
+	/**
+	 * Special contact for consuming unnecessary data values.
+	 */
+	lazy val devNull = new Contact[Any]("devNull", DevNullContact)
+	def extendBasicSystemBuilder[T <: SystemBuilderExtension](
+		implicit sb: BasicSystemBuilder,
+		extensionInstance: SystemBuilderExtensionId[T]): T =
+		sb.extend(extensionInstance)
 
+	implicit def basicSystemBuilderToAdvanced(implicit sb: BasicSystemBuilder): SystemBuilderAdv = new SystemBuilderAdvC(sb)
+	implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: BasicSystemBuilder)(
+		implicit extensionInstance: SystemBuilderExtensionId[T]): T =
+		sb.extend(extensionInstance)
+
+	implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId(new AuxContactNumberingExt(_))
+	implicit val LabellingExtId = new SystemBuilderExtensionId(new LabellingExt(_))
+
+	implicit def sbToAux(sb:BasicSystemBuilder):AuxContactNumberingExt = sb.extend[AuxContactNumberingExt]//(AuxContactNumberingExtId)
+	implicit def sbToLabelling(sb:BasicSystemBuilder):LabellingExt = sb.extend[LabellingExt]
+//  	(new BasicSystemBuilder).nextContactName
   /**
    * Extractor of contacts' data from result.
    */
