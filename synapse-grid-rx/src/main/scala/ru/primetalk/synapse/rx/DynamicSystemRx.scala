@@ -33,7 +33,12 @@ class DynamicSystemRx(ds:DynamicSystem){
     spRx.rxOutput.filter(_.contact == contact).map(_.data.asInstanceOf[T]).subscribe(s)
     s
   }
+  private
+  val rxInputs = ds.inputContacts.map(c => (c, inputRx(c))).toMap[Contact[_], Observer[_]]
 
-  val rxInputs = ds.inputContacts.map(c => (c, inputRx(c))).toMap
-  val rxOutputs = ds.outputContacts.map(c => (c, outputRx(c))).toMap
+  private
+  val rxOutputs = ds.outputContacts.map(c => (c, outputRx(c))).toMap[Contact[_], Observable[_]]
+
+  def rxInput[T](c:Contact[T]):Observer[T] = rxInputs(c).asInstanceOf[Observer[T]]
+  def rxOutput[T](c:Contact[T]):Observable[T] = rxOutputs(c).asInstanceOf[Observable[T]]
 }

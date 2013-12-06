@@ -12,5 +12,18 @@
  */
 package ru.primetalk.synapse
 
+import _root_.rx.lang.scala.Observable
+import _root_.rx.lang.scala.subjects.PublishSubject
+import core._
+
 package object rx {
+
+  implicit class RichContact[T](c:Contact[T])(implicit sb:BasicSystemBuilder){
+    import implicits._
+    def toObservable:Observable[T] = {
+      val rxOutput = PublishSubject[T]()
+      c.foreach(t => rxOutput.onNext(t))
+      rxOutput
+    }
+  }
 }

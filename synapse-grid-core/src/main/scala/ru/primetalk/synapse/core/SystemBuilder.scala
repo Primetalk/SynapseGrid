@@ -16,7 +16,7 @@ package core
 
 import scala.reflect.ClassTag
 import scala.collection.{GenTraversableOnce, mutable}
-
+import scala.language.implicitConversions
   /**
    * Doesn't work because T2 is unknown when it is called implicitly.
    * <pre>
@@ -363,7 +363,7 @@ class ContactOps[T](val c: Contact[T])(sb:BasicSystemBuilder) {
     def getState[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
       (zipWithState(stateHolder) -> sb.auxContact[S]). map(_._1, sb.nextLabel(name, "_._1"))
 
-    implicit def zippingLink[S, T](c:(Contact[T], Contact[(S,T)]))(sb:BasicSystemBuilder) = new ZippingLinkOps[S, T](c:(Contact[T], Contact[(S,T)]))(sb)
+    implicit def zippingLink[S](c:(Contact[T], Contact[(S,T)]))(sb:BasicSystemBuilder) = new ZippingLinkOps[S, T](c:(Contact[T], Contact[(S,T)]))(sb)
     /** Converts data to pair with current state value. */
     def zipWithState[S](stateHolder: StateHandle[S], name: String = ""): Contact[(S, T)] =
     	new ZippingLinkOps(c -> sb.auxContact[(S,T)])(sb).zipWithState(stateHolder, name)
