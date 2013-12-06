@@ -20,16 +20,23 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 ext {
     aGroup = 'ru.primetalk'
-// to publish to maven central,
-// first change version — remove SNAPSHOT. and put _${scalaMajorVersion} in artifact names.
-// then issue
+// To publish to maven central:
+// 1. change version — remove SNAPSHOT.
+// 2. put _${scalaMajorVersion} in artifact names.
+// 3. enableSigning = true
+// 4. issue at shell:
 //     gradle uploadArchives
-// then login to oss sonatype and do migration: remove examples from repository,
-// close it, and then release. Te artifacts will appear in Maven Central.
+// 5. Login to oss sonatype https://oss.sonatype.org/index.html
+// 6. Do migration:
+//    - remove synapse-grid-examples from repository,
+//    - Close repository,
+//    - Release repository.
+// The artifacts should appear in Maven Central.
+//
 
-    aVersion = '1.3.1-SNAPSHOT'
+    aVersion = '1.3.2-SNAPSHOT'
     enableSigning = false
-//    aVersion = '1.3.0'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.3.1'//'1.2.0-SNAPSHOT'
 //    enableSigning = true
 
 
@@ -39,6 +46,7 @@ ext {
     akkaVersion = '2.1.4'
     slf4j = "org.slf4j:slf4j-api:1.7.2"
     shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:1.2.4"
+    rxDep = "com.netflix.rxjava:rxjava-scala:0.15.1"
 }
 
 allprojects {
@@ -140,8 +148,11 @@ subprojects {
                 pom.project {
                     packaging 'jar'
                     description 'SynapseGrid is a framework for constructing reactive real-time immutable data flow systems. ' +
-                            '-core contains everything to run a single-threaded system, -akka contains everything to run systems' +
-                            'over Akka actors, -slf4j - enables logging, -examples - a few test systems.'
+                            '-core contains everything to run a single-threaded system, ' +
+                            '-akka contains everything to run systems over Akka actors, ' +
+                            '-slf4j - enables logging, ' +
+                            '-concurrent - running systems directly over ExecutorContext without the need for Akka, ' +
+                            '-examples - a few test systems.'
                     url 'https://github.com/Primetalk/SynapseGrid'
                     parent {
                         groupId 'org.sonatype.oss'
@@ -222,6 +233,13 @@ project(':synapse-grid-concurrent') {
     dependencies {
         compile project(':synapse-grid-core')
         compile shapelessDep
+    }
+}
+
+project(':synapse-grid-rx') {
+    dependencies {
+        compile project(':synapse-grid-core')
+        compile rxDep
     }
 }
 
