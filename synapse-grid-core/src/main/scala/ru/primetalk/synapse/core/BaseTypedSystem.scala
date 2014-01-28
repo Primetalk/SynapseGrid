@@ -12,9 +12,9 @@
  */
 package ru.primetalk.synapse.core
 
-trait BaseTypedSystem {
+abstract class BaseTypedSystem(name:String = "") {
   protected val sb = new SystemBuilder {}
-  sb.setSystemName(getClass.getSimpleName)
+  sb.setSystemName(if(name == "") getClass.getSimpleName else name)
   protected def defineSystem() {}
   private lazy val system = {
     defineSystem()

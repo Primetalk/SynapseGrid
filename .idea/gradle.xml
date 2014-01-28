@@ -1,3 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project version="4" />
+<project version="4">
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="distributionType" value="DEFAULT_WRAPPED" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleHome" value="/opt/apps/gradle-1.6" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/synapse-grid-akka" />
+            <option value="$PROJECT_DIR$/synapse-grid-concurrent" />
+            <option value="$PROJECT_DIR$/synapse-grid-core" />
+            <option value="$PROJECT_DIR$/synapse-grid-examples" />
+            <option value="$PROJECT_DIR$/synapse-grid-rx" />
+            <option value="$PROJECT_DIR$/synapse-grid-shapeless" />
+            <option value="$PROJECT_DIR$/synapse-grid-slf4j" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>
 

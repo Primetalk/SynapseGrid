@@ -216,12 +216,6 @@ project(':synapse-grid-akka') {
     }
 }
 
-project(':synapse-grid-examples') {
-    dependencies {
-        compile project(':synapse-grid-akka')
-    }
-}
-
 project(':synapse-grid-shapeless') {
     dependencies {
         compile project(':synapse-grid-core')
@@ -240,6 +234,13 @@ project(':synapse-grid-rx') {
     dependencies {
         compile project(':synapse-grid-core')
         compile rxDep
+    }
+}
+
+project(':synapse-grid-examples') {
+    dependencies {
+        compile project(':synapse-grid-akka')
+        compile project(':synapse-grid-rx')
     }
 }
 

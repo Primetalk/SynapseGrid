@@ -21,10 +21,14 @@ import scala.collection.mutable
  * one must convert it to [[ru.primetalk.synapse.core.StaticSystem]].
  */
 trait BasicSystemBuilder {
-  private var name = getClass.getSimpleName.
-    replaceAllLiterally("Builder", "").
-    replaceAllLiterally("BuilderC", "").
-    replaceAllLiterally("$", "")
+	private var name =
+		if (getClass.isAnonymousClass)
+			""
+		else
+			getClass.getSimpleName.
+				replaceAllLiterally("Builder", "").
+				replaceAllLiterally("BuilderC", "").
+				replaceAllLiterally("$", "")
 
   def setSystemName(name : String) {
     this.name = name

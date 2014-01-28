@@ -20,8 +20,11 @@ import scala.language.implicitConversions
 package object akka {
   implicit class RichStaticSystemSystem(s:StaticSystem){
   	/** @param threadSafeOutputFun - a function that will receive output signals of the actor. Should be thread safe!!!*/
-    def toActorTree(threadSafeOutputFun:Option[InternalSignals => Any] = None)(implicit actorRefFactory: ActorRefFactory):ActorRef = StaticSystemActor.toActorTree(actorRefFactory)(List(),s, threadSafeOutputFun)
-    def toActorTree(implicit actorRefFactory: ActorRefFactory):ActorRef = toActorTree(None)(actorRefFactory)
+    def toActorTree(threadSafeOutputFun:Option[InternalSignals => Any] = None)
+                   (implicit actorRefFactory: ActorRefFactory):ActorRef =
+      StaticSystemActor.toActorTree(actorRefFactory)(List(),s, threadSafeOutputFun)
+    def toActorTree(implicit actorRefFactory: ActorRefFactory):ActorRef =
+      toActorTree(None)(actorRefFactory)
   }
   
   implicit def toActorSystemBuilder[T<:BasicSystemBuilder](sb:T) = new ActorSystemBuilderOps()(sb) 

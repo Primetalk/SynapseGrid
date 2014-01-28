@@ -167,3 +167,6 @@ trait MySystem2 extends MySystem1 {
 }
 </pre>
 
+На рисунке изображён пример системы с подсистемами:
+
+![Система с подсистемами](images/example4.png)

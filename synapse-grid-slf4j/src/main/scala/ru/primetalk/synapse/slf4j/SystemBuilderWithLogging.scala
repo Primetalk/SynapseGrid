@@ -16,6 +16,7 @@ package ru.primetalk.synapse.slf4j
 import ru.primetalk.synapse.core.{Contact, SystemBuilderAdv, SystemBuilder, Signal}
 import org.slf4j.LoggerFactory
 import ru.primetalk.synapse.core.BasicSystemBuilder
+import scala.language.implicitConversions
 
 ///////////////////////////////////////////////////////////////
 // © ООО «Праймтолк», 2011-2013                              //
