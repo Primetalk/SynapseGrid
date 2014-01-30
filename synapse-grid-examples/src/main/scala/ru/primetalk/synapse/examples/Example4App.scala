@@ -21,13 +21,14 @@ object Example4App extends App {
 
   /** A subsystem that returns the length of a string and splits it into words.*/
   class StringStat extends BaseTypedSystem {
-    import sb._
     val stringInput = input [String]("stringInput")
     val lenOutput   = output[Int]   ("lenOutput")
     val wordsOutput = output[String]("wordsOutput")
-    (stringInput -> lenOutput).map(_.length, "len")
-    (stringInput -> wordsOutput).flatMap(_.split(' '), "split")
-    stringInput.foreach(n => println("="+n))
+    override protected def defineSystem(implicit sb: SystemBuilder) {
+      (stringInput -> lenOutput).map(_.length, "len")
+      (stringInput -> wordsOutput).flatMap(_.split(' '), "split")
+      stringInput.foreach(n => println("="+n))
+    }
   }
 
   class WordStat extends BaseTypedSystem {

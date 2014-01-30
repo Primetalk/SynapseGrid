@@ -17,7 +17,7 @@ import java.io.{File, PrintWriter}
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
 
-package object core {
+package object core extends SystemBuilderImplicits2 {
 
 	def contact[T](name: String) = new Contact[T](name)
 
@@ -25,12 +25,6 @@ package object core {
 	 * Special contact for consuming unnecessary data values.
 	 */
 	lazy val devNull = new Contact[Any]("devNull", DevNullContact)
-	def extendBasicSystemBuilder[T <: SystemBuilderExtension](
-		implicit sb: BasicSystemBuilder,
-		extensionInstance: SystemBuilderExtensionId[T]): T =
-		sb.extend(extensionInstance)
-
-	implicit def basicSystemBuilderToAdvanced(implicit sb: BasicSystemBuilder): SystemBuilderAdv = new SystemBuilderAdvC(sb)
 	implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: BasicSystemBuilder)(
 		implicit extensionInstance: SystemBuilderExtensionId[T]): T =
 		sb.extend(extensionInstance)

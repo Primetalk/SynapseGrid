@@ -1,6 +1,8 @@
 package ru.primetalk.synapse
 
+import scala.language.implicitConversions
 import core._
+
 
 package object slf4j {
 

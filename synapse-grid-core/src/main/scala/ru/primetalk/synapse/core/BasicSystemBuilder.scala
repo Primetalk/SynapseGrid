@@ -33,7 +33,9 @@ trait BasicSystemBuilder {
   def setSystemName(name : String) {
     this.name = name
   }
+
   def systemName = name
+
   def systemName_=(name : String) {
     this.name = name
   }
@@ -48,7 +50,8 @@ trait BasicSystemBuilder {
   private[core] val outputContacts = mutable.Set[Contact[_]]()
 
   protected val extensions = mutable.Map[SystemBuilderExtensionId[_], Any]()
-  /** Constructs new version of static system. */
+
+  /** Constructs the current version of static system. */
   def toStaticSystem = StaticSystem(
     /** A subset of contacts */
     inputContacts.toList.distinct,
@@ -123,6 +126,7 @@ trait BasicSystemBuilder {
     val link = Link(from, to, info)
     addLink(link)
   }
+
   /**
     */
   def addLink[T1, T2](link : Link[T1, T2, T1, T2]):Contact[T2] = {
@@ -132,9 +136,11 @@ trait BasicSystemBuilder {
     links += link
     link.to
   }
+
   def addComponent(component:Component){
     components += component
   }
+
   /**
    * Subsystem.
    * It can have a few input contacts (any number), however,
@@ -149,6 +155,7 @@ trait BasicSystemBuilder {
     components += new InnerSystem(s, state(s.name+"State", s0withoutShared), sharedStateHandles.toList)
     system
   }
+
   /** Adds a few subsystems at once. Useful for super systems construction.*/
   def addSubsystems(subsystems:StaticSystem*) {
     subsystems.foreach(subsystem => addSubsystem(subsystem)(identity))
@@ -163,12 +170,14 @@ trait BasicSystemBuilder {
     val compSuccessors = components.toList.filter(_.inputContacts.contains(c)).flatMap(_.outputContacts)
     (linkSuccessors ++ compSuccessors).distinct
   }
+
   /** returns one step successors from the given contact */
   def predecessors(c:Contact[_]):List[Contact[_]] = {  	
     val linkPredecessors = links.toList.filter(_.to == c).map(_.from)
     val compPredecessors = components.toList.filter(_.outputContacts.contains(c)).flatMap(_.inputContacts)
     (linkPredecessors ++ compPredecessors).distinct
   }
+
   /** Calculates the number of transitions from c1 to that contact. If the contact is not reachable
     *  then the distance is equals = -1*/
   def minDistance(c1 : Contact[_], c2 : Contact[_]) = {

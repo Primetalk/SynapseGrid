@@ -13,12 +13,27 @@
 package ru.primetalk.synapse.core
 
 abstract class BaseTypedSystem(name:String = "") {
-  protected val sb = new SystemBuilder {}
-  sb.setSystemName(if(name == "") getClass.getSimpleName else name)
-  protected def defineSystem() {}
+  protected val sb = new SystemBuilderC(if(name == "") getClass.getSimpleName else name)
+
+  protected def defineSystem(implicit sb:SystemBuilder) {}
+
+  /**
+   * Create contact and add it to the builder as an input
+   */
+  def input[T](name: String) =
+    sb.input[T](name)
+
+  /**
+   * Create contact and add it to the builder as an output
+   */
+  def output[T](name: String) =
+    sb.output[T](name)
+
   private lazy val system = {
-    defineSystem()
+    defineSystem(sb)
     sb.toStaticSystem
   }
-  def toStaticSystem = system
+
+  def toStaticSystem =
+    system
 }
