@@ -14,7 +14,7 @@
 package ru.primetalk.synapse.akka
 
 import ru.primetalk.synapse.core._
-import akka.actor.{Props, Actor, ActorContext, ActorRef}
+import akka.actor._
 import ru.primetalk.synapse.akka.SpecialActorContacts.{NonSignalWithSenderInput, ContextInput, SenderInput}
 import ru.primetalk.synapse.slf4j.SystemBuilderWithLogging
 
@@ -23,7 +23,11 @@ import ru.primetalk.synapse.slf4j.SystemBuilderWithLogging
  * @author А.Жижелев
  *
  */
-case class ActorInnerSubsystem(subsystem: StaticSystem) extends Component with ComponentWithInternalStructure{
+case class ActorInnerSubsystem(subsystem: StaticSystem,
+                               supervisorStrategy:SupervisorStrategy = defaultSupervisorStrategy)
+  extends Component
+  with ComponentWithInternalStructure
+{
 	def name = subsystem.name
 	val inputContacts = subsystem.inputContacts
 	val outputContacts = subsystem.outputContacts
@@ -31,8 +35,9 @@ case class ActorInnerSubsystem(subsystem: StaticSystem) extends Component with C
   def toStaticSystem : StaticSystem = subsystem
 }
 trait ActorContainerBuilder extends SystemBuilder {
-	def addActorSubsystem[T](subsystem: T)(implicit ev:T=>StaticSystem):T = {
-		addComponent(new ActorInnerSubsystem(subsystem))
+	def addActorSubsystem[T](subsystem: T,
+                           supervisorStrategy:SupervisorStrategy = defaultSupervisorStrategy)(implicit ev:T=>StaticSystem):T = {
+		addComponent(new ActorInnerSubsystem(subsystem, supervisorStrategy))
 		subsystem
 	}
 

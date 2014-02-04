@@ -1,6 +1,6 @@
 package ru.primetalk.synapse
 
-import _root_.akka.actor.{ActorRefFactory,ActorRef}
+import _root_.akka.actor.{SupervisorStrategy, AllForOneStrategy, ActorRefFactory, ActorRef}
 import ru.primetalk.synapse.core._
 import scala.language.implicitConversions
 
@@ -28,5 +28,8 @@ package object akka {
   }
   
   implicit def toActorSystemBuilder[T<:BasicSystemBuilder](sb:T) = new ActorSystemBuilderOps()(sb) 
-  
+
+  val defaultSupervisorStrategy:SupervisorStrategy = AllForOneStrategy(){
+    case _:Throwable=>SupervisorStrategy.Escalate
+  }
 }

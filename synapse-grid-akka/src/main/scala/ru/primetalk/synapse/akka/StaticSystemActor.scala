@@ -26,9 +26,7 @@ import SystemConverting._
   *  in-channel actors.*/
 trait EscalatingActor extends Actor {
   override val supervisorStrategy =
-    AllForOneStrategy(){
-      case _:Throwable=>Escalate
-    }
+    defaultSupervisorStrategy
 }
 /**
   * Actor that corresponds to the given static system. It will work according to
@@ -37,7 +35,10 @@ trait EscalatingActor extends Actor {
   *
   * @param systemPath the list of intermediate systems from parent actor to the system of this actor
   */
-class StaticSystemActor(systemPath:List[String], system: StaticSystem, outputFun:Option[InternalSignals => Any] = None) extends EscalatingActor {
+class StaticSystemActor(systemPath:List[String],
+                        system: StaticSystem,
+                        outputFun:Option[InternalSignals => Any] = None,
+                        override val supervisorStrategy:SupervisorStrategy) extends Actor {
 	val log = Logging(context.system, this)
 
 //	var emptyContext = system.s0// Map[Contact[_], Any]()
@@ -105,9 +106,9 @@ object StaticSystemActor {
                                   system: StaticSystem): TotalTrellisProducer =
   {
 		val actorInnerSubsystemConverter: SubsystemConverter = {
-			case (path1, _, ActorInnerSubsystem(subsystem)) =>
+			case (path1, _, ActorInnerSubsystem(subsystem, supervisorStrategy)) =>
 				val actorRef = actorRefFactory.actorOf(Props(
-					new StaticSystemActor(path1,subsystem)),
+					new StaticSystemActor(path1,subsystem, None, supervisorStrategy)),
 					subsystem.name)
 				RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal) => {
 					actorRef.tell(signal, self)
@@ -127,8 +128,10 @@ object StaticSystemActor {
 	}
 
 	/** Converts top level system to top level actor. */
-	def toActorTree(actorRefFactory: ActorRefFactory)(path:List[String], system: StaticSystem, outputFun:Option[InternalSignals => Any] = None): ActorRef =
+	def toActorTree(actorRefFactory: ActorRefFactory,
+    supervisorStrategy:SupervisorStrategy =
+    defaultSupervisorStrategy)(path:List[String], system: StaticSystem, outputFun:Option[InternalSignals => Any] = None): ActorRef =
 		actorRefFactory.actorOf(Props(
-			new StaticSystemActor(path,system, outputFun)),
+			new StaticSystemActor(path,system, outputFun, supervisorStrategy)),
 			system.name)
 }

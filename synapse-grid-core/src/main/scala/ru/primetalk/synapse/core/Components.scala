@@ -18,12 +18,16 @@ trait Component extends Named {
   val inputContacts: Set[Contact[_]]
   val outputContacts: Set[Contact[_]]
 }
+
+//trait ComponentMeta
 trait ComponentWithInternalStructure extends Component {
   def toStaticSystem:StaticSystem
 }
+
 object StaticSystem {
   type State = Map[Contact[_], Any]
 }
+
 case class StaticSystem(
                           /** A subset of contacts */
                           inputs: List[Contact[_]],
@@ -32,7 +36,8 @@ case class StaticSystem(
                           components: List[Component],
                           name: String) extends Named
   with Component
-  with Stateful[Map[Contact[_], Any]] {
+  with Stateful[Map[Contact[_], Any]]
+  with ComponentWithInternalStructure {
   lazy val inputContacts = inputs.toSet
   lazy val outputContacts = outputs.toSet
   /** Contacts that should be processed by SignalsProcessor. */
@@ -46,6 +51,7 @@ case class StaticSystem(
 
   lazy val staticSubsystems =
     components.collect{case InnerSystem(s:StaticSystem, _, _) => s}
+  def toStaticSystem = this
 }
 
 /** Dynamic system. The state is kept inside the system. All complex logic
@@ -70,7 +76,10 @@ case class InnerSystem[S](
   def name = s.name
   def toStaticSystem:StaticSystem = s
 }
-/** Special component that atomically updates state. It doesn't have any output contact.*/
+
+/**
+ * Special component that atomically updates state. It doesn't have any output contact.
+ */
 case class StateUpdate[S, T2](
                                from : Contact[T2],
                                stateHandle : StateHandle[S],
@@ -80,6 +89,7 @@ case class StateUpdate[S, T2](
   lazy val inputContacts = Set(from) : Set[Contact[_]]
   lazy val outputContacts = Set[Contact[_]]() //stateHolder)
 }
+
 object StateUpdate {
   def replace[S, T2 <: S](s : S, t : T2) = t
 }
