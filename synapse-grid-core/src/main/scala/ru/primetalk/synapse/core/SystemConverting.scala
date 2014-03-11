@@ -126,15 +126,13 @@ object SystemConvertingSupport {
         s"The component $component cannot be converted to SingleSignalProcessor (${(path, system, component)}).")
   }
 
-
 }
 
 object SystemConverting {
 
   import SystemConvertingSupport._
 
-  def innerSystemSignalHandlerWithShared(
-                                         subsystemStateHandle1:Contact[_],
+  def innerSystemSignalHandlerWithShared(subsystemStateHandle1: Contact[_],
                                          proc:TotalTrellisProducer,
                                          sharedStateHandles: List[Contact[_]]) =
   {
@@ -178,50 +176,64 @@ object SystemConverting {
 			RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
 	}
 
+  /** Ignores red links.
+    * This converter is necessary to avoid infinite conversion of redlinks.
+    */
   val redLinkDummy: ComponentDescriptorConverter = {
     case ComponentDescriptor(Link(from, to, RedMapLink(stopContacts, label)), path, system) ⇒
       RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ (context, List()))
   }
 
-  /** Converts components to a function that will do the work
-    * when the data appears on one of the contacts.
-    */
-  def componentToSignalProcessor(rsToTtp: RuntimeSystemToTotalTrellisProducerConverter): MutableComponentConverterBuilderOld = {
-    val combinedConverter = new MutableComponentConverterBuilderOld
-    val inner = innerSystemToSignalProcessor(combinedConverter, rsToTtp )
-
-    val converterWithoutRedLinks = new MutableComponentConverterBuilderOld
-    converterWithoutRedLinks += redLinkDummy
-    converterWithoutRedLinks += RuntimeComponent.linkToSignalProcessor1
-    converterWithoutRedLinks += inner
-
-    combinedConverter += redLinkToSignalProcessor(converterWithoutRedLinks)
-    combinedConverter += RuntimeComponent.linkToSignalProcessor1
-    combinedConverter += inner
-    combinedConverter
-  }
-
-
-  /** Converts components to a function that will do the work
-    * when the data appears on one of the contacts.
-    */
-  //  def componentToSignalProcessor2(rsToTtp:RuntimeSystemToTotalTrellisProducerConverter) : MutableComponentConverterBuilder = {
-  //    val combinedConverter = new ComponentDescriptorConverterProxy// MutableComponentConverterBuilder
-  //
+  //  /** Converts components to a function that will do the work
+  //    * when the data appears on one of the contacts.
+  //    */
+  //  def componentToSignalProcessor(rsToTtp: RuntimeSystemToTotalTrellisProducerConverter): MutableComponentConverterBuilderOld = {
+  //    val combinedConverter = new MutableComponentConverterBuilderOld
   //    val inner = innerSystemToSignalProcessor(combinedConverter, rsToTtp )
   //
-  //    val converterWithoutRedLinks = new MutableComponentConverterBuilder
+  //    val converterWithoutRedLinks = new MutableComponentConverterBuilderOld
   //    converterWithoutRedLinks += redLinkDummy
-  //    converterWithoutRedLinks += linkToSignalProcessor1
+  //    converterWithoutRedLinks += RuntimeComponent.linkToRuntimeComponent
   //    converterWithoutRedLinks += inner
   //
-  //    val converterWithRedLinks = new MutableComponentConverterBuilder
-  //    converterWithRedLinks += redLinkToSignalProcessor(converterWithoutRedLinks)
-  //    converterWithRedLinks += linkToSignalProcessor1
-  //    converterWithRedLinks += inner
-  //
+  //    combinedConverter += redLinkToSignalProcessor(converterWithoutRedLinks)
+  //    combinedConverter += RuntimeComponent.linkToRuntimeComponent
+  //    combinedConverter += inner
   //    combinedConverter
   //  }
+
+
+  /** Converts components to a function that will do the work
+    * when the data appears on one of the contacts.
+    *
+    * Create special construction for processing red links: on top it converts redlinks
+    * as a special components. Inside the special red-link component redLinks are
+    * converted to dummies. So there will be no infinite loop in conversion.
+    *
+    * Also the conterter has a proxy-trick for subsystems. The same converter
+    * is used to convert high level systems and inner subsystems.
+    */
+  def componentToSignalProcessor2(rsToTtp: RuntimeSystemToTotalTrellisProducerConverter, simpleConverters: ComponentDescriptorConverter*): ComponentDescriptorConverter = {
+    val combinedConverter = new ComponentDescriptorConverterProxy
+
+    val inner = innerSystemToSignalProcessor(combinedConverter, rsToTtp)
+
+    val converterWithoutRedLinks = new MutableComponentConverterBuilder
+    converterWithoutRedLinks += redLinkDummy
+    //    converterWithoutRedLinks += RuntimeComponent.linkToRuntimeComponent
+    converterWithoutRedLinks ++= simpleConverters
+    converterWithoutRedLinks += inner
+
+
+    val converterWithRedLinks = new MutableComponentConverterBuilder
+    converterWithRedLinks += redLinkToSignalProcessor(converterWithoutRedLinks.totalConverter)
+    //    converterWithRedLinks += RuntimeComponent.linkToRuntimeComponent
+    converterWithRedLinks ++= simpleConverters
+    converterWithRedLinks += inner
+
+    combinedConverter.target = converterWithRedLinks.totalConverter
+    combinedConverter
+  }
 
 
   // TODO: replace with dispatching red links
@@ -285,7 +297,7 @@ object SystemConverting {
                       stopContacts: Set[Contact[_]],
                        rsToTtp:RuntimeSystemToTotalTrellisProducerConverter):RuntimeSystem = {
 
-    val m = componentToSignalProcessor(rsToTtp)
+    val m = componentToSignalProcessor2(rsToTtp, RuntimeComponent.linkToRuntimeComponent)
 
     systemToRuntimeSystem(List(), system, m, stopContacts)
 
@@ -298,7 +310,8 @@ object SystemConverting {
     var state = system.s0
 
     val rs = systemToRuntimeSystem(path,system,
-      componentToSignalProcessor(rsToTtp), system.outputContacts)
+      componentToSignalProcessor2(rsToTtp, RuntimeComponent.linkToRuntimeComponent),
+      system.outputContacts)
     val proc = rsToTtp(rs)// rs.toTotalTrellisProducer
 
     def receive(signal: Signal[_]): List[Signal[_]] = {

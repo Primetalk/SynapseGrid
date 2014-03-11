@@ -21,6 +21,9 @@ sealed trait RuntimeComponent extends Named {
 }
 
 sealed trait RuntimeComponentTransparent extends RuntimeComponent {
+  /**
+   * the list of contacts that trigger processing of the component
+   */
   val inputContacts: List[Contact[_]]
   /**
    * outputContacts - the list of contacts that can be influenced by this component.
@@ -47,7 +50,8 @@ case class RuntimeComponentFlatMap(
 
 /**
  * Is very similar to the most generic link — StateFlatMap.
- * This component refers a single stateHandle.*/
+ * This component refers a single stateHandle.
+ */
 case class RuntimeComponentStateFlatMap[S](
                                             name: String,
                                             inputContacts: List[Contact[_]],
@@ -61,7 +65,8 @@ case class RuntimeComponentStateFlatMap[S](
 }
 
 /**
- * The most general processing element.*/
+ * The most general processing element. Can depend on a few states.
+ */
 case class RuntimeComponentMultiState(
                                        name: String,
                                        stateHandles: List[Contact[_]],
@@ -73,7 +78,7 @@ object RuntimeComponent {
 
   import SystemConvertingSupport._
 
-  val linkToSignalProcessor1: SimpleComponentConverter = {
+  val linkToRuntimeComponent: SimpleComponentConverter = {
     case Link(from, to, FlatMapLink(f, name)) ⇒
       RuntimeComponentFlatMap(name, from, to, {
         (signal) ⇒
@@ -89,10 +94,9 @@ object RuntimeComponent {
           (nState, nDataSeq.toList.map(new Signal(to, _)))
       })
     case Link(from, to, NopLink(name)) ⇒
-      RuntimeComponentFlatMap(name, from, to, {
-        (signal) ⇒
-          List(new Signal(to, signal.data))
-      })
+      RuntimeComponentFlatMap(name, from, to,
+        (signal) ⇒ List(new Signal(to, signal.data))
+      )
     case Link(from, to, StateZipLink(pe, name)) ⇒
       RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe, {
         (value, signal) ⇒
