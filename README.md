@@ -55,3 +55,4 @@ See also (English)
 3. [Лицензия](docs/LICENSE.RU.md).
 4. [Работа с подсистемами](docs/Subsystems.RU.md).
 5. [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
+6. [Распределённые системы](docs/Distributed.RU.md).

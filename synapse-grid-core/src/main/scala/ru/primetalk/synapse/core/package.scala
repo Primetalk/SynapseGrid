@@ -19,78 +19,93 @@ import scala.language.reflectiveCalls
 
 package object core extends SystemBuilderImplicits2 {
 
-	def contact[T](name: String) = new Contact[T](name)
+  def contact[T](name: String) = new Contact[T](name)
 
-	/**
-	 * Special contact for consuming unnecessary data values.
-	 */
-	lazy val devNull = new Contact[Any]("devNull", DevNullContact)
-	implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: BasicSystemBuilder)(
-		implicit extensionInstance: SystemBuilderExtensionId[T]): T =
-		sb.extend(extensionInstance)
+  /**
+   * Special contact for consuming unnecessary data values.
+   */
+  lazy val devNull = new Contact[Any]("devNull", DevNullContact)
 
-	implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId(new AuxContactNumberingExt(_))
-	implicit val LabellingExtId = new SystemBuilderExtensionId(new LabellingExt(_))
+  implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: BasicSystemBuilder)(
+    implicit extensionInstance: SystemBuilderExtensionId[T]): T =
+    sb.extend(extensionInstance)
 
-	implicit def sbToAux(sb:BasicSystemBuilder):AuxContactNumberingExt = sb.extend[AuxContactNumberingExt]//(AuxContactNumberingExtId)
-	implicit def sbToLabelling(sb:BasicSystemBuilder):LabellingExt = sb.extend[LabellingExt]
-//  	(new BasicSystemBuilder).nextContactName
+  implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId(new AuxContactNumberingExt(_))
+  implicit val LabellingExtId = new SystemBuilderExtensionId(new LabellingExt(_))
+
+  implicit def sbToAux(sb: BasicSystemBuilder): AuxContactNumberingExt = sb.extend[AuxContactNumberingExt]
+
+  //(AuxContactNumberingExtId)
+  implicit def sbToLabelling(sb: BasicSystemBuilder): LabellingExt = sb.extend[LabellingExt]
+
+  //  	(new BasicSystemBuilder).nextContactName
   /**
    * Extractor of contacts' data from result.
    */
   implicit class ContactExtractor[T](c: Contact[T]) {
 
     def signal(d: T) = Signal(c, d)
+
     def createSignal(d: T) = Signal(c, d)
 
     def createSignals(ds: T*): List[Signal[T]] = ds.map(Signal(c, _)).toList
 
-    def get(signals: List[Signal[_]]) :List[T]= {
+    def get(signals: List[Signal[_]]): List[T] = {
       val C = c
-      signals.collect{case Signal(C, data) => data.asInstanceOf[T]}
+      signals.collect {
+        case Signal(C, data) => data.asInstanceOf[T]
+      }
     }
+
     def filterFunction = (signals: List[Signal[_]]) ⇒ signals.filter(_._1 == c).map(_.asInstanceOf[Signal[T]])
 
     def filterNotFunction = (signals: List[Signal[_]]) ⇒ signals.filterNot(_._1 == c)
   }
 
-  implicit class RichSignalList(signals: List[Signal[_]]){
+  implicit class RichSignalList(signals: List[Signal[_]]) {
     /** Divides the list of signals. The first part will contain signals on the given contact.
-      * the second — the rest signals.*/
-    def partition[T](c:Contact[T]) :(List[Signal[T]], List[Signal[_]]) =
+      * the second — the rest signals. */
+    def partition[T](c: Contact[T]): (List[Signal[T]], List[Signal[_]]) =
       signals.
         partition(_.contact == c).
         asInstanceOf[(List[Signal[T]], List[Signal[_]])]
 
-    def get[T](`c`:Contact[T]) :List[T]=
+    def get[T](`c`: Contact[T]): List[T] =
       signals.
-        collect{
-          case Signal(`c`, data) =>
-            data.asInstanceOf[T]
+        collect {
+        case Signal(`c`, data) =>
+          data.asInstanceOf[T]
       }
 
 
   }
+
   implicit def pairToSignal[T](p: (Contact[T], T)) = Signal(p._1, p._2)
 
-  implicit def toStaticSystem(a:{ def toStaticSystem:StaticSystem }):StaticSystem = {
+  implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem
   }
+
   implicit class RichStaticSystem(system: StaticSystem) {
     def toDot = SystemRenderer.staticSystem2ToDot(system)
-    def toDotAtLevel(level:Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
-    def toDynamicSystem = SystemConverting.toDynamicSystem(List(),system, _.toTotalTrellisProducer)
-    def toSimpleSignalProcessor = SystemConverting.toSimpleSignalProcessor(List(),system, _.toTotalTrellisProducer)
+
+    def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
+
+    def toDynamicSystem = SystemConverting.toDynamicSystem(List(), system, _.toTotalTrellisProducer)
+
+    def toSimpleSignalProcessor = SystemConverting.toSimpleSignalProcessor(List(), system, _.toTotalTrellisProducer)
+
     def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts, _.toTotalTrellisProducer)
 
 
   }
+
   implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
-    extends RichStaticSystem(systemBuilder.toStaticSystem){
+    extends RichStaticSystem(systemBuilder.toStaticSystem) {
     def system = systemBuilder.toStaticSystem
   }
 
-  implicit class RichSimpleSignalProcessor(sp:SimpleSignalProcessor){
+  implicit class RichSimpleSignalProcessor(sp: SimpleSignalProcessor) {
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
       data: TInput =>
         val inputSignal = Signal(input, data)
@@ -99,6 +114,7 @@ package object core extends SystemBuilderImplicits2 {
           case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
         }
     }
+
     def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
       data: TInput =>
         val inputSignal = Signal(input, data)
@@ -136,7 +152,7 @@ package object core extends SystemBuilderImplicits2 {
 
   implicit def filenameToFile(filename: String): File = new File(filename)
 
-  /** The context for system is a map from state handles to values.*/
+  /** The context for system is a map from state handles to values. */
   type Context = Map[Contact[_], _]
 
   type TrellisElement = (Context, List[Signal[_]])
@@ -144,35 +160,37 @@ package object core extends SystemBuilderImplicits2 {
   type ContextUpdater = List[(Contact[_], _)]
 
 
-  /** The simplest signal processor. Corresponds to FlatMap.*/
+  /** The simplest signal processor. Corresponds to FlatMap. */
   type SimpleSignalProcessor = Signal[_] => List[Signal[_]]
 
   type TrellisElementUpdater = (ContextUpdater, List[Signal[_]])
-  def updateTrellisElement(te:TrellisElement, upd:TrellisElementUpdater):TrellisElement =
-    ((te._1 /: upd._1.reverse)((ctx, u) => ctx + u) , upd._2)
 
-	/** A function that makes single(?) step over time. */
-	type TrellisProducer = TrellisElement => TrellisElement
-  /** A function that takes a single signal on input and returns the last trellis element.*/
-  type TotalTrellisProducer = ((Context, Signal[_])=>TrellisElement)
+  def updateTrellisElement(te: TrellisElement, upd: TrellisElementUpdater): TrellisElement =
+    ((te._1 /: upd._1.reverse)((ctx, u) => ctx + u), upd._2)
+
+  /** A function that makes single(?) step over time. */
+  type TrellisProducer = TrellisElement => TrellisElement
+  /** A function that takes a single signal on input and returns the last trellis element. */
+  type TotalTrellisProducer = ((Context, Signal[_]) => TrellisElement)
   type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
 
-  type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem=>TotalTrellisProducer
-  implicit class RichRuntimeSystem(runtimeSystem:RuntimeSystem){
-    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step.*/
-    def toTotalTrellisProducer:TotalTrellisProducer = {
+  type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem => TotalTrellisProducer
+
+  implicit class RichRuntimeSystem(runtimeSystem: RuntimeSystem) {
+    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
+    def toTotalTrellisProducer: TotalTrellisProducer = {
       val rsftp = new RuntimeSystemForTrellisProcessing(runtimeSystem)
       val step = TrellisProducerSpeedy(rsftp)
       val loopy = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
-        loopy
+      loopy
     }
   }
 
-  implicit class RichTotalTrellisProducer(ttp:TotalTrellisProducer){
-    /** Creates hidden state that will be maintained between different signals.*/
-    def toSimpleSignalProcessor(s0:Context):SimpleSignalProcessor = {
-      var state:Map[Contact[_], _] = s0
-      (signal:Signal[_]) => {
+  implicit class RichTotalTrellisProducer(ttp: TotalTrellisProducer) {
+    /** Creates hidden state that will be maintained between different signals. */
+    def toSimpleSignalProcessor(s0: Context): SimpleSignalProcessor = {
+      var state: Map[Contact[_], _] = s0
+      (signal: Signal[_]) => {
         val r = ttp(state, signal)
         state = r._1
         r._2
@@ -184,7 +202,7 @@ package object core extends SystemBuilderImplicits2 {
    * Some additional information about the system. In particular,
    * one may find orphan contacts.
    */
-  implicit class OrphanContactsAnalysis(system:StaticSystem){
+  implicit class OrphanContactsAnalysis(system: StaticSystem) {
 
     val allInputContacts =
       system.components.flatMap(_.inputContacts).toSet ++ system.outputContacts
@@ -204,27 +222,52 @@ package object core extends SystemBuilderImplicits2 {
 
 
     /** Contacts that has only one connection either in or out. */
-    val orphanContacts:Set[Contact[_]] =
+    val orphanContacts: Set[Contact[_]] =
       orphanComponentInputs ++
         orphanComponentOutputs
   }
 
+  type SystemPath = List[String]
+  /** The system path that is reversed. One can convert to SystemPath with .reverse */
+  type SystemPathReversed = List[String]
+
+  /** Recursively finds all components that have inner structure.
+    * if the component is Named then it's name is added to the path. Otherwise an empty
+    * string is added.
+    * */
+  def components(component: Component):
+  List[(SystemPathReversed, Component)] = {
+    def components0(component: Component, path: SystemPathReversed):
+    List[(SystemPathReversed, Component)] =
+      (path, component) :: (
+        component match {
+          case c: ComponentWithInternalStructure =>
+            val s = c.toStaticSystem
+            val name = if (c.isInstanceOf[Named]) c.asInstanceOf[Named].name else ""
+            val path2 = name :: path
+            s.components.flatMap(s => components0(s, path2))
+          case _ =>
+            Nil
+        }
+        )
+    components0(component, Nil)
+  }
 
   /** Recursively finds all subsystems of the system.
-    * The system is the first element of the result with path = ".$systemName".*/
-  def subsystems(system:StaticSystem):List[(String, StaticSystem)] = {
-    def subsystems0(system:StaticSystem, path:String):List[(String, StaticSystem)] = {
-      val path2 = path+"."+system.name
-      (path2, system) :: system.staticSubsystems.flatMap(s=>subsystems0(s, path2))
+    * The system is the first element of the result with path = ".$systemName". */
+  def subsystems(system: StaticSystem): List[(String, StaticSystem)] = {
+    def subsystems0(system: StaticSystem, path: String): List[(String, StaticSystem)] = {
+      val path2 = path + "." + system.name
+      (path2, system) :: system.staticSubsystems.flatMap(s => subsystems0(s, path2))
     }
     subsystems0(system, "")
   }
 
   /**
-    * Recursively finds unconnected contacts
-    * within the subsystems of the system.
-    */
-  def orphanContactsRec(system:StaticSystem):List[(String, Set[Contact[_]])] =
+   * Recursively finds unconnected contacts
+   * within the subsystems of the system.
+   */
+  def orphanContactsRec(system: StaticSystem): List[(String, Set[Contact[_]])] =
     subsystems(system).
       map(p => (p._1, p._2.orphanContacts)).
       filterNot(_._2.isEmpty)

@@ -16,53 +16,94 @@ import scala.util.Try
 import scala.language.implicitConversions
 import scala.language.existentials
 
+
 /**
   * Toolkit for conversion of StaticSystem to RuntimeSystems.
   * The conversion purpose is to convert all Components of a StaticSystem
   * to some kind of Signal processors.
   */
-object SystemConverting {
+object SystemConvertingSupport {
 
+  /** A simple converter is for simple components like links that do not require
+    * context description.
+    * For complex components use ComponentDescriptor
+    */
   type SimpleComponentConverter = PartialFunction[Component, RuntimeComponent]
-  type SubsystemConverter = PartialFunction[
-    (List[String],
-      StaticSystem,
-      Component),
-    RuntimeComponent]
-  type ComponentConverter = (List[String], StaticSystem, Component) => RuntimeComponent
 
-  implicit def enrichConverter(cvt:SimpleComponentConverter):SubsystemConverter = {
-    case (_, _, comp) if cvt.isDefinedAt(comp) =>
+  /** Describes component within a system.
+    *
+    * The path is used in hierarchical subsystem transformations.
+    * The parentSystem is used in red-links processing.
+    */
+  case class ComponentDescriptor(component: Component, path: List[String] = List(), parentSystem: StaticSystem)
+
+  /** ComponentDescriptorConverter is for complex components with internal structure. */
+  type ComponentDescriptorConverter = PartialFunction[ComponentDescriptor, RuntimeComponent]
+
+  /** Converts one partial function to another. */
+  implicit def enrichConverter(cvt: SimpleComponentConverter): ComponentDescriptorConverter = {
+    case ComponentDescriptor(comp, _, _) if cvt.isDefinedAt(comp) =>
       val rc = cvt(comp)
-    rc
+      rc
   }
 
+  /** Converter proxy is used to construct functional converter with
+    * recursive internal structure.
+    *
+    * The target can be assigned after the object was constructed.
+    */
+  class ComponentDescriptorConverterProxy extends ComponentDescriptorConverter {
+    private var converter: Option[ComponentDescriptorConverter] = None
 
-  class MutableComponentConverter extends ComponentConverter {
-    private val subsystemConverters = new scala.collection.mutable.ListBuffer[SubsystemConverter]()
+    def target = converter.get
+
+    def target_=(t: ComponentDescriptorConverter) {
+      if (converter.isDefined)
+        throw new IllegalStateException("Cannot change the target of proxy.")
+      converter = Some(t)
+    }
+
+    def isDefinedAt(t: ComponentDescriptor) =
+      target.isDefinedAt(t)
+
+    def apply(t: ComponentDescriptor): RuntimeComponent =
+      converter.map(_(t)).getOrElse(throw new IllegalStateException("Proxy target is not set."))
+
+  }
+
+  /** A component converter that can be extended by adding more converters to it.
+    */
+  class MutableComponentConverterBuilder {
+    private val converters = new scala.collection.mutable.ListBuffer[ComponentDescriptorConverter]()
     private var readOnly = false
     private def assertWritable(arg:Any){
       if(readOnly)
         throw new IllegalStateException(s"MutableComponentConverter is read only. Cannot add $arg.")
     }
 
-    def +=(cvt:SubsystemConverter) {
+    def +=(cvt: ComponentDescriptorConverter) {
       assertWritable(cvt)
-      subsystemConverters += cvt
+      converters += cvt
     }
 
-    def ++=(cvts:TraversableOnce[SubsystemConverter]) {
+    def ++=(cvts: TraversableOnce[ComponentDescriptorConverter]) {
       assertWritable(cvts)
-      subsystemConverters ++= cvts
+      converters ++= cvts
     }
 
-    lazy val totalConverter:SubsystemConverter = {
+    /** Joins all added converters as a chain of partial functions.
+      * The end of chain is `unmatched` converter that throws an exception. */
+    lazy val totalConverter: ComponentDescriptorConverter = {
       readOnly = true
-      (subsystemConverters :\ unmatched)(_ orElse _)
+      (converters :\ unmatched)(_ orElse _)
     }
 
-    def apply(path:List[String], system:StaticSystem, component:Component):RuntimeComponent = {
-      val tuple = (path,system,component)
+  }
+
+
+  class MutableComponentConverterBuilderOld extends MutableComponentConverterBuilder with ComponentDescriptorConverter {
+    /** An alternative to `totalConverter` is to call MutableComponentConverterBuilder as a ComponentConverter. */
+    def apply(tuple: ComponentDescriptor): RuntimeComponent = {
       val t = Try{
         totalConverter(tuple)
       }
@@ -73,44 +114,24 @@ object SystemConverting {
         throw new RuntimeException(s"Cannot convert $tuple.", e)
       }
     }
-    def convertToRuntimeSystem(system:StaticSystem,
-                               stopContacts: Set[Contact[_]]):RuntimeSystem = {
-      systemToRuntimeSystem(List(),system, this, stopContacts)
-    }
+
+    def isDefinedAt(tuple: ComponentDescriptor) =
+      totalConverter.isDefinedAt(tuple)
+
   }
 
-  val linkToSignalProcessor1 : SimpleComponentConverter = {
-		case Link(from, to, FlatMapLink(f, name)) ⇒
-      RuntimeComponentFlatMap(name, from, to,
-      {(signal) ⇒
-          val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
-          val res = fun(signal.data)
-          res.map(new Signal(to, _)).toList
-      })
-    case Link(from, to, StatefulFlatMapLink(f, pe, name)) ⇒
-      RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe,
-      {(value, signal) ⇒
-        val fun = f.asInstanceOf[(Any, Any) ⇒ (Any, Seq[Any])]
-        val (nState, nDataSeq) = fun(value, signal.data)
-        (nState, nDataSeq.toList.map(new Signal(to, _)))
-      })
-    case Link(from, to, NopLink(name)) ⇒
-      RuntimeComponentFlatMap(name, from, to,
-      {(signal) ⇒
-        List(new Signal(to, signal.data))
-      })
-		case Link(from, to, StateZipLink(pe, name)) ⇒
-			RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe,
-      {(value, signal) ⇒
-				(value, List(new Signal(to, (value, signal.data))))
-      })
-		case StateUpdate(from, pe, name, f) ⇒
-      RuntimeComponentStateFlatMap[Any](name, List(from), List(), pe,
-        {(value, signal) ⇒
-          val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data)
-          (result, List())
-        })
+  val unmatched: ComponentDescriptorConverter = {
+    case ComponentDescriptor(component, path, system) =>
+      throw new IllegalArgumentException(
+        s"The component $component cannot be converted to SingleSignalProcessor (${(path, system, component)}).")
   }
+
+
+}
+
+object SystemConverting {
+
+  import SystemConvertingSupport._
 
   def innerSystemSignalHandlerWithShared(
                                          subsystemStateHandle1:Contact[_],
@@ -131,16 +152,17 @@ object SystemConverting {
     }
   }
 
-  def innerSystemToSignalProcessor(converterRecursive: ComponentConverter, rsToTtp:RuntimeSystemToTotalTrellisProducerConverter): SubsystemConverter = {
-    case (path, _, InnerSystem(subsystem, subsystemStateHandle, Nil)) ⇒
-      val rs = systemToRuntimeSystem(subsystem.name::path,
+  def innerSystemToSignalProcessor(converterRecursive: ComponentDescriptorConverter,
+                                   rsToTtp: RuntimeSystemToTotalTrellisProducerConverter): ComponentDescriptorConverter = {
+    case ComponentDescriptor(InnerSystem(subsystem, subsystemStateHandle, Nil), path, _) ⇒
+      val rs = systemToRuntimeSystem(subsystem.name :: path,
         subsystem,
         converterRecursive,
         subsystem.outputContacts)
       val proc = rsToTtp(rs)//rs.toTotalTrellisProducer
       RuntimeComponentStateFlatMap(subsystem.name, subsystem.inputs, subsystem.outputs, subsystemStateHandle,proc)
-    case (path, _, InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles)) ⇒
-      val rs = systemToRuntimeSystem(subsystem.name::path,
+    case ComponentDescriptor(InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles), path, _) ⇒
+      val rs = systemToRuntimeSystem(subsystem.name :: path,
         subsystem,
         converterRecursive,
         subsystem.outputContacts)
@@ -149,38 +171,58 @@ object SystemConverting {
       RuntimeComponentMultiState(subsystem.name, stateHandles,innerSystemSignalHandlerWithShared(subsystemStateHandle, proc, sharedStateHandles))
   }
 
-  def redLinkToSignalProcessor(converterWithoutRedLinks:ComponentConverter) : SubsystemConverter = {
-		case (path, system, Link(from, to, RedMapLink(stopContacts, label))) ⇒
-      val rs = systemToRuntimeSystem(path,system, converterWithoutRedLinks, stopContacts)
+  def redLinkToSignalProcessor(converterWithoutRedLinks: ComponentDescriptorConverter): ComponentDescriptorConverter = {
+    case ComponentDescriptor(Link(from, to, RedMapLink(stopContacts, label)), path, system) ⇒
+      val rs = systemToRuntimeSystem(path, system, converterWithoutRedLinks, stopContacts)
       val proc = rs.toTotalTrellisProducer// toRuntimeComponentHeavy(system.privateStateHandles)
 			RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
 	}
-  val redLinkDummy:SubsystemConverter = {
-    case (path, system, Link(from, to, RedMapLink(stopContacts, label))) ⇒
+
+  val redLinkDummy: ComponentDescriptorConverter = {
+    case ComponentDescriptor(Link(from, to, RedMapLink(stopContacts, label)), path, system) ⇒
       RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ (context, List()))
   }
 
-  val unmatched : SubsystemConverter = {
-    case (path, system, component) =>
-      throw new IllegalArgumentException(
-        s"The component $component cannot be converted to SingleSignalProcessor (${(path, system, component)}).")
-  }
-
-	/** Converts components to a function that will do the work when the data appears on one of the contacts. */
-	def componentToSignalProcessor(rsToTtp:RuntimeSystemToTotalTrellisProducerConverter) : MutableComponentConverter = {
-    val combinedConverter = new MutableComponentConverter
+  /** Converts components to a function that will do the work
+    * when the data appears on one of the contacts.
+    */
+  def componentToSignalProcessor(rsToTtp: RuntimeSystemToTotalTrellisProducerConverter): MutableComponentConverterBuilderOld = {
+    val combinedConverter = new MutableComponentConverterBuilderOld
     val inner = innerSystemToSignalProcessor(combinedConverter, rsToTtp )
 
-    val converterWithoutRedLinks = new MutableComponentConverter
+    val converterWithoutRedLinks = new MutableComponentConverterBuilderOld
     converterWithoutRedLinks += redLinkDummy
-    converterWithoutRedLinks += linkToSignalProcessor1
+    converterWithoutRedLinks += RuntimeComponent.linkToSignalProcessor1
     converterWithoutRedLinks += inner
 
     combinedConverter += redLinkToSignalProcessor(converterWithoutRedLinks)
-    combinedConverter += linkToSignalProcessor1
+    combinedConverter += RuntimeComponent.linkToSignalProcessor1
     combinedConverter += inner
     combinedConverter
   }
+
+
+  /** Converts components to a function that will do the work
+    * when the data appears on one of the contacts.
+    */
+  //  def componentToSignalProcessor2(rsToTtp:RuntimeSystemToTotalTrellisProducerConverter) : MutableComponentConverterBuilder = {
+  //    val combinedConverter = new ComponentDescriptorConverterProxy// MutableComponentConverterBuilder
+  //
+  //    val inner = innerSystemToSignalProcessor(combinedConverter, rsToTtp )
+  //
+  //    val converterWithoutRedLinks = new MutableComponentConverterBuilder
+  //    converterWithoutRedLinks += redLinkDummy
+  //    converterWithoutRedLinks += linkToSignalProcessor1
+  //    converterWithoutRedLinks += inner
+  //
+  //    val converterWithRedLinks = new MutableComponentConverterBuilder
+  //    converterWithRedLinks += redLinkToSignalProcessor(converterWithoutRedLinks)
+  //    converterWithRedLinks += linkToSignalProcessor1
+  //    converterWithRedLinks += inner
+  //
+  //    combinedConverter
+  //  }
+
 
   // TODO: replace with dispatching red links
   def subsystemDirectProcessor(procs:Map[String, RuntimeComponent]):RuntimeComponent =
@@ -205,13 +247,15 @@ object SystemConverting {
             throw new IllegalArgumentException(s"Wrong data on contact SubsystemSpecialContact: $outerSignal.")
         }
     } )
-	def systemToRuntimeSystem( path:List[String],
-                                system: StaticSystem,
-                                converter: ComponentConverter,
-                                stopContacts:Set[Contact[_]]):RuntimeSystem = {
+
+
+  def systemToRuntimeSystem(path: List[String],
+                            system: StaticSystem,
+                            converter: ComponentDescriptorConverter,
+                            stopContacts:Set[Contact[_]]):RuntimeSystem = {
     val processors = for {
       component ← system.components
-      proc = converter(path, system, component):RuntimeComponent
+      proc = converter(ComponentDescriptor(component, path, system)): RuntimeComponent
     } yield (component, proc)
 		val contactsProcessors = (
 			for {
@@ -240,8 +284,13 @@ object SystemConverting {
                     //inContacts: Set[Contact[_]],
                       stopContacts: Set[Contact[_]],
                        rsToTtp:RuntimeSystemToTotalTrellisProducerConverter):RuntimeSystem = {
-    componentToSignalProcessor(rsToTtp).convertToRuntimeSystem(system, stopContacts)
+
+    val m = componentToSignalProcessor(rsToTtp)
+
+    systemToRuntimeSystem(List(), system, m, stopContacts)
+
   }
+
   def toSimpleSignalProcessor(path:List[String],
                               system: StaticSystem,
                               rsToTtp:RuntimeSystemToTotalTrellisProducerConverter):SimpleSignalProcessor = {
@@ -265,7 +314,8 @@ object SystemConverting {
     }
     receive
   }
-	def toDynamicSystem(path:List[String],
+
+  def toDynamicSystem(path: List[String],
                       system: StaticSystem,
                       rsToTtp:RuntimeSystemToTotalTrellisProducerConverter) =
     new DynamicSystem(system.inputContacts, system.outputContacts, system.name, toSimpleSignalProcessor(path, system, rsToTtp))

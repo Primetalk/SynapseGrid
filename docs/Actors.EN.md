@@ -31,4 +31,18 @@ When Actor receives a Signal message, then it will be proceed in the most obviou
 The NonSignalWithSenderInput contact can be used for compatibility with programs, which doesn't support Signals.
 This contact has (ActorRef, Any) type. It's first element will contain received data sender, the second – data..
 
+Distributed systems deployment
+------------------------------
 
+A static system can be deployed either on a single node, or over a few interconnected nodes (cluster).
+
+Of course we can create a few separate systems for each of the nodes and then link the systems via
+embedded actor's mechanism. However, this apporach prevents uniform description, compile-time checking,
+static system's structure analysis.
+
+That's why it seems better to have a single Static system in which a few subsystems have been moved to
+other hosts.
+First of all we need to have identical instances of StaticSystem at every host. Then, we need
+a uniform descriptor for where each subsystem should go. When we start a runtime system, we also need
+to know, which host we are currently run. Then we create and publish only those subsystems that belong
+to the host.

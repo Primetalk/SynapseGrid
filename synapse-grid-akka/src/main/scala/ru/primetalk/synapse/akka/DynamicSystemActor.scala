@@ -21,46 +21,57 @@ import org.slf4j.MDC
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class DynamicSystemActor(path:List[String], system:DynamicSystem) extends EscalatingActor {
-	val log = Logging(context.system, this)
-	private def innerProcessSignals(ls : List[Signal[_]]){
-		MDC.put("akkaSource", ""+self.path)
-		val results = ls.flatMap(system.receive)
-		if(!results.isEmpty)
-			context.parent ! InternalSignals(path, results)
-	}
-	val processSignals =
-		if (system.inputContacts.contains(SenderInput)) // the check is done at the beginning.
-			(ls : List[Signal[_]]) ⇒
-				innerProcessSignals (Signal(SenderInput, sender) :: ls)
-		else
-			innerProcessSignals _
+/**
+ * The actor is an envelope around an arbitrary dynamic system.
+ * @param path the path of the system.
+ * @param system the system itself
+ */
+class DynamicSystemActor(path: List[String], system: DynamicSystem) extends EscalatingActor {
 
-	private object Tick
+  val log = Logging(context.system, this)
 
-	if(system.inputContacts.contains(CurrentTimeMsInput))
-		context.system.scheduler.schedule(0 milliseconds, 10 milliseconds, // scheduler has 100ms precision. Thus it will be called only once in 100 ms. (tick-interval)
-	  		self, Tick)(context.dispatcher)
+  private def innerProcessSignals(ls: List[Signal[_]]) {
+    MDC.put("akkaSource", "" + self.path)
+    val results = ls.flatMap(system.receive)
+    if (!results.isEmpty)
+      context.parent ! InternalSignals(path, results)
+  }
+
+  val processSignals =
+    if (system.inputContacts.contains(SenderInput)) // the check is done at the beginning.
+      (ls: List[Signal[_]]) ⇒
+        innerProcessSignals(Signal(SenderInput, sender) :: ls)
+    else
+      innerProcessSignals _
+
+  private object Tick
+
+  if (system.inputContacts.contains(CurrentTimeMsInput))
+    context.system.scheduler.schedule(0 milliseconds, 10 milliseconds, // scheduler has 100ms precision. Thus it will be called only once in 100 ms. (tick-interval)
+      self, Tick)(context.dispatcher)
+
   def receive = LoggingReceive {
-		case s @ Signal(_, _) ⇒
-			processSignals(s :: Nil)
+    case s@Signal(_, _) ⇒
+      processSignals(s :: Nil)
     case InternalSignals(systemPath, signals) =>
       processSignals(signals)
-		case Tick ⇒
-			processSignals(Signal(CurrentTimeMsInput, System.currentTimeMillis) :: Nil)
-		case nonSignalMessage ⇒
-			val s = Signal(NonSignalWithSenderInput, (sender, nonSignalMessage))
-			processSignals(s :: Nil)
-	}
-	override def preStart() {
-		if(system.inputContacts.contains(ContextInput))
-			processSignals( Signal(ContextInput, context)::Nil)
-		if(system.inputContacts.contains(PreStartInput))
-			processSignals( Signal(PreStartInput, context)::Nil)
-		context.parent ! InitCompleted(self)
-	}
-	override def postStop() {
-		if(system.inputContacts.contains(PostStopInput))
-			processSignals( Signal(PostStopInput, PostStop)::Nil)
-	}
+    case Tick ⇒
+      processSignals(Signal(CurrentTimeMsInput, System.currentTimeMillis) :: Nil)
+    case nonSignalMessage ⇒
+      val s = Signal(NonSignalWithSenderInput, (sender, nonSignalMessage))
+      processSignals(s :: Nil)
+  }
+
+  override def preStart() {
+    if (system.inputContacts.contains(ContextInput))
+      processSignals(Signal(ContextInput, context) :: Nil)
+    if (system.inputContacts.contains(PreStartInput))
+      processSignals(Signal(PreStartInput, context) :: Nil)
+    context.parent ! InitCompleted(self)
+  }
+
+  override def postStop() {
+    if (system.inputContacts.contains(PostStopInput))
+      processSignals(Signal(PostStopInput, PostStop) :: Nil)
+  }
 }
