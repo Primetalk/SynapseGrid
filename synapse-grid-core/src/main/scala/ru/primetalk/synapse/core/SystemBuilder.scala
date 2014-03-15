@@ -97,29 +97,33 @@ class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuild
   }
 
   def map(f: T1 ⇒ T2, name: String = ""): Contact[T2] =
-    sb.addLink(c._1, c._2, new FlatMapLink[T1, T2](x => Seq(f(x)), sb.nextLabel(name, "" + f)))
+    sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
+      new FlatMapLink[T1, T2](x => Seq(f(x))))
 
   def const(value: T2, name: String = ""): Contact[T2] =
-    sb.addLink(c._1, c._2, new FlatMapLink[T1, T2]((t: T1) => Seq(value), sb.nextLabel(name, "⇒" + value)))
+    sb.addLink(c._1, c._2, sb.nextLabel(name, "⇒" + value),
+      new FlatMapLink[T1, T2]((t: T1) => Seq(value)))
 
   def flatMap[TSeq](f: T1 ⇒ GenTraversableOnce[T2], name: String = "") =
-    sb.addLink(c._1, c._2, new FlatMapLink[T1, T2](f, sb.nextLabel(name, "" + f)))
+    sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
+      new FlatMapLink[T1, T2](f))
 
   def splitToElements(name: String = "")(implicit ev: T1 <:< TraversableOnce[T2]): Contact[T2] =
     flatMap(t => ev(t), sb.nextLabel(name, "split"))
 
   def optionalMap(f: T1 ⇒ Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
-    sb.addLink(c._1, c._2, new FlatMapLink[T1, T2](f(_).toSeq, sb.nextLabel(name, "" + f))) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
+    sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
+      new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
 
   /** Cast data to the given class if possible. If the data cannot be cast, then it is filtered out. */
   def castFilter[T3 <: T2](t2Class: Class[T3], name: String = "") = {
     sb.addLink(c._1, c._2,
+      sb.nextLabel(name, "cast(" + t2Class.getSimpleName + ")"),
       new FlatMapLink[T1, T2](
         d ⇒ if (t2Class.isInstance(d))
           Seq(d.asInstanceOf[T2])
         else
-          Seq(),
-        sb.nextLabel(name, "cast(" + t2Class.getSimpleName + ")")))
+          Seq()))
   }
 
   /** Cast data to the given class if possible. If the data cannot be cast, then it is filtered out.
@@ -128,11 +132,11 @@ class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuild
     */
   def castFilter2[T3 <: T2](implicit t3Class: ClassTag[T3]) = {
     sb.addLink(c._1, c._2,
+      sb.nextLabel("", "cast2(" + t3Class.runtimeClass.getSimpleName + ")"),
       new FlatMapLink[T1, T2]({
         case t3Class(d) => Seq(d.asInstanceOf[T2])
         case _ => Seq()
-      },
-      sb.nextLabel("", "cast2(" + t3Class.runtimeClass.getSimpleName + ")")))
+      }))
   }
 
   def collect(f: PartialFunction[T1, T2], name: String = "") =
@@ -142,15 +146,16 @@ class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuild
 
   def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, T2)) =
     sb.addLink(c._1, c._2,
+      sb.nextLabel(name, "sm"),
       new StatefulFlatMapLink[S, T1, T2](
         (s, t) => {
           val r = f(s, t)
           (r._1, Seq(r._2))
-        }, stateHandle,
-        sb.nextLabel(name, "sm")))
+        }, stateHandle))
 
   def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, GenTraversableOnce[T2])) =
-    sb.addLink(c._1, c._2, new StatefulFlatMapLink[S, T1, T2](f, stateHandle, sb.nextLabel(name, "sfm")))
+    sb.addLink(c._1, c._2, sb.nextLabel(name, "sfm"),
+      new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
 }
 
@@ -158,47 +163,49 @@ class StateLinkBuilder2Ops[T1, T2, S](p: (core.ContactWithState[T1, S], Contact[
 
   def stateMap(f: (S, T1) ⇒ (S, T2), name: String = "") =
     sb.addLink(p._1.c1, p._2,
+      sb.nextLabel(name, "sm"),
       new StatefulFlatMapLink[S, T1, T2](
         (s, t) => {
           val r = f(s, t)
           (r._1, Seq(r._2))
-        }, p._1.stateHandle,
-        sb.nextLabel(name, "sm")))
+        }, p._1.stateHandle))
 
   def stateFlatMap(f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name: String = "") =
-    sb.addLink(p._1.c1, p._2, new StatefulFlatMapLink[S, T1, T2](f, p._1.stateHandle,
-      sb.nextLabel(name, "sfm")))
+    sb.addLink(p._1.c1, p._2, sb.nextLabel(name, "sfm"),
+      new StatefulFlatMapLink[S, T1, T2](f, p._1.stateHandle))
 }
 
 class DirectLinkBuilderOps[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(sb: BasicSystemBuilder) {
   def directly(name: String = "Δt") =
-    sb.addLink(p._1, p._2, new NopLink[T1, T2](name))
+    sb.addLink(p._1, p._2, name, new NopLink[T1, T2]())
 
   def filter(predicate: T1 ⇒ Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
     sb.addLink(p._1, p._2,
+      sb.nextLabel(name, if (name endsWith "?") name else name + "?"),
       new FlatMapLink[T1, T2]({
         x ⇒
           if (predicate(x))
             Seq(x: T2)
           else
             Seq[T2]()
-      }, sb.nextLabel(name, if (name.endsWith("?")) name else name + "?"))) //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
+      })) //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
 }
 
 class ContactWithState[T1, S](val c1: Contact[T1], val stateHandle: StateHandle[S])(sb: BasicSystemBuilder) {
 
   def stateMap[T2](f: (S, T1) ⇒ (S, T2), name: String = "") =
     sb.addLink(c1, sb.auxContact[T2],
+      sb.nextLabel(name, "sm"),
       new StatefulFlatMapLink[S, T1, T2](
         (s, t) => {
           val r = f(s, t)
           (r._1, Seq(r._2))
-        }, stateHandle,
-        sb.nextLabel(name, "sm")))
+        }, stateHandle))
 
   def stateFlatMap[T2](f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name: String = "") =
-    sb.addLink(c1, sb.auxContact[T2], new StatefulFlatMapLink[S, T1, T2](f, stateHandle,
-      sb.nextLabel(name, "sfm")))
+    sb.addLink(c1, sb.auxContact[T2],
+      sb.nextLabel(name, "sfm"),
+      new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
   def updateState(name: String = "")(fun: (S, T1) ⇒ S) {
     sb.addComponent(new StateUpdate[S, T1](c1, stateHandle, sb.nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
@@ -229,7 +236,9 @@ class ContactPairOps[S, T](c: Contact[(S, T)])(sb: BasicSystemBuilder) {
 class ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb: BasicSystemBuilder) {
 
   def zipWithState(stateHolder: StateHandle[S], name: String = ""): Contact[(S, T)] =
-    sb.addLink(c._1, c._2, StateZipLink[S, T, T](stateHolder, sb.nextLabel(name, "(" + stateHolder + ", _)")))
+    sb.addLink(c._1, c._2,
+      sb.nextLabel(name, "(" + stateHolder + ", _)"),
+      StateZipLink[S, T, T](stateHolder))
 }
 
 /** New methods available on contacts that construct links.
@@ -283,18 +292,20 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
   }
 
   def foreach(body: T ⇒ Any, name: String = "") = {
-    sb.addLink(c, devNull, new FlatMapLink[T, Any](x => {
-      body(x)
-      Seq()
-    }, sb.nextLabel(name, "foreach")))
+    sb.addLink(c, devNull, sb.nextLabel(name, "foreach"),
+      new FlatMapLink[T, Any](x => {
+        body(x)
+        Seq()
+      }))
     c
   }
 
   def exec(body: ⇒ Any, name: String = "") = {
-    sb.addLink(c, sb.auxContact[T], new FlatMapLink[T, T]((t: T) => {
-      body
-      Seq(t)
-    }, sb.nextLabel(name, "exec")))
+    sb.addLink(c, sb.auxContact[T], sb.nextLabel(name, "exec"),
+      new FlatMapLink[T, T]((t: T) => {
+        body
+        Seq(t)
+      }))
   }
 
 
@@ -459,12 +470,14 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
 
   /** fires fast execution until the given finishContacts. Be careful. */
   def fireUntilSet[T2 <: T](start: Contact[T2], finishContacts: Set[Contact[_]], name: String = "") {
-    sb.addLink[T, T2](c, start, RedMapLink[T, T2](finishContacts + start, sb.nextLabel(name, "fire")))
+    sb.addLink[T, T2](c, start, sb.nextLabel(name, "fire"),
+      RedMapLink[T, T2](finishContacts + start))
   }
 
   /** fires fast execution until the given finishContacts. Be careful. */
   def fire[T2 <: T](start: Contact[T2], finishContacts: Contact[_]*) {
-    sb.addLink[T, T2](c, start, RedMapLink[T, T2](finishContacts.toSet + start, sb.nextLabel("", "fire")))
+    sb.addLink[T, T2](c, start, sb.nextLabel("", "fire"),
+      RedMapLink[T, T2](finishContacts.toSet + start))
   }
 
 
@@ -647,7 +660,7 @@ trait SystemBuilderAdv extends SystemBuilderImplicits {
 
 
   def connect[T1, T2 >: T1](c1: Contact[T1], c2: Contact[T2], name: String = "") = {
-    sb.addLink(c1, c2, new NopLink[T1, T2](name))
+    sb.addLink(c1, c2, name, new NopLink[T1, T2]())
     c2
   }
 

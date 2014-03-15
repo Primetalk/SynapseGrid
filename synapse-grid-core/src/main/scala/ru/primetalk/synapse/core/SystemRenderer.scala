@@ -27,18 +27,18 @@ trait SystemRenderer {
 	def nodeToString(id : Int, c : Any, nodeKind:NodeKind) : String = (c, nodeKind) match {
 		case (StateHandle(name, _), StateNode) ⇒
 			s"$id [label=${"\""+name+"\""}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
-		case (Link(_,_,NopLink(_)), _) ⇒
-			s"$id [label=${"\"Δt\""}, shape=square]"
-		case (Link(_,_,linkInfo:StatefulFlatMapLink[_,_,_]), _) ⇒
-			s"$id [label=${"\""+linkInfo.name+"\""}, $stateLegacyModification]"
-		case (Link(_,_,StateZipLink(st, name)), _) ⇒
-			s"$id [label=${"\""+name+"\""}, shape=none]"
-		case (Link(_, Contact(_, DevNullContact), linkInfo), _) ⇒
-			s"$id [label=${"\""+linkInfo.name+"\""}, shape=none, fontcolor=red]"
-		case (Link(_, _, linkInfo), _) ⇒
-			s"$id [label=${"\""+linkInfo.name+"\""}, shape=none]"
-		case (StateUpdate(_, st, name, _), _) ⇒
-			s"$id [label=${"\""+name+"\""}, $stateModification]"
+    case (Link(_, _, _, NopLink()), _) ⇒
+      s"$id [label=${"\"Δt\""}, shape=square]"
+    case (Link(_, _, name, _: StatefulFlatMapLink[_, _, _]), _) ⇒
+      s"$id [label=${"\"" + name + "\""}, $stateLegacyModification]"
+    case (Link(_, _, name, StateZipLink(_)), _) ⇒
+      s"$id [label=${"\"" + name + "\""}, shape=none]"
+    case (Link(_, Contact(_, DevNullContact), name, linkInfo), _) ⇒
+      s"$id [label=${"\"" + name + "\""}, shape=none, fontcolor=red]"
+    case (Link(_, _, name, linkInfo), _) ⇒
+    s"$id [label=${"\"" + name + "\""}, shape=none]"
+    case (StateUpdate(_, st, name, _), _) ⇒
+    s"$id [label=${"\""+name+"\""}, $stateModification]"
 		case (os : Component, _) ⇒
 			s"$id [label=${"\""+os.name+"\""}, shape=component]"
 		case (Contact(_, DevNullContact), InnerContact) ⇒
@@ -125,11 +125,11 @@ trait SystemRenderer {
 				elements += linkToString(id, getId(o, InnerContact), c, o)
 			/** state link */
 			c match {
-				case Link(_, _, StateZipLink(st, _)) ⇒
-					elements += slinkToString(getId(st, StateNode), id, st, c)
-				case Link(_, _, StatefulFlatMapLink(_, st, _)) ⇒
-					elements += slinkToString(getId(st, StateNode), id, st, c)
-				case InnerSystem(_, st, _) ⇒
+        case Link(_, _, _, StateZipLink(st)) ⇒
+          elements += slinkToString(getId(st, StateNode), id, st, c)
+        case Link(_, _, _, StatefulFlatMapLink(_, st)) ⇒
+          elements += slinkToString(getId(st, StateNode), id, st, c)
+        case InnerSystem(_, st, _) ⇒
 					elements += slinkToString(getId(st, StateNode), id, st, c)
 				case StateUpdate(_, st, _, _) ⇒
 					elements += suLinkToString(id, getId(st, StateNode), c, st)

@@ -21,7 +21,19 @@ import scala.language.existentials
   * Toolkit for conversion of StaticSystem to RuntimeSystems.
   * The conversion purpose is to convert all Components of a StaticSystem
   * to some kind of Signal processors.
-  */
+ *
+ * As a basis for conversion Partial functions are used. They have convenient pattern-matching
+ * syntax. Also partial functions allow easy chaining.
+ * However, construction of composite converters is a bit tricky:
+ * - ensure recursive conversion of subsystems;
+ * - ensure red links conversion with the whole system in mind.
+ * - extensible to add new component types.
+ * It is possible to employ a slightly different approach. First get the class of a component and then
+ * apply a partial function to the component. This approach however works only for simple one-level
+ * components like links.
+ *
+ *
+ */
 object SystemConvertingSupport {
 
   /** A simple converter is for simple components like links that do not require
@@ -51,6 +63,7 @@ object SystemConvertingSupport {
     * recursive internal structure.
     *
     * The target can be assigned after the object was constructed.
+    * Thus a recursive structure becomes possible.
     */
   class ComponentDescriptorConverterProxy extends ComponentDescriptorConverter {
     private var converter: Option[ComponentDescriptorConverter] = None
@@ -170,7 +183,7 @@ object SystemConverting {
   }
 
   def redLinkToSignalProcessor(converterWithoutRedLinks: ComponentDescriptorConverter): ComponentDescriptorConverter = {
-    case ComponentDescriptor(Link(from, to, RedMapLink(stopContacts, label)), path, system) ⇒
+    case ComponentDescriptor(Link(from, to, label, RedMapLink(stopContacts)), path, system) ⇒
       val rs = systemToRuntimeSystem(path, system, converterWithoutRedLinks, stopContacts)
       val proc = rs.toTotalTrellisProducer// toRuntimeComponentHeavy(system.privateStateHandles)
 			RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
@@ -180,7 +193,7 @@ object SystemConverting {
     * This converter is necessary to avoid infinite conversion of redlinks.
     */
   val redLinkDummy: ComponentDescriptorConverter = {
-    case ComponentDescriptor(Link(from, to, RedMapLink(stopContacts, label)), path, system) ⇒
+    case ComponentDescriptor(Link(from, to, label, RedMapLink(stopContacts)), path, system) ⇒
       RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ (context, List()))
   }
 

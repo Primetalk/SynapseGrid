@@ -122,8 +122,9 @@ trait BasicSystemBuilder {
 //      privateStateHandles += sh
 //    sh
   }
-  def addLink[T1, T2](from:Contact[T1], to:Contact[T2], info: LinkInfo[T1, T2]):Contact[T2] = {
-    val link = Link(from, to, info)
+
+  def addLink[T1, T2](from: Contact[T1], to: Contact[T2], name: String, info: LinkInfo[T1, T2]): Contact[T2] = {
+    val link = Link(from, to, name, info)
     addLink(link)
   }
 
