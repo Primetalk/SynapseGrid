@@ -72,7 +72,7 @@ object SystemConvertingSupport {
 
     def target_=(t: ComponentDescriptorConverter) {
       if (converter.isDefined)
-        throw new IllegalStateException("Cannot change the target of proxy.")
+        throw new IllegalStateException("Cannot change the target of a proxy.")
       converter = Some(t)
     }
 
@@ -80,7 +80,7 @@ object SystemConvertingSupport {
       target.isDefinedAt(t)
 
     def apply(t: ComponentDescriptor): RuntimeComponent =
-      converter.map(_(t)).getOrElse(throw new IllegalStateException("Proxy target is not set."))
+      converter.getOrElse(throw new IllegalStateException("Proxy target is not set."))(t)
 
   }
 
@@ -226,7 +226,9 @@ object SystemConverting {
     * Also the conterter has a proxy-trick for subsystems. The same converter
     * is used to convert high level systems and inner subsystems.
     */
-  def componentToSignalProcessor2(rsToTtp: RuntimeSystemToTotalTrellisProducerConverter, simpleConverters: ComponentDescriptorConverter*): ComponentDescriptorConverter = {
+  def componentToSignalProcessor2(
+                                   rsToTtp: RuntimeSystemToTotalTrellisProducerConverter,
+                                   simpleConverters: ComponentDescriptorConverter*): ComponentDescriptorConverter = {
     val combinedConverter = new ComponentDescriptorConverterProxy
 
     val inner = innerSystemToSignalProcessor(combinedConverter, rsToTtp)

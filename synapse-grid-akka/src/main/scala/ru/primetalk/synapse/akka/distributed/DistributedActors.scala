@@ -15,7 +15,9 @@ package ru.primetalk.synapse.akka.distributed
 import akka.actor._
 import ru.primetalk.synapse.core.StaticSystem
 import ru.primetalk.synapse.core
+import ru.primetalk.synapse.akka.InternalSignals
 import ru.primetalk.synapse.akka.ActorInnerSubsystem
+import scala.Some
 
 /**
  * Deploys a single part of a distributed system that can run over a few hosts.
@@ -26,6 +28,7 @@ object DistributedActors {
     */
   type HostLayout = HostId => ActorPath
 
+  /** Collection of relations between hostId and system paths. */
   type DeploymentDescriptor = Vector[(HostId, List[core.SystemPath])]
 
   //  case class SubsystemPath(hostId:HostId, path:)
@@ -35,6 +38,7 @@ object DistributedActors {
    ----------------------------------------------
 
    */
+
   /**
    * Describes system's remote location.
    *
@@ -64,14 +68,18 @@ object DistributedActors {
   def actorInnerSubsystems2(component: core.Component): List[(core.SystemPath, core.Component)] =
     actorInnerSubsystems(component).map(p => (p._1.reverse, p._2))
 
+  def systemPathToActorName(path: core.SystemPath) =
+    path.mkString("_")
+
   /**
    * Creates all routers for the system.
    * @param s the system to create routers
+   * @return collection of SystemPath -> ActorRef - routers for every InnerActorSubsystem.
    */
-  def createRouters(s: StaticSystem)(context: ActorRefFactory) {
-    val actorNames = actorInnerSubsystems2(s).map(_._1.mkString("_"))
-    actorNames.foreach(actorName => context.actorOf(Props[RouterBecome], actorName))
-  }
+  def createRouters(s: StaticSystem)(context: ActorRefFactory) =
+    actorInnerSubsystems2(s).map(p =>
+      (p._1, context.actorOf(Props[RouterBecome], systemPathToActorName(p._1))))
+
 
   def pathsForThisHost(deployment: DeploymentDescriptor, thisHost: HostId) = deployment.toMap.getOrElse(thisHost, Nil).toSet
 
@@ -79,6 +87,34 @@ object DistributedActors {
     val actorComponents = actorInnerSubsystems2(s).filter(p => pathsForThisHost.contains(p._1))
     //    context.actorOf(Props())
   }
+
+  /**
+   *
+   * @param actorRefFactory the factory to create actors at
+   * @param hostId identifier of the current host
+   * @param supervisorStrategy supervisor strategy
+   */
+  class Actors(actorRefFactory: ActorRefFactory,
+               hostId: HostId,
+               system: StaticSystem,
+               supervisorStrategy: SupervisorStrategy
+               //              =
+               //              defaultSupervisorStrategy
+               ,
+               outputFun: Option[InternalSignals => Any] =
+               None) {
+
+    val routers = createRouters(system)(actorRefFactory).toMap
+    //    : ActorRef =
+    //  /** Converts top level system to top level actor. */
+    //  def toActorTree(actorRefFactory: ActorRefFactory,
+    //                  supervisorStrategy:SupervisorStrategy =
+    //                  defaultSupervisorStrategy)(path:List[String], system: StaticSystem, outputFun:Option[InternalSignals => Any] = None): ActorRef =
+    //    actorRefFactory.actorOf(Props(
+    //      new StaticSystemActor(path,system, outputFun, supervisorStrategy)),
+    //      system.name)
+  }
+
 }
 
 /**

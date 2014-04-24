@@ -5,8 +5,8 @@
       <configuration>
         <option name="compileOrder" value="ScalaThenJava" />
         <option name="compilerLibraryLevel" value="Global" />
-        <option name="compilerLibraryName" value="scala-compiler-2.10.2" />
-        <option name="compilerOptions" value="-feature" />
+        <option name="compilerLibraryName" value="scala-compiler-2.10.4" />
+        <option name="compilerOptions" value="-target:jvm-1.6" />
         <option name="deprecationWarnings" value="true" />
         <option name="uncheckedWarnings" value="true" />
       </configuration>
@@ -28,12 +28,12 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="synapse-grid-akka" exported="" />
     <orderEntry type="module" module-name="synapse-grid-rx" exported="" />
-    <orderEntry type="library" exported="" name="Gradle: scala-library-2.10.4-RC2" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: junit-4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: scalatest_2.10-1.9.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: hamcrest-core-1.3" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: scala-actors-2.10.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: scala-reflect-2.10.0" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: scala-library-2.10.4" level="project" />
   </component>
 </module>
 

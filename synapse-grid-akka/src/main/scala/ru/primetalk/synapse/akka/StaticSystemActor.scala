@@ -125,7 +125,7 @@ object StaticSystemActor {
     val actorInnerSubsystemConverter: ComponentDescriptorConverter = {
       case ComponentDescriptor(ActorInnerSubsystem(subsystem, supervisorStrategy), path1, _) =>
         val actorRef = actorRefFactory.actorOf(Props(
-          new StaticSystemActor(path1,subsystem, None, supervisorStrategy)),
+          new StaticSystemActor(path1, subsystem, None, supervisorStrategy)),
 					subsystem.name)
 				RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal) => {
 					actorRef.tell(signal, self)
@@ -136,7 +136,9 @@ object StaticSystemActor {
 
     val converter = {
       val c =
-        SystemConverting.componentToSignalProcessor2(_.toTotalTrellisProducer, RuntimeComponent.linkToRuntimeComponent, actorInnerSubsystemConverter)
+        SystemConverting.componentToSignalProcessor2(_.toTotalTrellisProducer,
+          RuntimeComponent.linkToRuntimeComponent,
+          actorInnerSubsystemConverter)
       //      c += actorInnerSubsystemConverter
       c
     }

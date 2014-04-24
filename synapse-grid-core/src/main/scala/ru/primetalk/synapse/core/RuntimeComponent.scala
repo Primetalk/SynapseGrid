@@ -76,8 +76,6 @@ case class RuntimeComponentMultiState(
 
 object RuntimeComponent {
 
-  //  import SystemConvertingSupport._
-
   val linkToRuntimeComponent: PartialFunction[Component, RuntimeComponent] = {
     case Link(from, to, name, FlatMapLink(f)) ⇒
       RuntimeComponentFlatMap(name, from, to, {
@@ -86,6 +84,10 @@ object RuntimeComponent {
           val res = fun(signal.data)
           res.map(new Signal(to, _)).toList
       })
+    case Link(from, to, name, NopLink()) ⇒
+      RuntimeComponentFlatMap(name, from, to,
+        (signal) ⇒ List(new Signal(to, signal.data))
+      )
     case Link(from, to, name, StatefulFlatMapLink(f, pe)) ⇒
       RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe, {
         (value, signal) ⇒
@@ -93,10 +95,6 @@ object RuntimeComponent {
           val (nState, nDataSeq) = fun(value, signal.data)
           (nState, nDataSeq.toList.map(new Signal(to, _)))
       })
-    case Link(from, to, name, NopLink()) ⇒
-      RuntimeComponentFlatMap(name, from, to,
-        (signal) ⇒ List(new Signal(to, signal.data))
-      )
     case Link(from, to, name, StateZipLink(pe)) ⇒
       RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe, {
         (value, signal) ⇒

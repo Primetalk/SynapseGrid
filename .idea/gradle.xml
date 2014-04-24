@@ -9,6 +9,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/synapse-frames" />
             <option value="$PROJECT_DIR$/synapse-grid-akka" />
             <option value="$PROJECT_DIR$/synapse-grid-concurrent" />
             <option value="$PROJECT_DIR$/synapse-grid-core" />

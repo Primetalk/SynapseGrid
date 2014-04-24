@@ -1,4 +1,3 @@
-import org.gradle.plugins.signing.Sign
 gradle.taskGraph.whenReady { taskGraph ->
     if (enableSigning && taskGraph.allTasks.any { it instanceof Sign }) {
         // Use Java 6's console to read from the console (no good for a CI environment)
@@ -244,3 +243,8 @@ project(':synapse-grid-examples') {
     }
 }
 
+project(':synapse-frames') {
+    dependencies {
+
+    }
+}
