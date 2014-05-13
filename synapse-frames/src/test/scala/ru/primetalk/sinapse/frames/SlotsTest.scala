@@ -23,9 +23,48 @@ class SlotsTest extends FunSuite {
     val ps = name :: SNil
     val pv = name := "Vasya"
     val ei = pv :: EmptySlotSeqValueBuilder
+
+    trait Named {
+      val name = slot[String]("name")
+    }
+
+    object Person extends Named {
+      val maritalStatus = slot[Boolean]("maritalStatus")
+      val maritalPartner = slot[String]("maritalPartner")
+    }
+
+    object Registrar extends Named
+
+    val marry =
+      (Person.name := "Maria") ::
+        (Person.name := "Vasya") ::
+        (Registrar.name := "ЗАГС Петроградского района") ::
+        EmptySlotSeqValueBuilder
+
     //    val i1 = pv :: ei
     //    val name = Prope
     //    val i1 =
+    def handleCompileTime(marryInfo: marry.type) {
+      val wife = marryInfo.head.value
+      val husband = marryInfo.tail.head.value
+      val registrar = marryInfo.tail.tail.head.value
+
+      val maritalStatusW =
+        (Person.name := wife) ::
+          (Person.maritalStatus := true) ::
+          (Person.maritalPartner := husband) ::
+          EmptySlotSeqValueBuilder
+
+      val maritalStatusH =
+        (Person.name := husband) ::
+          (Person.maritalStatus := true) ::
+          (Person.maritalPartner := wife) ::
+          EmptySlotSeqValueBuilder
+
+      //      PersonDb.save(maritalStatusW)
+      //      PersonDb.save(maritalStatusH)
+    }
+
   }
 
 }

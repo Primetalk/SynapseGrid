@@ -26,8 +26,11 @@ object slots {
     def :=(value: Type) = SlotValue(this, value)
   }
 
+  type SlotIdExistential = SlotId[_]
+
   case class SlotValue[T, S <: SlotId[T]](slotId: S, value: T)
 
+  type SlotValueExistential = SlotValue[T, S] forSome {type T; type S <: SlotId[T]}
   /** Sequence of properties. */
   sealed trait SlotSeq {
     self =>
@@ -56,7 +59,8 @@ object slots {
   type SNil = SNil.type
 
   case class ::[P <: SlotId0, PS <: SlotSeq](slotId: P, tail: PS) extends SlotSeq {
-    type SlotUnion = PS#SlotUnion with P
+    type SlotUnion = P with PS#SlotUnion
+
     type Record = types.::[P#Type, PS#Record]
 
     def slots: List[SlotId0] = slotId :: tail.slots
@@ -73,8 +77,17 @@ object slots {
     /** values of the result. */
     def values: SlotSeq1#Record
 
+    /** pairs for runtime processing */
+    def list: List[SlotValueExistential]
+
+    private
+    lazy val map = list.map(sv => (sv.slotId: SlotId0, sv.value)).toMap
+
+    def get[SlotType <: SlotId[_]](slotId: SlotType)(implicit ev: SlotSeq1#SlotUnion <:< SlotType) = ???
+
     def ::[T, S1 <: SlotId[T]](slotValue: SlotValue[T, S1]) =
       PairSlotSeqValueBuilder[T, S1, self.type](slotValue, self)
+
 
   }
 
@@ -87,15 +100,29 @@ object slots {
     def slotSeq: SlotSeq1 = SNil
 
     def values: SlotSeq1#Record = HNil
+
+    def list: List[SlotValueExistential] = Nil
   }
 
-  case class PairSlotSeqValueBuilder[T, S1 <: SlotId[T], I <: SlotSeqValueBuilder](slotValue: SlotValue[T, S1], rest: I) {
+  case class PairSlotSeqValueBuilder[T, S1 <: SlotId[T], I <: SlotSeqValueBuilder](head: SlotValue[T, S1], tail: I) extends SlotSeqValueBuilder {
     type SlotSeq1 = S1 :: I#SlotSeq1
 
-    def slotSeq: SlotSeq1 = (slotValue.slotId :: rest.slotSeq).asInstanceOf[SlotSeq1]
+    def slotSeq: SlotSeq1 = (head.slotId :: tail.slotSeq).asInstanceOf[SlotSeq1]
 
-    def values: SlotSeq1#Record = (slotValue.value :: rest.values).asInstanceOf[SlotSeq1#Record]
+    def values: SlotSeq1#Record = (head.value :: tail.values).asInstanceOf[SlotSeq1#Record]
+
+    def list: List[SlotValueExistential] = head :: tail.list
   }
 
+
+  case class SlotDelta[T: Numeric, S <: SlotId[T]](slotId: S, delta: T) {
+    def addTo(oldValue: SlotValue[T, S]) =
+      SlotValue(slotId, implicitly[Numeric[T]].plus(oldValue.value, delta))
+  }
+
+  implicit class SlotValueEx[T: Numeric, S <: SlotId[T]](slotValue: SlotValue[T, S]) {
+    def +(delta: T) =
+      SlotValue(slotValue.slotId, implicitly[Numeric[T]].plus(slotValue.value, delta))
+  }
 
 }
