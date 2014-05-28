@@ -13,32 +13,33 @@
 package ru.primetalk.synapse.rx
 
 import ru.primetalk.synapse.core.{Signal, Contact, DynamicSystem}
-import rx.lang.scala.{Observable, Observer}
-import rx.lang.scala.subjects.PublishSubject
+import rx.lang.scala.{Observable, Observer, Subject}
 
-class DynamicSystemRx(ds:DynamicSystem){
+class DynamicSystemRx(ds: DynamicSystem) {
   private
   val spRx = new SimpleSignalProcessorRx(ds.receive)
 
   private
-  def inputRx[T](c:Contact[T]):Observer[T] = {
-    val s = PublishSubject[T]()
+  def inputRx[T](c: Contact[T]): Observer[T] = {
+    val s = rx.lang.scala.Subject[T]()
     s.map(data => Signal(c, data)).subscribe(spRx.rxInput)
     s
   }
 
   private
-  def outputRx[T](contact:Contact[T]):Observable[T] = {
-    val s = PublishSubject[T]()
+  def outputRx[T](contact: Contact[T]): Observable[T] = {
+    val s = Subject[T]()
     spRx.rxOutput.filter(_.contact == contact).map(_.data.asInstanceOf[T]).subscribe(s)
     s
   }
+
   private
   val rxInputs = ds.inputContacts.map(c => (c, inputRx(c))).toMap[Contact[_], Observer[_]]
 
   private
   val rxOutputs = ds.outputContacts.map(c => (c, outputRx(c))).toMap[Contact[_], Observable[_]]
 
-  def rxInput[T](c:Contact[T]):Observer[T] = rxInputs(c).asInstanceOf[Observer[T]]
-  def rxOutput[T](c:Contact[T]):Observable[T] = rxOutputs(c).asInstanceOf[Observable[T]]
+  def rxInput[T](c: Contact[T]): Observer[T] = rxInputs(c).asInstanceOf[Observer[T]]
+
+  def rxOutput[T](c: Contact[T]): Observable[T] = rxOutputs(c).asInstanceOf[Observable[T]]
 }

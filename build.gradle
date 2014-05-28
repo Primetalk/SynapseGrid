@@ -1,3 +1,7 @@
+// Troubleshooting:
+// gradle OutOfMemoryError: PermGen space:
+// JAVAOPTS="-Xmx1024M -XX:MaxPermSize=512M"
+
 gradle.taskGraph.whenReady { taskGraph ->
     if (enableSigning && taskGraph.allTasks.any { it instanceof Sign }) {
         // Use Java 6's console to read from the console (no good for a CI environment)
@@ -33,19 +37,18 @@ ext {
 // The artifacts should appear in Maven Central.
 //
 
-    aVersion = '1.3.2-SNAPSHOT'
+    aVersion = '1.3.3-SNAPSHOT'
     enableSigning = false
-//    aVersion = '1.3.1'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.3.2'//'1.2.0-SNAPSHOT'
 //    enableSigning = true
 
 
-
     scalaMajorVersion = '2.10'
-    scalaFullVersion = "${scalaMajorVersion}.3"
-    akkaVersion = '2.1.4'
-    slf4j = "org.slf4j:slf4j-api:1.7.2"
-    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:1.2.4"
-    rxDep = "com.netflix.rxjava:rxjava-scala:0.15.1"
+    scalaFullVersion = "${scalaMajorVersion}.4"
+    akkaVersion = '2.3.3'
+    slf4j = "org.slf4j:slf4j-api:1.7.7"
+    shapelessDep = "com.chuusai:shapeless_${scalaFullVersion}:2.0.0"
+    rxDep = "com.netflix.rxjava:rxjava-scala:0.18.3"
 }
 
 allprojects {
@@ -83,7 +86,7 @@ subprojects {
         testCompile "junit:junit:4.11"
         testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
     }
-    
+
     // making source.jar
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
@@ -95,7 +98,7 @@ subprojects {
         classifier = 'javadoc'
         from javadoc.destinationDir
     }
-    
+
     // adding source.jar and javadoc.jar to artifacts
     artifacts {
         archives jar
@@ -103,7 +106,6 @@ subprojects {
         archives sourcesJar
         archives javadocJar
     }
-
 
 /*  publishing {
         publications {
@@ -122,15 +124,15 @@ subprojects {
         }
     }
 */
-    
+
     configurations {
-		deployerJars
-	}
-	
-	dependencies {
-		deployerJars "org.apache.maven.wagon:wagon-http:2.2"
-	}
-    
+        deployerJars
+    }
+
+    dependencies {
+        deployerJars "org.apache.maven.wagon:wagon-http:2.2"
+    }
+
     uploadArchives {
         repositories {
             mavenDeployer {
@@ -145,13 +147,14 @@ subprojects {
 //				}
                 beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
                 pom.project {
+                    artifactId "${project.name}_${scalaMajorVersion}"
                     packaging 'jar'
                     description 'SynapseGrid is a framework for constructing reactive real-time immutable data flow systems. ' +
                             '-core contains everything to run a single-threaded system, ' +
                             '-akka contains everything to run systems over Akka actors, ' +
                             '-slf4j - enables logging, ' +
                             '-concurrent - running systems directly over ExecutorContext without the need for Akka, ' +
-                            '-examples - a few test systems.'
+                            '-examples - a few test systems. Also there are -frames - a framework for types construction with meta information.'
                     url 'https://github.com/Primetalk/SynapseGrid'
                     parent {
                         groupId 'org.sonatype.oss'
@@ -181,7 +184,9 @@ subprojects {
                             name 'Pavel Popov'
                             email 'popov@primetalk.ru'
                         }
+
                     }
+
                     scm {
                         url 'https://github.com/Primetalk/SynapseGrid'
                         connection 'scm:git:git@github.com:Primetalk/SynapseGrid.git'

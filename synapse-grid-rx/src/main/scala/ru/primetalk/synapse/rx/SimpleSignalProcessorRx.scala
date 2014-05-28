@@ -13,22 +13,21 @@
 package ru.primetalk.synapse.rx
 
 import ru.primetalk.synapse.core._
-import rx.lang.scala.subjects.PublishSubject
 import ru.primetalk.synapse.core.Signal
-import rx.lang.scala.{Observable, Observer}
+import rx.lang.scala.{Observable, Observer, Subject}
 import scala.util.Try
 
-class SimpleSignalProcessorRx(sp:SimpleSignalProcessor){
+class SimpleSignalProcessorRx(sp: SimpleSignalProcessor) {
   private
-  val rxInputSubject = PublishSubject[Signal[_]]()
+  val rxInputSubject = Subject[Signal[_]]()
   private
-  val rxOutputSubject = PublishSubject[Signal[_]]()
-  rxInputSubject.subscribe{s =>
+  val rxOutputSubject = Subject[Signal[_]]()
+  rxInputSubject.subscribe { s =>
     val res = Try(sp(s))
     res.foreach(_.foreach(rxOutputSubject.onNext))
-    res.recover{ case (e:Throwable) => rxOutputSubject.onError(e)}
+    res.recover { case (e: Throwable) => rxOutputSubject.onError(e)}
   }
 
-  val rxInput:Observer[Signal[_]] = rxInputSubject
-  val rxOutput:Observable[Signal[_]] = rxOutputSubject
+  val rxInput: Observer[Signal[_]] = rxInputSubject
+  val rxOutput: Observable[Signal[_]] = rxOutputSubject
 }

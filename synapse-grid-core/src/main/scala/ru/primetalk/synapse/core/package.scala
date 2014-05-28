@@ -239,13 +239,16 @@ package object core extends SystemBuilderImplicits2 {
   List[(SystemPathReversed, Component)] = {
     def components0(component: Component, path: SystemPathReversed):
     List[(SystemPathReversed, Component)] =
-      (path, component) :: (
+      (component.name :: path, component) :: (
         component match {
           case c: ComponentWithInternalStructure =>
             val s = c.toStaticSystem
-            val name = if (c.isInstanceOf[Named]) c.asInstanceOf[Named].name else ""
+            val name = c match {
+              case n: Named => n.name;
+              case _ => ""
+            } //if (c.isInstanceOf[Named]) c.asInstanceOf[Named].name else ""
             val path2 = name :: path
-            s.components.flatMap(s => components0(s, path2))
+            s.components.flatMap(c => components0(c, path2))
           case _ =>
             Nil
         }
