@@ -10,14 +10,14 @@
  *
  * Created: 25.04.14, zhizhelev
  */
-package ru.primetalk.sinapse.frames
+package ru.primetalk.synapse.frames
 
 import org.scalatest.FunSuite
 
 class SlotsTest extends FunSuite {
 
-  import slots._
   import SlotsOntology._
+  import slots._
 
   test("slots test") {
     val ps = name :: SNil

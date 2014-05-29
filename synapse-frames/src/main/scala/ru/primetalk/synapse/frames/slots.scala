@@ -10,7 +10,7 @@
  *
  * Created: 11.05.14, zhizhelev
  */
-package ru.primetalk.sinapse.frames
+package ru.primetalk.synapse.frames
 
 import types._
 
@@ -83,7 +83,8 @@ object slots {
     private
     lazy val map = list.map(sv => (sv.slotId: SlotId0, sv.value)).toMap
 
-    def get[SlotType <: SlotId[_]](slotId: SlotType)(implicit ev: SlotSeq1#SlotUnion <:< SlotType) = ???
+    def get[SlotType <: SlotId[_]](slotId: SlotType)(implicit ev: SlotSeq1#SlotUnion <:< SlotType) =
+      map(slotId).asInstanceOf[SlotType#Type]
 
     def ::[T, S1 <: SlotId[T]](slotValue: SlotValue[T, S1]) =
       PairSlotSeqValueBuilder[T, S1, self.type](slotValue, self)

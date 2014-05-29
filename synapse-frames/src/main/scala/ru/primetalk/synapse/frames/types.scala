@@ -10,7 +10,7 @@
  *
  * Created: 11.05.14, zhizhelev
  */
-package ru.primetalk.sinapse.frames
+package ru.primetalk.synapse.frames
 
 object types {
 
