@@ -21,12 +21,15 @@ import ru.primetalk.synapse.core.SystemConvertingSupport._
 import ru.primetalk.synapse.core.RuntimeComponentMultiState
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import akka.event.Logging
+import org.slf4j.LoggerFactory
 
 /**
  * Deploys a single part of a distributed system that can run over a few hosts.
  */
 object DistributedActors {
 
+  val log = LoggerFactory.getLogger(getClass)
   /** Where the root of each host is placed.
     */
   type HostLayout = HostId => ActorPath
@@ -103,7 +106,7 @@ object DistributedActors {
     actorInnerSubsystems2(s).map(_._1).map {
       path =>
         val actorName = systemPathToActorName(path)
-        println("router " + actorName + " for " + path)
+        log.info("router " + actorName + " for " + path)
         (path, context.actorOf(Props[RouterBecome], actorName))
     }
 
@@ -148,11 +151,9 @@ object DistributedActors {
 
     def receive = {
       case msg =>
-        println("HostActor: " + msg)
+        log.info("HostActor: " + msg)
     }
 
-    println("HostActor.routers = " + routers)
-    println("HostActor.actorSubsystems = " + actorSubsystems)
 
     //    def connect
   }
@@ -174,11 +175,11 @@ object DistributedActors {
         // TODO: obtain ActorRef for better performance
         val childRouterPath = realm.getRouterPath(path1 ++ List(subsystem.name))
         val childRouterSelection = actorRefFactory.actorSelection(childRouterPath)
-        println(s"actorInnerSubsystemConverter childRouterPath=$childRouterPath; childRouterSelection=$childRouterSelection")
+        log.info(s"actorInnerSubsystemConverter childRouterPath=$childRouterPath; childRouterSelection=$childRouterSelection")
         childRouterSelection ! "hello"
 
         RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal) => {
-          println("rcms: " + signal)
+          log.info("Signal to inner actor system: " + signal + " to " + childRouterSelection)
           childRouterSelection.tell(signal, self)
           (context, List())
         })
@@ -247,14 +248,15 @@ case object Unregister extends RouterCommand
   * the system that has registered with the router.
   */
 class RouterBecome extends Actor {
-  println("RouterBecome[" + self.path + "] created")
+  val log = Logging(context.system, this)
+  log.info("RouterBecome[" + self.path + "] created")
   def receive = {
     case Register(actor) =>
 
-      println("RouterBecome: " + self.path + " received " + Register(actor))
+      log.info("RouterBecome: " + self.path + " received " + Register(actor))
       context.become {
         case m =>
-          println("RouterBecome[" + self.path + "](" + actor + "): received " + m)
+          log.info("RouterBecome.recieve[" + self.path + "](" + actor + "): received " + m)
           actor forward m
       }
   }
@@ -269,14 +271,17 @@ class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
                              override val outputFun: Option[InternalSignals => Any] = None,
                              override val supervisorStrategy: SupervisorStrategy,
                              val realm: DistributedActors.Realm) extends AbstractStaticSystemActor {
-  println("ActorForSystemOneLevel: " + self.path)
+  log.info("ActorForSystemOneLevel: " + self.path)
   lazy val parentSystemRef: Option[ActorRef] =
     if (systemPath.isEmpty) // for the root system.
       None
     else {
       implicit val timeout = Timeout(5 seconds)
+      val name = realm.getRouterPath(systemPath.take(systemPath.size - 1))
+      val actorSelection = context.actorSelection(name)
+      log.info(s"Name=$name, sel=$actorSelection")
       Some(Await.result(
-        context.actorSelection(DistributedActors.systemPathToActorName(systemPath.take(systemPath.size - 1))).resolveOne(),
+        actorSelection.resolveOne(),
         atMost = timeout.duration
       ))
     }

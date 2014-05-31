@@ -54,7 +54,9 @@ with ComponentWithInternalStructure {
       case component: ComponentWithInternalStructure => component.toStaticSystem
     }
 
-  def toStaticSystem = this
+  def toStaticSystem =
+    this
+
 }
 
 /** Dynamic system. The state is kept inside the system. All complex logic

@@ -40,10 +40,21 @@ case object StateContact extends ContactStyle
  * Basis point of connection of other elements.
  * If auxiliary then it is drawn on the graph as a simple little circle
  */
-class Contact[T](name1: String = null, val contactStyle: ContactStyle = NormalContact) extends Named {
+class Contact[T](name1: String = null, val contactStyle: ContactStyle = NormalContact) extends Named with Serializable {
   val name = if (name1 == null) getClass.getSimpleName.replaceAllLiterally("$", "") else name1
 
   override def toString = "C(" + name + ")"
+
+  //  @throws(classOf[IOException])
+  //  private def writeObject(out: ObjectOutputStream): Unit = {
+  //    out.defaultWriteObject();
+  //    out.writeString(name)
+  //  }
+  //
+  //  @throws(classOf[IOException])
+  //  private def readObject(in: ObjectInputStream): Unit = {
+  //    in.defaultReadObject();
+  //  }
 }
 
 object Contact {

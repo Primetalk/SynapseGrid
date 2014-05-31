@@ -97,7 +97,10 @@ package object core extends SystemBuilderImplicits2 {
 
     def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts, _.toTotalTrellisProducer)
 
-
+    def allContacts =
+      system.processedContacts ++
+        system.staticSubsystems.flatMap(_.processedContacts) ++
+        system.outputContacts
   }
 
   implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)

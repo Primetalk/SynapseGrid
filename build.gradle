@@ -46,9 +46,10 @@ ext {
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.4"
     akkaVersion = '2.3.3'
-    slf4j = "org.slf4j:slf4j-api:1.7.7"
+    slf4j = 'org.slf4j:slf4j-api:1.7.7'
+    logback = 'ch.qos.logback:logback-classic:1.1.2'
     shapelessDep = "com.chuusai:shapeless_${scalaFullVersion}:2.0.0"
-    rxDep = "com.netflix.rxjava:rxjava-scala:0.18.3"
+    rxDep = 'com.netflix.rxjava:rxjava-scala:0.18.3'
 }
 
 allprojects {
@@ -217,6 +218,8 @@ project(':synapse-grid-akka') {
         compile "com.typesafe.akka:akka-actor_$scalaMajorVersion:$akkaVersion"
         compile "com.typesafe.akka:akka-remote_$scalaMajorVersion:$akkaVersion"
         compile "com.typesafe.akka:akka-slf4j_$scalaMajorVersion:$akkaVersion"
+
+        testCompile logback
     }
 }
 
