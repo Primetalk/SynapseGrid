@@ -28,6 +28,36 @@ object StaticSystem {
   type State = Map[Contact[_], Any]
 }
 
+trait ContactsIndex {
+  /** All contacts, available at this system's level.
+    * This is a stable sequence of contacts
+    * */
+  def contacts: Seq[Contact[_]]
+
+  lazy val reversedContactsIndex = contacts.toSeq.zipWithIndex.toMap[Contact[_], Int]
+
+  /** Signal should be from the current system. */
+  def convertSignalToSignalDist(s: Signal[_]): SignalDist = {
+    val id: Int = reversedContactsIndex(s.contact)
+    SignalDist(id, s.data.asInstanceOf[java.lang.Object])
+  }
+
+  def convertSignalDistToSignal(s: SignalDist): Signal[_] = {
+    val c = contacts(s.contactId).asInstanceOf[Contact[AnyRef]]
+    Signal(c, s.data)
+  }
+
+  def apply(s: Signal[_]): SignalDist = convertSignalToSignalDist(s)
+
+  def apply(s: SignalDist): Signal[_] = convertSignalDistToSignal(s)
+}
+
+trait Indexed {
+  def index: ContactsIndex
+}
+
+case class ContactsIndexImpl(contacts: Seq[Contact[_]]) extends ContactsIndex
+
 case class StaticSystem(
                          /** A subset of contacts */
                          inputs: List[Contact[_]],
@@ -37,7 +67,8 @@ case class StaticSystem(
                          name: String) extends Named
 with Component
 with Stateful[Map[Contact[_], Any]]
-with ComponentWithInternalStructure {
+with ComponentWithInternalStructure
+with Indexed {
   lazy val inputContacts = inputs.toSet
   lazy val outputContacts = outputs.toSet
   /** Contacts that should be processed by SignalsProcessor. */
@@ -57,6 +88,15 @@ with ComponentWithInternalStructure {
   def toStaticSystem =
     this
 
+  /** All contacts, available at this system's level.
+    * This is a stable sequence of contacts
+    * */
+  lazy val index: ContactsIndex = ContactsIndexImpl(
+    (inputs.toSeq ++
+      components.flatMap(_.inputContacts).toSeq ++
+      components.flatMap(_.outputContacts).toSeq ++
+      outputContacts.toSeq).toArray.toSeq
+  )
 }
 
 /** Dynamic system. The state is kept inside the system. All complex logic
@@ -65,7 +105,8 @@ case class DynamicSystem(
                           inputContacts: Set[Contact[_]],
                           outputContacts: Set[Contact[_]],
                           name: String,
-                          receive: SimpleSignalProcessor) extends Named with Component {}
+                          receive: SimpleSignalProcessor,
+                          index: ContactsIndex) extends Named with Component with Indexed {}
 
 
 /** The system can be embedded into some other static system. It has state. */

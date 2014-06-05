@@ -34,13 +34,13 @@ class DynamicSystemActor(path: List[String], system: DynamicSystem) extends Esca
     MDC.put("akkaSource", "" + self.path)
     val results = ls.flatMap(system.receive)
     if (!results.isEmpty)
-      context.parent ! InternalSignals(path, results)
+      context.parent ! InternalSignalsDist(path, results.map(system.index.convertSignalToSignalDist))
   }
 
   val processSignals =
     if (system.inputContacts.contains(SenderInput)) // the check is done at the beginning.
       (ls: List[Signal[_]]) ⇒
-        innerProcessSignals(Signal(SenderInput, sender) :: ls)
+        innerProcessSignals(Signal(SenderInput, sender()) :: ls)
     else
       innerProcessSignals _
 
@@ -53,12 +53,18 @@ class DynamicSystemActor(path: List[String], system: DynamicSystem) extends Esca
   def receive = LoggingReceive {
     case s@Signal(_, _) ⇒
       processSignals(s :: Nil)
-    case InternalSignals(systemPath, signals) =>
-      processSignals(signals)
-    case Tick ⇒
-      processSignals(Signal(CurrentTimeMsInput, System.currentTimeMillis) :: Nil)
+    case InternalSignalsDist(systemPath, signalsDist) =>
+
+      processSignals(
+        systemPath.reverse match {
+          case Nil =>
+            signalsDist.map(sd => system.index(sd))
+          case _ =>
+            throw new NotImplementedError("Processing signals for innermost systems is not implemented " + systemPath)
+        }
+      )
     case nonSignalMessage ⇒
-      val s = Signal(NonSignalWithSenderInput, (sender, nonSignalMessage))
+      val s = Signal(NonSignalWithSenderInput, (sender(), nonSignalMessage))
       processSignals(s :: Nil)
   }
 

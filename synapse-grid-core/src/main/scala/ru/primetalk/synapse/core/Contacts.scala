@@ -39,6 +39,13 @@ case object StateContact extends ContactStyle
 /**
  * Basis point of connection of other elements.
  * If auxiliary then it is drawn on the graph as a simple little circle
+ *
+ * NB: the contact is not very well serializable. After deserialization
+ * we obtain a different instance of the contact. But in most cases the comparison is done by
+ * referential equality (.eq) and it won't do well.
+ *
+ * In synapse-grid-akka there is a solution for Contact serializations.
+ * @see ru.primetalk.synapse.akka.ContactSerializer.
  */
 class Contact[T](name1: String = null, val contactStyle: ContactStyle = NormalContact) extends Named with Serializable {
   val name = if (name1 == null) getClass.getSimpleName.replaceAllLiterally("$", "") else name1

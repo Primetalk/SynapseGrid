@@ -26,12 +26,13 @@ class DistributedTest extends FunSuite {
   /** The simple system that does nothing.
     */
   class NoOpSystem extends BaseTypedSystem("child") {
-    val in = input[String]("in")
-    val out = output[String]("out")
+    val inChild = input[String]("inChild")
+    val outChild = output[String]("outChild")
 
     protected override
     def defineSystem(implicit sb: SystemBuilder) {
-      in >> out
+      inChild.foreach(n => println("child.in: " + n))
+      inChild.map("Hello, " + _) >> outChild
     }
   }
 
@@ -46,9 +47,9 @@ class DistributedTest extends FunSuite {
     def defineSystem(implicit sb: SystemBuilder) {
       new ActorSystemBuilderOps().addActorSubsystem(child)
       in.foreach(n => println("parent.in: " + n))
-      in >> child.in
-      child.out >> out
-      child.out.foreach(n => println("Hello, " + n))
+      in >> child.inChild
+      child.outChild >> out //possibly send answer output to sender of the original signal (or design rx-java interoperability). If send to sender - don't forget to store original sender.
+      child.outChild.foreach(n => println("Answer: " + n))
     }
   }
 
@@ -133,23 +134,25 @@ class DistributedTest extends FunSuite {
     try {
 
       val descriptor: DeploymentDescriptor = Vector(
-        h1 -> List(List("ParentSystem")),
-        h2 -> List(List("ParentSystem", "child"))
+        List(List("ParentSystem")) -> h1.toActorPath,
+        List(List("ParentSystem", "child")) -> h2.toActorPath,
+        List(List()) -> h1.toActorPath
       )
 
       val realm = DistributedActors.Realm(root, descriptor)
 
       val escalate = ru.primetalk.synapse.akka.defaultSupervisorStrategy
+      //      val testing1 = akka1.actorOf(Props(new ClientTestingActor()), "client")
       // h1 contains root app system.
+
       val parent1 = akka1.actorOf(Props(new HostActor(h1, realm, escalate, None)), h1.hostActorName)
       val parent2 = akka2.actorOf(Props(new HostActor(h2, realm, escalate, None)), h2.hostActorName)
 
       log.info("start")
       Thread.sleep(1000)
-      parent2 ! "Message to host 2"
       val selection = akka1.actorSelection(realm.getRouterPath(List("ParentSystem")))
       selection ! Signal(parentSystem.in, "World")
-      Thread.sleep(2000)
+      Thread.sleep(4000)
       log.info("end")
     } finally {
       akka1.shutdown()

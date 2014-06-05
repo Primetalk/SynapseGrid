@@ -97,10 +97,8 @@ package object core extends SystemBuilderImplicits2 {
 
     def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts, _.toTotalTrellisProducer)
 
-    def allContacts =
-      system.processedContacts ++
-        system.staticSubsystems.flatMap(_.processedContacts) ++
-        system.outputContacts
+    def allContacts = system.index.contacts
+
   }
 
   implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
@@ -250,7 +248,7 @@ package object core extends SystemBuilderImplicits2 {
               case n: Named => n.name;
               case _ => ""
             } //if (c.isInstanceOf[Named]) c.asInstanceOf[Named].name else ""
-            val path2 = name :: path
+          val path2 = name :: path
             s.components.flatMap(c => components0(c, path2))
           case _ =>
             Nil

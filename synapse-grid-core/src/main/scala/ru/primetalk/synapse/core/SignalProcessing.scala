@@ -24,8 +24,15 @@ import scala.annotation.tailrec
   * */
 object TrellisContact extends Contact[List[Signal[_]]]
 
+sealed trait SubsystemDirectSignal0 {
+  val subsystemName: String
+}
+
 /** An encapsulation of the signal that targets a subsystem's internal contact. */
-case class SubsystemDirectSignal(subsystemName:String, signal:Signal[_])
+case class SubsystemDirectSignal(subsystemName: String, signal: Signal[_]) extends SubsystemDirectSignal0
+
+case class SubsystemDirectSignalDist(subsystemName: String, signal: SignalDist) extends SubsystemDirectSignal0
+
 /** This contact is used to process signals of internal system.
   *
   * In asynchronous execution the resulting signal should come
@@ -34,7 +41,10 @@ case class SubsystemDirectSignal(subsystemName:String, signal:Signal[_])
   * we package asynchronous result into
   * Signal(SubsystemSpecialContact, SubsystemDirectSignal( name, actual resulting signal))
   */
-object SubsystemSpecialContact extends Contact[SubsystemDirectSignal]
+object SubsystemSpecialContact extends Contact[SubsystemDirectSignal0]
+
+/** This contact is used to process answers of internal system. */
+object SubsystemSpecialAnswerContact extends Contact[SubsystemDirectSignal0]
 
 /** A runtime system is a representation of the system that is
   * organized by Contacts and is ready for direct processing of TrellisElement.*/

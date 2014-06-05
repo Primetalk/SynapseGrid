@@ -14,21 +14,25 @@
 package ru.primetalk.synapse.akka
 
 
-import ru.primetalk.synapse.core.Signal
+import ru.primetalk.synapse.core.SignalDist
 import scala.language.postfixOps
 
+
 /**
-  * Signals from subsystems.
-  *
-  * @param path can be used to store the position of the system (the path to the system)
+ * Signals defined within a subsystem.
+ *
+ * SignalDist contains contactId defined within the child system.
+ *
+ * @param path can be used to store the position of the system (the path to the system)
   *                  or a signal processor for output signals.
   *                  It is stored by parent system and is handled exclusively by parent.
-  *
   */
-case class InternalSignals(path:List[String], list: List[Signal[_]])
+case class InternalSignalsDist(path: List[String], list: List[SignalDist])
 
 ///** Signals from external systems.*/
 // @deprecated("Signals should come one by one", "01.07.2013")
 //case class Signals(list: List[Signal[_]])
+
+
 
 

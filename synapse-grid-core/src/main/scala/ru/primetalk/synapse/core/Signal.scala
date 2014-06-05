@@ -13,21 +13,28 @@
 package ru.primetalk.synapse.core
 
 import scala.language.implicitConversions
+
 /**
  * Signal is a pair of contact and data on it.
  */
 case class Signal[T](contact: Contact[T], data: T) {
   def _1 = contact
+
   def _2 = data
 }
 
+/** Signal for remote transfer. The contacts are not quite well serializable (see Contact for details).
+  */
+case class SignalDist(contactId: Int, data: AnyRef)
+
 /** Sometimes signals are processed as a batch of data on the same contact.
-  * The Batch can be used interchangeably with List[Signal[T]]*/
+  * The Batch can be used interchangeably with List[Signal[T]] */
 case class Batch[T](contact: Contact[T], data: List[T]) {
   def _1 = contact
+
   lazy val signals = data.map(Signal(contact, _))
 }
 
 object Batch {
-  implicit def batchToSignals[T](b:Batch[T]) = b.signals
+  implicit def batchToSignals[T](b: Batch[T]) = b.signals
 }

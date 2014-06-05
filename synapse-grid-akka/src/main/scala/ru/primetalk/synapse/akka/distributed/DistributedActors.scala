@@ -21,7 +21,7 @@ import ru.primetalk.synapse.core.SystemConvertingSupport._
 import ru.primetalk.synapse.core.RuntimeComponentMultiState
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import akka.event.Logging
+import akka.event.{LoggingReceive, Logging}
 import org.slf4j.LoggerFactory
 
 /**
@@ -35,7 +35,7 @@ object DistributedActors {
   type HostLayout = HostId => ActorPath
 
   /** Collection of relations between hostId and system paths. */
-  type DeploymentDescriptor = Vector[(HostId, List[core.SystemPath])]
+  type DeploymentDescriptor = Vector[(List[core.SystemPath], ActorPath)]
 
   def systemPathToActorName(path: core.SystemPath) =
     path.mkString("_")
@@ -49,26 +49,26 @@ object DistributedActors {
     /** Looks up for the systemPath in the deployment descriptor
       * and constructs an appropriate ActorPath for it. */
     def getRouterPath(systemPath: core.SystemPath): ActorPath = {
-      val hosts = deployment.filter(_._2.contains(systemPath)).map(_._1)
+      val hosts = deployment.filter(_._1.contains(systemPath)).map(_._2)
       if (hosts.size != 1)
         throw new IllegalStateException(s"For path=$systemPath found != 1 hosts.")
       val host = hosts(0)
-      host.toActorPath / systemPathToActorName(systemPath)
+      host / systemPathToActorName(systemPath)
     }
 
     /** Looks up for the systemPath in the deployment descriptor
       * and constructs an appropriate ActorPath for it. */
     def getSystemImplPath(systemPath: core.SystemPath): ActorPath = {
-      val hosts = deployment.filter(_._2.contains(systemPath)).map(_._1)
+      val hosts = deployment.filter(_._1.contains(systemPath)).map(_._2)
       if (hosts.size != 1)
         throw new IllegalStateException(s"For path=$systemPath found != 1 hosts.")
       val host = hosts(0)
-      host.toActorPath / ("subsystem_" + systemPathToActorName(systemPath))
+      host / ("subsystem_" + systemPathToActorName(systemPath))
     }
 
     /** List paths of systems that should be created at this host. */
-    def pathsForHost(host: HostId) =
-      deployment.toMap.getOrElse(host, Nil).toSet
+    def pathsForHost(host: ActorPath) =
+      deployment.filter(_._2 == host).flatMap(_._1).toSet
 
   }
 
@@ -116,17 +116,18 @@ object DistributedActors {
     *
     * The subsystems send signals to other actors via router actors that should have been
     * created. */
-  def createSubsystems(s: core.Component, pathsForThisHost: Set[core.SystemPath])(context: ActorRefFactory,
-                                                                                  supervisorStrategy: SupervisorStrategy =
-                                                                                  defaultSupervisorStrategy,
-                                                                                  outputFun: Option[InternalSignals => Any] = None, realm: Realm) = {
+  def createSubsystems(s: core.Component,
+                       pathsForThisHost: Set[core.SystemPath])(context: ActorRefFactory,
+                                                               supervisorStrategy: SupervisorStrategy =
+                                                               defaultSupervisorStrategy,
+                                                               outputFun: Option[InternalSignalsDist => Any] = None, realm: Realm) = {
     for {
       (path, actorSubsystem) <- actorInnerSubsystems2(s)
       if pathsForThisHost.contains(path) // we construct only those subsystems that should be instantiated at this host
       subsystem = actorSubsystem.subsystem
       actorName = "subsystem_" + systemPathToActorName(path)
     } yield
-      context.actorOf(Props(new ActorForSystemOneLevel(path, subsystem, outputFun, supervisorStrategy, realm)), actorName)
+      context.actorOf(Props(new ActorForSystemOneLevel(path, subsystem, supervisorStrategy, realm)), actorName)
   }
 
   /**
@@ -141,15 +142,18 @@ object DistributedActors {
   class HostActor(hostId: HostId,
                   realm: Realm,
                   supervisorStrategy: SupervisorStrategy,
-                  outputFun: Option[InternalSignals => Any] = None) extends Actor {
+                  outputFun: Option[List[Signal[_]] => Any] = None) extends Actor {
 
-    val pathsForThisHost = realm.pathsForHost(hostId)
+    val pathsForThisHost = realm.pathsForHost(hostId.toActorPath)
 
     val routers = createRouters(realm.topLevelSystem)(context).toMap
 
-    val actorSubsystems = createSubsystems(realm.topLevelSystem, pathsForThisHost)(context, supervisorStrategy, outputFun, realm) //realm.topLevelSystem, pathsForThisHost)(context, realm)
+    val actorSubsystems = createSubsystems(realm.topLevelSystem, pathsForThisHost)(context, supervisorStrategy, None, realm) //realm.topLevelSystem, pathsForThisHost)(context, realm)
 
     def receive = {
+      case InternalSignalsDist(_, list) =>
+
+        outputFun.foreach(_(list.map(sd => realm.topLevelSystem.index(sd))))
       case msg =>
         log.info("HostActor: " + msg)
     }
@@ -176,11 +180,12 @@ object DistributedActors {
         val childRouterPath = realm.getRouterPath(path1 ++ List(subsystem.name))
         val childRouterSelection = actorRefFactory.actorSelection(childRouterPath)
         log.info(s"actorInnerSubsystemConverter childRouterPath=$childRouterPath; childRouterSelection=$childRouterSelection")
-        childRouterSelection ! "hello"
+        //        childRouterSelection ! "hello"
 
         RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal) => {
-          log.info("Signal to inner actor system: " + signal + " to " + childRouterSelection)
-          childRouterSelection.tell(signal, self)
+          val sd = subsystem.index(signal)
+          log.info("To inner actor system: {Signal=" + signal + ", SignalDist =" + sd + "} to " + childRouterSelection)
+          childRouterSelection.tell(sd, self)
           (context, List())
         })
     }
@@ -249,16 +254,16 @@ case object Unregister extends RouterCommand
   */
 class RouterBecome extends Actor {
   val log = Logging(context.system, this)
-  log.info("RouterBecome[" + self.path + "] created")
-  def receive = {
-    case Register(actor) =>
 
+  //  log.info("RouterBecome[" + self.path + "] created")
+  def receive = LoggingReceive {
+    case Register(actor) =>
       log.info("RouterBecome: " + self.path + " received " + Register(actor))
-      context.become {
+      context.become(LoggingReceive {
         case m =>
           log.info("RouterBecome.recieve[" + self.path + "](" + actor + "): received " + m)
           actor forward m
-      }
+      })
   }
 }
 
@@ -268,9 +273,11 @@ class RouterBecome extends Actor {
   * message to another host for instanse. */
 class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
                              override val system: StaticSystem,
-                             override val outputFun: Option[InternalSignals => Any] = None,
+                             //                             override val outputFun: Option[InternalSignalsDist => Any] = None,
                              override val supervisorStrategy: SupervisorStrategy,
                              val realm: DistributedActors.Realm) extends AbstractStaticSystemActor {
+  override val outputFun: Option[InternalSignalsDist => Any] = None
+
   log.info("ActorForSystemOneLevel: " + self.path)
   lazy val parentSystemRef: Option[ActorRef] =
     if (systemPath.isEmpty) // for the root system.
@@ -302,3 +309,13 @@ class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
     selfRouter ! Register(self)
   }
 }
+
+class ClientTestingActor(fun: List[Signal[_]] => Any) extends Actor {
+  def receive = {
+    case _ =>
+  }
+}
+
+
+
+

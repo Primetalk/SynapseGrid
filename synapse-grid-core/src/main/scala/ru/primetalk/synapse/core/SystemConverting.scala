@@ -252,13 +252,18 @@ object SystemConverting {
 
 
   // TODO: replace with dispatching red links
-  def subsystemDirectProcessor(procs:Map[String, RuntimeComponent]):RuntimeComponent =
+  def subsystemDirectProcessor(procs: Map[String, (RuntimeComponent, ContactsIndex)]): RuntimeComponent =
     RuntimeComponentMultiState("subsystemDirectProcessor", List(), {
       case (context, outerSignal) =>
         outerSignal match {
-          case Signal(SubsystemSpecialContact, SubsystemDirectSignal(subsystemName, signal)) ⇒
-            procs.get(subsystemName).
-              map {
+          case Signal(SubsystemSpecialContact, sig0: SubsystemDirectSignal0) ⇒
+            val rt = procs.get(sig0.subsystemName)
+            rt.map { rc =>
+              val signal = sig0 match {
+                case SubsystemDirectSignal(_, s) => s
+                case SubsystemDirectSignalDist(_, d) => rc._2(d)
+              }
+              rc._1 match {
                 case RuntimeComponentMultiState(_, _, f) =>
                   f(context, signal)
                 case RuntimeComponentFlatMap(_, _, _, f) =>
@@ -268,8 +273,21 @@ object SystemConverting {
                   val s = context(sh)
                   val r = f(s, signal)
                   (context.updated(sh, r._1), r._2)
-              }.
+              }
+            }.
                 getOrElse((context, List()))
+          case Signal(SubsystemSpecialAnswerContact, sig0: SubsystemDirectSignal0) ⇒
+            println("SubsystemSpecialAnswerContact: " + sig0)
+            val rt = procs.get(sig0.subsystemName)
+            println("SubsystemSpecialAnswerContact.rt: " + rt)
+            val signals = rt.map { rc =>
+              sig0 match {
+                case SubsystemDirectSignal(_, s) => s
+                case SubsystemDirectSignalDist(_, d) => rc._2(d)
+              }
+            }.toList
+            println("SubsystemSpecialAnswerContact.signals: " + signals)
+            (context, signals)
           case _ =>
             throw new IllegalArgumentException(s"Wrong data on contact SubsystemSpecialContact: $outerSignal.")
         }
@@ -292,13 +310,19 @@ object SystemConverting {
 			).toList
     val innerSystems =
       processors.collect{
-        case (comp:ComponentWithInternalStructure, proc) => (comp.toStaticSystem.name, proc)
+        case (comp: ComponentWithInternalStructure, proc) =>
+          val s = comp.toStaticSystem
+          (s.name, (proc, s.index))
       }
     val contactsProcessors2 =
       if(innerSystems.isEmpty)
         contactsProcessors
-      else
-        (SubsystemSpecialContact,subsystemDirectProcessor(innerSystems.toMap)) :: contactsProcessors //(p => (SubsystemSpecialContact, p))
+      else {
+        val subsystemProc = subsystemDirectProcessor(innerSystems.toMap)
+        (SubsystemSpecialContact, subsystemProc) ::
+          (SubsystemSpecialAnswerContact, subsystemProc) ::
+          contactsProcessors //(p => (SubsystemSpecialContact, p))
+      }
 
 
 		val lst = contactsProcessors2.groupBy(_._1).map(p ⇒ (p._1, p._2.map(_._2)))
@@ -346,7 +370,7 @@ object SystemConverting {
   def toDynamicSystem(path: List[String],
                       system: StaticSystem,
                       rsToTtp:RuntimeSystemToTotalTrellisProducerConverter) =
-    new DynamicSystem(system.inputContacts, system.outputContacts, system.name, toSimpleSignalProcessor(path, system, rsToTtp))
+    new DynamicSystem(system.inputContacts, system.outputContacts, system.name, toSimpleSignalProcessor(path, system, rsToTtp), system.index)
 
 
 }

@@ -15,6 +15,7 @@ package ru.primetalk.synapse.akka.distributed
 import akka.actor.{Extension, ExtensionId, ExtendedActorSystem}
 import akka.serialization._
 import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.akka.SpecialActorContacts._
 
 
 /** Contacts are serialized as long identifiers.
@@ -32,19 +33,30 @@ class ContactsSerializer(system: ExtendedActorSystem) extends Serializer {
 
   def identifier = 43751
 
-  def toBinary(obj: AnyRef): Array[Byte] =
+  private object Codes {
+    val internalSignals = 1
+    val signal = 2
+    val contact = 3
+  }
+
+  def toBinary(obj: AnyRef): Array[Byte] = {
+    //    val out = new ObjectOutputStream
     obj match {
+      //      case InternalSignals(path, signals) =>
+      //
       case Signal(c, data: AnyRef) =>
         val contactArr = toBinary(c)
         val serializer = akkaSerialization.findSerializerFor(data)
         val dataArr = serializer.toBinary(data)
-        contactArr ++ dataArr
+        val res = contactArr ++ dataArr
+        res
       case c: Contact[_] =>
         val id = contactsExtension.getContactId(c)
         Array[Byte](id.toByte, (id >> 8).toByte, (id >> 16).toByte, (id >> 24).toByte)
       case msg =>
         throw new IllegalArgumentException(s"Cannot serialize $msg")
     }
+  }
 
   def fromBinary(bytes: Array[Byte],
                  clazz: Option[Class[_]]): AnyRef = {
@@ -63,7 +75,8 @@ class ContactsSerializer(system: ExtendedActorSystem) extends Serializer {
 case class ContactsIndex(system: StaticSystem) {
   private var n = 0L
   val (nToContact, contactToN) = {
-    val arr = (Set(SubsystemSpecialContact) ++ system.allInputContacts).toArray
+    val arr = (Set(NonSignalWithSenderInput, SubsystemSpecialContact, CurrentTimeMsInput) ++
+      system.allInputContacts).toArray
     val cn = arr.toSeq.zipWithIndex
     (arr, cn.toMap[Contact[_], Int])
   }
