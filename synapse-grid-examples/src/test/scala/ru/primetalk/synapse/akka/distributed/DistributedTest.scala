@@ -16,7 +16,6 @@ import org.scalatest.FunSuite
 import akka.actor.{ActorSystem, Props}
 import ru.primetalk.synapse.core._
 import com.typesafe.config.ConfigFactory
-import DistributedActors._
 import ru.primetalk.synapse.akka._
 import akka.serialization.SerializationExtension
 import org.slf4j.LoggerFactory
@@ -133,13 +132,11 @@ class DistributedTest extends FunSuite {
 
     try {
 
-      val descriptor: DeploymentDescriptor = Vector(
+      val realm = RealmDescriptor(root, Vector(
         List(List("ParentSystem")) -> h1.toActorPath,
         List(List("ParentSystem", "child")) -> h2.toActorPath,
         List(List()) -> h1.toActorPath
-      )
-
-      val realm = DistributedActors.Realm(root, descriptor)
+      ))
 
       val escalate = ru.primetalk.synapse.akka.defaultSupervisorStrategy
       //      val testing1 = akka1.actorOf(Props(new ClientTestingActor()), "client")
