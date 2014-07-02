@@ -45,6 +45,10 @@ ext {
 
     scalaMajorVersion = '2.10'
     scalaFullVersion = "${scalaMajorVersion}.4"
+
+    scalaLib = "org.scala-lang:scala-library:${scalaFullVersion}"
+    scalaReflect = "org.scala-lang:scala-reflect:${scalaFullVersion}"
+
     akkaVersion = '2.3.3'
     slf4j = 'org.slf4j:slf4j-api:1.7.7'
     logback = 'ch.qos.logback:logback-classic:1.1.2'
@@ -82,7 +86,7 @@ subprojects {
     targetCompatibility = 1.6
 
     dependencies {
-        compile "org.scala-lang:scala-library:${scalaFullVersion}"
+        compile scalaLib
 
         testCompile "junit:junit:4.11"
         testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
@@ -253,6 +257,7 @@ project(':synapse-grid-examples') {
 
 project(':synapse-frames') {
     dependencies {
+        compile scalaReflect
 
     }
 }
