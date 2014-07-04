@@ -13,7 +13,7 @@
 package ru.primetalk.synapse.frames
 
 import scala.language.{existentials, higherKinds, implicitConversions, reflectiveCalls}
-import scala.reflect.runtime.universe._
+import scala.reflect._
 
 /**
  * Relations are named binary relations between two types.
@@ -39,31 +39,32 @@ import scala.reflect.runtime.universe._
  */
 trait RelationsDefs {
 
-  case class Rel[+L, R](name: String)
+  case class Rel[-L, R](name: String)
 
 }
 
 trait SchemaDefs extends RelationsDefs {
 
   /** an aggregate of a relation with the schema for the right part. */
-  case class RelWithRSchema[L, R](rel: Rel[L, R], schema: Schema[R])
+  case class RelWithRSchema[-L, R](rel: Rel[L, R], schema: Schema[R])
 
   sealed trait Schema[T]
 
-  case class SimpleSchema[T](implicit typeTag: TypeTag[T]) extends Schema[T]
+  case class SimpleSchema[T](implicit val classTag: ClassTag[T]) extends Schema[T]
 
   case class RecordSchema[T](props: Seq[RelWithRSchema[T, _]]) extends Schema[T] {
     lazy val map = props.map(p => (p.rel.name, p.schema.asInstanceOf[Schema[_]])).toMap[String, Schema[_]]
   }
+
+  sealed class Tag[Tg, T]
+
+  case class TaggedSchema[Tg, T](tag: Tg, schema: Schema[T]) extends Schema[Tag[Tg, T]]
 
   case class CollectionSchema[T](elementSchema: Schema[T]) extends Schema[Seq[T]]
 
 
   case class Tuple2Schema[T1, T2](_1: Schema[T1], _2: Schema[T2]) extends Schema[(T1, T2)]
 
-  final class Tag[Tg, T]
-
-  case class TaggedSchema[Tg, T](tag: Tg, schema: Schema[T]) extends Schema[Tag[Tg, T]]
 
   case class AnnotatedSchema[T](schema: Schema[T])(annotations: Any*) extends Schema[T]
 
@@ -118,6 +119,8 @@ trait InstanceDefs extends SchemaDefs {
     type SchemaType = CustomSchema[T, CS]
   }
 
+  case class InstanceWithMeta[T](i: Instance[T], s: Schema[T])
+
 }
 
 /** operations with schema instances. */
@@ -126,7 +129,7 @@ trait OperationsDefs extends InstanceDefs {
 
   implicit def toExistentialRelWithRSchema[T, T2](rel: Rel[T, T2])(implicit schema: Schema[T2]): RelWithRSchema[T, _] = RelWithRSchema(rel, schema)
 
-  implicit def toSimpleSchema[T <: AnyVal](implicit typeTag: TypeTag[T]) = SimpleSchema[T]()
+  implicit def toSimpleSchema[T <: AnyVal](implicit classTag: ClassTag[T]) = SimpleSchema[T]()
 
   implicit class RecordInstanceOps[T](i: RecordInstance[T]) {
     def set[T2, Anc >: T](prop: Rel[Anc, T2], value: Instance[T2]): RecordInstance[T] =
@@ -150,25 +153,72 @@ trait OperationsDefs extends InstanceDefs {
       schema.props.map(_.rel.name).forall(i.keySet.contains)
   }
 
-  def isMatching[T](i: Instance[T], schema: Schema[T]): Boolean = {
-    def isMatching0(p: (Instance[T], Schema[T])): Boolean = {
-      ???
+  /** Checks match and returns Seq() if matches. Otherwise returns the list of non-matching
+    * elements. */
+  def isMatching[T](i: Instance[T], schema: Schema[T]): Seq[InstanceWithMeta[_]] = {
+    def isMatching0(p: InstanceWithMeta[_]): Seq[InstanceWithMeta[_]] = p match {
+      case InstanceWithMeta(i: SimpleInstance[_], s: SimpleSchema[_]) =>
+
+        if (s.classTag.runtimeClass.isPrimitive //TODO: implement for primitive types
+          || s.classTag.runtimeClass.isAssignableFrom(i.value.getClass))
+          Seq()
+        else
+          Seq(p)
+      case InstanceWithMeta(RecordInstance(values), s@RecordSchema(props)) =>
+        for {
+          v <- values
+          if s.map.contains(v._1)
+          iwm = InstanceWithMeta(v._2.asInstanceOf[Instance[Any]], s.map(v._1).asInstanceOf[Schema[Any]])
+          matchResult <- isMatching0(iwm)
+        } yield matchResult
+      case _ =>
+        throw new IllegalArgumentException("isMatching is not implemented for " + p)
     }
-    isMatching0((i, schema))
+    isMatching0(InstanceWithMeta(i, schema))
   }
 
   implicit class SchemaEx[T](schema: Schema[T]) {
     def /[T2, Anc >: T](prop: Rel[Anc, T2]): Schema[T2] = schema match {
       case r: RecordSchema[T] => r.map(prop.name).asInstanceOf[Schema[T2]]
-      case _ => throw new IllegalArgumentException(s"cannot proceed hierachically with other schemas except RecordSchema: $schema ")
+      case _ => throw new IllegalArgumentException(s"cannot proceed hierachically with other schemas except RecordSchema or CollectionSchema: $schema ")
     }
 
-    def element = schema match {
-      case cs: CollectionSchema[T] => cs.elementSchema.asInstanceOf[Schema[T]]
-      case _ => throw new IllegalArgumentException(s"cannot proceed hierachically with other schemas except RecordSchema: $schema ")
-    }
   }
 
+  object Element
+
+  implicit class SchemaEx2[T](schema: Schema[Seq[T]]) {
+
+    def /(e: Element.type): Schema[T] = schema match {
+      case cs: CollectionSchema[T] => cs.elementSchema.asInstanceOf[Schema[T]]
+      case _ => throw new IllegalArgumentException(s"Cannot proceed hierachically with other schemas except CollectionSchema: $schema ")
+    }
+
+  }
+
+  /** Aligns raw tuple (list of any) with the schema. Every data element
+    * is attached to apropriate property of the schema. */
+  def align[T](data: List[Any], schema: Schema[T]): Instance[T] = {
+    def align0(data: List[Any], schema: Schema[_]): (Instance[T], List[Any]) = schema match {
+      case s: SimpleSchema[_] =>
+        (SimpleInstance(data.head.asInstanceOf[T]), data.tail)
+      case RecordSchema(propSeq) =>
+
+        def align1(data: List[Any], props: List[RelWithRSchema[_, _]], res: List[(String, Instance[T])]): (List[(String, Instance[_])], List[Any]) = props match {
+          case Nil => (res.reverse, data)
+          case RelWithRSchema(rel, schema) :: ptail =>
+            val (prop, rest) = align0(data, schema)
+            align1(rest, ptail, (rel.name, prop) :: res)
+        }
+        val (props, tail) = align1(data, propSeq.toList, Nil)
+        (RecordInstance(props.toSeq), tail)
+      case _ => throw new IllegalArgumentException(s"Alignment is not implemented for $schema")
+    }
+    val (res, tail) = align0(data, schema)
+    if (!tail.isEmpty)
+      throw new IllegalArgumentException(s"$data cannot be aligned to $schema completely")
+    res
+  }
 }
 
 object relations

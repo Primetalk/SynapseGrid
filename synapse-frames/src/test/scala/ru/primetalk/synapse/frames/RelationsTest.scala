@@ -52,8 +52,15 @@ class RelationsTest extends FunSuite {
   val globalSchema = record[Global](boxes)
 
   test("Get meta test") {
-    val widthSchema = (globalSchema / boxes).element / width
+    val widthSchema = globalSchema / boxes / Element / width
     assert(widthSchema === SimpleSchema[Int])
   }
 
+  test("b2 matches box schema") {
+    assert(isMatching(b2, boxSchema) === Seq())
+  }
+  test("align raw data") {
+    val b3 = align(List(10, 20), boxSchema)
+    assert(b3 === b1)
+  }
 }
