@@ -63,4 +63,10 @@ class RelationsTest extends FunSuite {
     val b3 = align(List(10, 20), boxSchema)
     assert(b3 === b1)
   }
+  test("align and unalign") {
+    val b1data = unalign(InstanceWithMeta(b1, boxSchema))
+    assert(b1data === List(10,20) )
+    val b1restored = align(b1data, boxSchema)
+    assert(b1restored === b1)
+  }
 }

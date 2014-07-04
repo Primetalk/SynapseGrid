@@ -48,32 +48,46 @@ trait SchemaDefs extends RelationsDefs {
   /** an aggregate of a relation with the schema for the right part. */
   case class RelWithRSchema[-L, R](rel: Rel[L, R], schema: Schema[R])
 
-  sealed trait Schema[T]
+  sealed trait Schema[T] {
+    def classTag:ClassTag[T]
+  }
 
   case class SimpleSchema[T](implicit val classTag: ClassTag[T]) extends Schema[T]
 
-  case class RecordSchema[T](props: Seq[RelWithRSchema[T, _]]) extends Schema[T] {
+  /** Schema that describes some record with properties. The properties can only belong to
+    * the type T. However, there can be different set of properties.
+   * */
+  case class RecordSchema[T](props: Seq[RelWithRSchema[T, _]])(implicit val classTag: ClassTag[T]) extends Schema[T] {
     lazy val map = props.map(p => (p.rel.name, p.schema.asInstanceOf[Schema[_]])).toMap[String, Schema[_]]
   }
 
   sealed class Tag[Tg, T]
 
-  case class TaggedSchema[Tg, T](tag: Tg, schema: Schema[T]) extends Schema[Tag[Tg, T]]
+  /** the instance is also tagged with the tag.*/
+  case class TaggedSchema[Tg, T](tag: Tg, schema: Schema[T]) extends Schema[Tag[Tg, T]] {
+    def classTag = scala.reflect.classTag[Tag[Tg, T]]
+  }
 
-  case class CollectionSchema[T](elementSchema: Schema[T]) extends Schema[Seq[T]]
+  case class CollectionSchema[T](elementSchema: Schema[T]) extends Schema[Seq[T]] {
+    def classTag = scala.reflect.classTag[Seq[T]]
+  }
 
 
-  case class Tuple2Schema[T1, T2](_1: Schema[T1], _2: Schema[T2]) extends Schema[(T1, T2)]
+  case class Tuple2Schema[T1, T2](_1: Schema[T1], _2: Schema[T2]) extends Schema[(T1, T2)] {
+    def classTag = scala.reflect.classTag[(T1, T2)]
+  }
 
 
-  case class AnnotatedSchema[T](schema: Schema[T])(annotations: Any*) extends Schema[T]
+  case class AnnotatedSchema[T](schema: Schema[T])(annotations: Any*) extends Schema[T]{
+    def classTag = schema.classTag
+  }
 
   //  case class PlainSchema(schemas: List[(TypeTag[T], Schema[T]) forSome {type T}])
 
-  case class Gen1Schema[T, S[T]](tag: Any, schema: Schema[T]) extends Schema[S[T]]
+  case class Gen1Schema[T, S[T]](tag: Any, schema: Schema[T])(implicit val classTag:ClassTag[S[T]]) extends Schema[S[T]]
 
   /** The user may use another way of type description. */
-  case class CustomSchema[T, CS](tag: Any, cs: CS) extends Schema[T]
+  case class CustomSchema[T, CS](tag: Any, cs: CS)(implicit val classTag:ClassTag[T]) extends Schema[T]
 
 
 }
@@ -93,6 +107,9 @@ trait InstanceDefs extends SchemaDefs {
     type SchemaType = RecordSchema[T]
     lazy val map = values.toMap
     lazy val keySet = map.keySet
+    def get[V](rel:Rel[T,V]):Instance[V] =
+      map(rel.name).asInstanceOf[Instance[V]]
+
   }
 
   case class CollectionInstance[T](values: Seq[Instance[T]]) extends Instance[Seq[T]] {
@@ -144,9 +161,9 @@ trait OperationsDefs extends InstanceDefs {
     case _ => throw new IllegalArgumentException(s"$i cannot be simplified")
   }
 
-  def empty[T]: RecordInstance[T] = RecordInstance[T](Seq())
+  def empty[T](implicit classTag:ClassTag[T]): RecordInstance[T] = RecordInstance[T](Seq())
 
-  def record[T](props: RelWithRSchema[T, _]*) = RecordSchema[T](props.toSeq)
+  def record[T](props: RelWithRSchema[T, _]*)(implicit classTag:ClassTag[T]) = RecordSchema[T](props.toSeq)
 
   implicit class RecordSchemaEx[T](schema: RecordSchema[T]) {
     def hasAllProperties(i: RecordInstance[T]) =
@@ -171,12 +188,58 @@ trait OperationsDefs extends InstanceDefs {
           iwm = InstanceWithMeta(v._2.asInstanceOf[Instance[Any]], s.map(v._1).asInstanceOf[Schema[Any]])
           matchResult <- isMatching0(iwm)
         } yield matchResult
+      case InstanceWithMeta(i, AnnotatedSchema(s)) =>
+        isMatching0(InstanceWithMeta(i, s))
       case _ =>
         throw new IllegalArgumentException("isMatching is not implemented for " + p)
     }
     isMatching0(InstanceWithMeta(i, schema))
   }
 
+
+  /** Aligns raw tuple (list of any) with the schema. Every data element
+    * is attached to apropriate property of the schema. */
+  def align[T](data: List[Any], schema: Schema[T]): Instance[T] = {
+    def align0(data: List[Any], schema: Schema[_]): (Instance[T], List[Any]) = schema match {
+      case s: SimpleSchema[_] =>
+        (SimpleInstance(data.head.asInstanceOf[T]), data.tail)
+      case RecordSchema(propSeq) =>
+        def align1(data: List[Any], props: List[RelWithRSchema[_, _]], res: List[(String, Instance[T])]): (List[(String, Instance[_])], List[Any]) = props match {
+          case Nil => (res.reverse, data)
+          case RelWithRSchema(rel, schema) :: ptail =>
+            val (prop, rest) = align0(data, schema)
+            align1(rest, ptail, (rel.name, prop) :: res)
+          case msg :: _ => throw new IllegalArgumentException(s"Alignment is not implemented for $msg")
+        }
+        val (props, tail) = align1(data, propSeq.toList, Nil)
+        (RecordInstance(props.toSeq), tail)
+      case AnnotatedSchema(s) =>
+        align0(data, s)
+      case _ => throw new IllegalArgumentException(s"Alignment is not implemented for $schema")
+    }
+    val (res, tail) = align0(data, schema)
+    if (!tail.isEmpty)
+      throw new IllegalArgumentException(s"$data cannot be aligned to $schema completely")
+    res
+  }
+  /** Aligns raw tuple (list of any) with the schema. Every data element
+    * is attached to apropriate property of the schema. */
+  def unalign[T](data: InstanceWithMeta[T]):List[Any]  = data match {
+      case InstanceWithMeta(SimpleInstance(v), _) =>
+        List(v)
+      case InstanceWithMeta(i@RecordInstance(values), RecordSchema(propSeq)) =>
+        propSeq.toList.flatMap{ case RelWithRSchema(rel, s) =>
+          val value = i.get(rel)
+          unalign(InstanceWithMeta(value, s))
+        }
+      case InstanceWithMeta(i, AnnotatedSchema(s)) =>
+        unalign(InstanceWithMeta(i, s))
+      case _ =>
+        throw new IllegalArgumentException(s"Unalignment is not implemented for $data")
+  }
+
+}
+trait Navigation extends InstanceDefs {
   implicit class SchemaEx[T](schema: Schema[T]) {
     def /[T2, Anc >: T](prop: Rel[Anc, T2]): Schema[T2] = schema match {
       case r: RecordSchema[T] => r.map(prop.name).asInstanceOf[Schema[T2]]
@@ -196,35 +259,12 @@ trait OperationsDefs extends InstanceDefs {
 
   }
 
-  /** Aligns raw tuple (list of any) with the schema. Every data element
-    * is attached to apropriate property of the schema. */
-  def align[T](data: List[Any], schema: Schema[T]): Instance[T] = {
-    def align0(data: List[Any], schema: Schema[_]): (Instance[T], List[Any]) = schema match {
-      case s: SimpleSchema[_] =>
-        (SimpleInstance(data.head.asInstanceOf[T]), data.tail)
-      case RecordSchema(propSeq) =>
-
-        def align1(data: List[Any], props: List[RelWithRSchema[_, _]], res: List[(String, Instance[T])]): (List[(String, Instance[_])], List[Any]) = props match {
-          case Nil => (res.reverse, data)
-          case RelWithRSchema(rel, schema) :: ptail =>
-            val (prop, rest) = align0(data, schema)
-            align1(rest, ptail, (rel.name, prop) :: res)
-        }
-        val (props, tail) = align1(data, propSeq.toList, Nil)
-        (RecordInstance(props.toSeq), tail)
-      case _ => throw new IllegalArgumentException(s"Alignment is not implemented for $schema")
-    }
-    val (res, tail) = align0(data, schema)
-    if (!tail.isEmpty)
-      throw new IllegalArgumentException(s"$data cannot be aligned to $schema completely")
-    res
-  }
 }
-
 object relations
   extends RelationsDefs
   with SchemaDefs
   with InstanceDefs
+  with Navigation
   with OperationsDefs {
 
 }
