@@ -17,15 +17,17 @@ import scala.reflect._
 
 /**
  * Relations are named binary relations between two types.
+ *
  * The types are either artificial classes that form entity hierarchy,
  * or ordinary types that usually serve as values.
  *
- * Two generic arguments allows to do complete type-checked property assignements. Having
+ * Two generic arguments allow to do complete type-checked property assignements. Having
  * left type we know which entity has the property. Having right type we know what kind of
- * property it is. Thus we can represent type checked hierarchical structures that resemble JSON.
+ * property it is. Thus we can represent type checked hierarchical data structures
+ * that resemble JSON.
  *
  * The actual set of properties are described with Schema's. Every schema describes the type T.
- * - if the type is an ordinary type, then schema is SimpleSchema and contains runtime type information (RTTI).
+ * - if the type is an ordinary type, then schema is SimpleSchema and contains only runtime type information (RTTI).
  *
  * - if we want to associate some structured data with the type, we use RecordSchema.
  *
@@ -39,31 +41,72 @@ import scala.reflect._
  */
 trait RelationsDefs {
 
-  case class Rel[-L, R](name: String)
+  /**
+   * An arbitrary relation identifier.
+   **/
+  sealed trait Relation[-L, R]
+
+  /** A single instance of type R can be traversed to
+    * from  an instance of type L using the given name.
+    *
+    * Usually this is referred to as an attribute or a property.
+    * */
+  case class Rel[-L, R](name: String) extends Relation[L, R]
+
+  /** A single instance of type R can be obtained
+    * from an  instance of type L using index.
+    *
+    * Usually this is referred to as a relative identifier of a child instance.
+    * */
+  case class LongId[T](id: Long) extends Relation[Seq[T], T]
+
+  case class IntId[T](id: Int) extends Relation[Seq[T], T]
+
+  /**
+   * A special relation between the collection and its's element.
+   * Can be used when we do not know exact identifier of an object within the collection.
+   * This can be the case when we add elements to a collection, or we are interested
+   * in the schema of elements.
+   **/
+  case class ElemRel[T]() extends Relation[Seq[T], T]
+
+  /** A composition of two relations. */
+  case class Rel2[-L, M, R](_1: Relation[L, M], _2: Relation[M, R]) extends Relation[L, R]
 
 }
 
-trait SchemaDefs extends RelationsDefs {
+trait RelationOps extends RelationsDefs {
+
+  implicit class RelEx[-L, R](r: Relation[L, R]) {
+    def /[R2](r2: Relation[R, R2]): Relation[L, R2] = Rel2[L, R, R2](r, r2)
+  }
+//  implicit class CollectionEx[T](r: Relation[Seq[T], T]) {
+//    def #[R2](r2: Relation[R, R2]): Relation[L, R2] = Rel2[L, R, R2](r, r2)
+//  }
+
+}
+
+trait SchemaDefs extends RelationsDefs with RelationOps {
 
   /** an aggregate of a relation with the schema for the right part. */
   case class RelWithRSchema[-L, R](rel: Rel[L, R], schema: Schema[R])
 
   sealed trait Schema[T] {
-    def classTag:ClassTag[T]
+    def classTag: ClassTag[T]
   }
 
   case class SimpleSchema[T](implicit val classTag: ClassTag[T]) extends Schema[T]
 
   /** Schema that describes some record with properties. The properties can only belong to
     * the type T. However, there can be different set of properties.
-   * */
+    * */
   case class RecordSchema[T](props: Seq[RelWithRSchema[T, _]])(implicit val classTag: ClassTag[T]) extends Schema[T] {
     lazy val map = props.map(p => (p.rel.name, p.schema.asInstanceOf[Schema[_]])).toMap[String, Schema[_]]
   }
 
   sealed class Tag[Tg, T]
 
-  /** the instance is also tagged with the tag.*/
+  /** the instance is also tagged with the tag. */
   case class TaggedSchema[Tg, T](tag: Tg, schema: Schema[T]) extends Schema[Tag[Tg, T]] {
     def classTag = scala.reflect.classTag[Tag[Tg, T]]
   }
@@ -78,16 +121,16 @@ trait SchemaDefs extends RelationsDefs {
   }
 
 
-  case class AnnotatedSchema[T](schema: Schema[T])(annotations: Any*) extends Schema[T]{
+  case class AnnotatedSchema[T](schema: Schema[T])(annotations: Any*) extends Schema[T] {
     def classTag = schema.classTag
   }
 
   //  case class PlainSchema(schemas: List[(TypeTag[T], Schema[T]) forSome {type T}])
 
-  case class Gen1Schema[T, S[T]](tag: Any, schema: Schema[T])(implicit val classTag:ClassTag[S[T]]) extends Schema[S[T]]
+  case class Gen1Schema[T, S[T]](tag: Any, schema: Schema[T])(implicit val classTag: ClassTag[S[T]]) extends Schema[S[T]]
 
   /** The user may use another way of type description. */
-  case class CustomSchema[T, CS](tag: Any, cs: CS)(implicit val classTag:ClassTag[T]) extends Schema[T]
+  case class CustomSchema[T, CS](tag: Any, cs: CS)(implicit val classTag: ClassTag[T]) extends Schema[T]
 
 
 }
@@ -107,7 +150,8 @@ trait InstanceDefs extends SchemaDefs {
     type SchemaType = RecordSchema[T]
     lazy val map = values.toMap
     lazy val keySet = map.keySet
-    def get[V](rel:Rel[T,V]):Instance[V] =
+
+    def get[V](rel: Rel[T, V]): Instance[V] =
       map(rel.name).asInstanceOf[Instance[V]]
 
   }
@@ -140,30 +184,56 @@ trait InstanceDefs extends SchemaDefs {
 
 }
 
-/** operations with schema instances. */
-trait OperationsDefs extends InstanceDefs {
-  implicit def toInstance[T](value: T)(implicit simpleSchema: SimpleSchema[T]) = SimpleInstance[T](value)
+trait SimpleOperationsDefs extends InstanceDefs {
+// this implicit leads to v
+//  implicit def toInstance[T](value: T)(implicit simpleSchema: SimpleSchema[T]) = SimpleInstance[T](value)
 
   implicit def toExistentialRelWithRSchema[T, T2](rel: Rel[T, T2])(implicit schema: Schema[T2]): RelWithRSchema[T, _] = RelWithRSchema(rel, schema)
 
   implicit def toSimpleSchema[T <: AnyVal](implicit classTag: ClassTag[T]) = SimpleSchema[T]()
 
+  implicit def intToIntId[T](id:Int) = IntId[T](id)
+
+  def navigate[E, T](i: Instance[E], path: Relation[E, T]): Instance[T] =
+    (
+      (i, path) match {
+        case (r: RecordInstance[_], p: Rel[_, _]) => r.get(p)
+        case (c: CollectionInstance[_], IntId(id)) => c.values(id)
+        case (_, Rel2(_1, _2)) => navigate(navigate(i, _1), _2)
+        case _ => throw new IllegalArgumentException(s"Couldn't navigate from $i by $path")
+      }
+      ).asInstanceOf[Instance[T]]
+
   implicit class RecordInstanceOps[T](i: RecordInstance[T]) {
     def set[T2, Anc >: T](prop: Rel[Anc, T2], value: Instance[T2]): RecordInstance[T] =
       i.copy(i.values :+(prop.name, value))
+//    def set[T2, Anc >: T](prop: Rel[Anc, T2], value: T2): RecordInstance[T] =
+//      i.copy(i.values :+(prop.name, SimpleInstance(value)))
 
-    def get[T2, Anc >: T](prop: Rel[Anc, T2]) = i.map(prop.name)
+    //    def get[T2, Anc >: T](prop: Rel[Anc, T2]) = i.map(prop.name)
+    //    def get[T2, Anc >: T](path: Relation[Anc, T2]) = path match {
+    //      case r@Rel => get(r)
+    //      case Rel2(_1, _2) =>
+    //        get(_1)
+    //    }
   }
 
+  def simple[T](value:T) = SimpleInstance(value)
   def simpify[T](i: Instance[T]) = i match {
     case SimpleInstance(value) =>
       value.asInstanceOf[T]
     case _ => throw new IllegalArgumentException(s"$i cannot be simplified")
   }
 
-  def empty[T](implicit classTag:ClassTag[T]): RecordInstance[T] = RecordInstance[T](Seq())
+  def empty[T](implicit classTag: ClassTag[T]): RecordInstance[T] = RecordInstance[T](Seq())
 
-  def record[T](props: RelWithRSchema[T, _]*)(implicit classTag:ClassTag[T]) = RecordSchema[T](props.toSeq)
+  def record[T](props: RelWithRSchema[T, _]*)(implicit classTag: ClassTag[T]) = RecordSchema[T](props.toSeq)
+
+  def seq[T](values:Instance[T]*):CollectionInstance[T] =CollectionInstance[T](values.toSeq)
+}
+
+/** operations with schema instances. */
+trait OperationsDefs extends SimpleOperationsDefs {
 
   implicit class RecordSchemaEx[T](schema: RecordSchema[T]) {
     def hasAllProperties(i: RecordInstance[T]) =
@@ -222,24 +292,27 @@ trait OperationsDefs extends InstanceDefs {
       throw new IllegalArgumentException(s"$data cannot be aligned to $schema completely")
     res
   }
+
   /** Aligns raw tuple (list of any) with the schema. Every data element
     * is attached to apropriate property of the schema. */
-  def unalign[T](data: InstanceWithMeta[T]):List[Any]  = data match {
-      case InstanceWithMeta(SimpleInstance(v), _) =>
-        List(v)
-      case InstanceWithMeta(i@RecordInstance(values), RecordSchema(propSeq)) =>
-        propSeq.toList.flatMap{ case RelWithRSchema(rel, s) =>
-          val value = i.get(rel)
-          unalign(InstanceWithMeta(value, s))
-        }
-      case InstanceWithMeta(i, AnnotatedSchema(s)) =>
-        unalign(InstanceWithMeta(i, s))
-      case _ =>
-        throw new IllegalArgumentException(s"Unalignment is not implemented for $data")
+  def unalign[T](data: InstanceWithMeta[T]): List[Any] = data match {
+    case InstanceWithMeta(SimpleInstance(v), _) =>
+      List(v)
+    case InstanceWithMeta(i@RecordInstance(values), RecordSchema(propSeq)) =>
+      propSeq.toList.flatMap { case RelWithRSchema(rel, s) =>
+        val value = i.get(rel)
+        unalign(InstanceWithMeta(value, s))
+      }
+    case InstanceWithMeta(i, AnnotatedSchema(s)) =>
+      unalign(InstanceWithMeta(i, s))
+    case _ =>
+      throw new IllegalArgumentException(s"Unalignment is not implemented for $data")
   }
 
 }
+
 trait Navigation extends InstanceDefs {
+
   implicit class SchemaEx[T](schema: Schema[T]) {
     def /[T2, Anc >: T](prop: Rel[Anc, T2]): Schema[T2] = schema match {
       case r: RecordSchema[T] => r.map(prop.name).asInstanceOf[Schema[T2]]
@@ -260,6 +333,7 @@ trait Navigation extends InstanceDefs {
   }
 
 }
+
 object relations
   extends RelationsDefs
   with SchemaDefs

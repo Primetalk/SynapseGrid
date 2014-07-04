@@ -33,8 +33,8 @@ class RelationsTest extends FunSuite {
 
   val boxSchema = record[Box](width, height)
 
-  val b0 = empty[Box].set(width, 10)
-  val b1 = b0.set(height, 20)
+  val b0 = empty[Box].set(width, simple(10))
+  val b1 = b0.set(height, simple(20))
 
   test("b0 doesn't have all properties of boxSchema") {
     assert(!boxSchema.hasAllProperties(b0))
@@ -43,7 +43,7 @@ class RelationsTest extends FunSuite {
   test("b1 has all properties of boxSchema") {
     assert(boxSchema.hasAllProperties(b1))
   }
-  val b2 = b1.set(longId, 10L)
+  val b2 = b1.set(longId, simple(10L))
   test("b2 has property from parent") {
     assert(simpify(b2.get(longId)) === 10L)
   }
@@ -68,5 +68,15 @@ class RelationsTest extends FunSuite {
     assert(b1data === List(10,20) )
     val b1restored = align(b1data, boxSchema)
     assert(b1restored === b1)
+  }
+
+  val globalInstance: relations.RecordInstance[Global] = empty[Global].set(boxes, seq(b0,b1))
+
+  test("navigation through hierarchy") {
+    val path0width = boxes / 0 / width
+    val path1width = boxes / 1 / width
+    val w0 = navigate(globalInstance, path0width)
+    val w1 = navigate(globalInstance, path1width)
+    assert(w0 === w1)
   }
 }
