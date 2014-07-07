@@ -14,6 +14,7 @@ package ru.primetalk.synapse.frames
 
 import scala.language.{existentials, higherKinds, implicitConversions, reflectiveCalls}
 import scala.reflect._
+import scala.collection.mutable
 
 /**
  * Relations are named binary relations between two types.
@@ -62,6 +63,10 @@ trait RelationsDefs {
 
   case class IntId[T](id: Int) extends Relation[Seq[T], T]
 
+  /** Sometimes we can index elements with their key property and
+    * select using given property value. */
+  case class PropValueId[T, TId](keyProperty: Relation[T, TId], value: TId) extends Relation[Seq[T], T]
+
   /**
    * A special relation between the collection and its's element.
    * Can be used when we do not know exact identifier of an object within the collection.
@@ -80,9 +85,10 @@ trait RelationOps extends RelationsDefs {
   implicit class RelEx[-L, R](r: Relation[L, R]) {
     def /[R2](r2: Relation[R, R2]): Relation[L, R2] = Rel2[L, R, R2](r, r2)
   }
-//  implicit class CollectionEx[T](r: Relation[Seq[T], T]) {
-//    def #[R2](r2: Relation[R, R2]): Relation[L, R2] = Rel2[L, R, R2](r, r2)
-//  }
+
+  //  implicit class CollectionEx[T](r: Relation[Seq[T], T]) {
+  //    def #[R2](r2: Relation[R, R2]): Relation[L, R2] = Rel2[L, R, R2](r, r2)
+  //  }
 
 }
 
@@ -146,10 +152,11 @@ trait InstanceDefs extends SchemaDefs {
     type SchemaType = SimpleSchema[T]
   }
 
-  case class RecordInstance[T](values: Seq[(String, Instance[_])]) extends Instance[T] {
+  case class RecordInstance[T](map: Map[String, Instance[_]]) extends Instance[T] {
     type SchemaType = RecordSchema[T]
-    lazy val map = values.toMap
+    //    lazy val map = values.toMap
     lazy val keySet = map.keySet
+    lazy val values = map.toSeq
 
     def get[V](rel: Rel[T, V]): Instance[V] =
       map(rel.name).asInstanceOf[Instance[V]]
@@ -185,14 +192,14 @@ trait InstanceDefs extends SchemaDefs {
 }
 
 trait SimpleOperationsDefs extends InstanceDefs {
-// this implicit leads to v
-//  implicit def toInstance[T](value: T)(implicit simpleSchema: SimpleSchema[T]) = SimpleInstance[T](value)
+  // this implicit leads to v
+  //  implicit def toInstance[T](value: T)(implicit simpleSchema: SimpleSchema[T]) = SimpleInstance[T](value)
 
   implicit def toExistentialRelWithRSchema[T, T2](rel: Rel[T, T2])(implicit schema: Schema[T2]): RelWithRSchema[T, _] = RelWithRSchema(rel, schema)
 
   implicit def toSimpleSchema[T <: AnyVal](implicit classTag: ClassTag[T]) = SimpleSchema[T]()
 
-  implicit def intToIntId[T](id:Int) = IntId[T](id)
+  implicit def intToIntId[T](id: Int) = IntId[T](id)
 
   def navigate[E, T](i: Instance[E], path: Relation[E, T]): Instance[T] =
     (
@@ -206,9 +213,10 @@ trait SimpleOperationsDefs extends InstanceDefs {
 
   implicit class RecordInstanceOps[T](i: RecordInstance[T]) {
     def set[T2, Anc >: T](prop: Rel[Anc, T2], value: Instance[T2]): RecordInstance[T] =
-      i.copy(i.values :+(prop.name, value))
-//    def set[T2, Anc >: T](prop: Rel[Anc, T2], value: T2): RecordInstance[T] =
-//      i.copy(i.values :+(prop.name, SimpleInstance(value)))
+      i.copy(i.map + ((prop.name, value)))
+
+    //    def set[T2, Anc >: T](prop: Rel[Anc, T2], value: T2): RecordInstance[T] =
+    //      i.copy(i.values :+(prop.name, SimpleInstance(value)))
 
     //    def get[T2, Anc >: T](prop: Rel[Anc, T2]) = i.map(prop.name)
     //    def get[T2, Anc >: T](path: Relation[Anc, T2]) = path match {
@@ -218,18 +226,41 @@ trait SimpleOperationsDefs extends InstanceDefs {
     //    }
   }
 
-  def simple[T](value:T) = SimpleInstance(value)
+  def simple[T](value: T) = SimpleInstance(value)
+
   def simpify[T](i: Instance[T]) = i match {
     case SimpleInstance(value) =>
       value.asInstanceOf[T]
     case _ => throw new IllegalArgumentException(s"$i cannot be simplified")
   }
 
-  def empty[T](implicit classTag: ClassTag[T]): RecordInstance[T] = RecordInstance[T](Seq())
+  def empty[T](implicit classTag: ClassTag[T]): RecordInstance[T] = RecordInstance[T](Map())
 
   def record[T](props: RelWithRSchema[T, _]*)(implicit classTag: ClassTag[T]) = RecordSchema[T](props.toSeq)
 
-  def seq[T](values:Instance[T]*):CollectionInstance[T] =CollectionInstance[T](values.toSeq)
+  def seq[T](values: Instance[T]*): CollectionInstance[T] = CollectionInstance[T](values.toSeq)
+
+  class Builder[T](schema: RecordSchema[T]) {
+    private
+    val map = mutable.Map[String, Instance[_]]()
+
+    def set[T2, Anc >: T](prop: Rel[Anc, T2], value: Instance[T2]) = {
+      if (schema.map.keySet.contains(prop.name))
+        map(prop.name) = value
+      else
+        throw new IllegalArgumentException(s"Schema $schema doesn't contain ${prop.name}")
+      this
+    }
+
+    def toInstance = {
+      val diff = schema.map.keySet -- map.keySet
+      if (diff.isEmpty)
+        RecordInstance[T](map.toMap)
+      else
+        throw new IllegalArgumentException(s"The builder doesn't yet contain the following properties: $diff")
+    }
+  }
+
 }
 
 /** operations with schema instances. */
@@ -251,9 +282,9 @@ trait OperationsDefs extends SimpleOperationsDefs {
           Seq()
         else
           Seq(p)
-      case InstanceWithMeta(RecordInstance(values), s@RecordSchema(props)) =>
+      case InstanceWithMeta(r@RecordInstance(_), s@RecordSchema(props)) =>
         for {
-          v <- values
+          v <- r.values
           if s.map.contains(v._1)
           iwm = InstanceWithMeta(v._2.asInstanceOf[Instance[Any]], s.map(v._1).asInstanceOf[Schema[Any]])
           matchResult <- isMatching0(iwm)
@@ -274,15 +305,18 @@ trait OperationsDefs extends SimpleOperationsDefs {
       case s: SimpleSchema[_] =>
         (SimpleInstance(data.head.asInstanceOf[T]), data.tail)
       case RecordSchema(propSeq) =>
-        def align1(data: List[Any], props: List[RelWithRSchema[_, _]], res: List[(String, Instance[T])]): (List[(String, Instance[_])], List[Any]) = props match {
-          case Nil => (res.reverse, data)
-          case RelWithRSchema(rel, schema) :: ptail =>
-            val (prop, rest) = align0(data, schema)
-            align1(rest, ptail, (rel.name, prop) :: res)
-          case msg :: _ => throw new IllegalArgumentException(s"Alignment is not implemented for $msg")
-        }
+        def align1(data: List[Any],
+                   props: List[RelWithRSchema[_, _]],
+                   res: List[(String, Instance[T])]): (List[(String, Instance[_])], List[Any]) =
+          props match {
+            case Nil => (res.reverse, data)
+            case RelWithRSchema(rel, schema) :: ptail =>
+              val (prop, rest) = align0(data, schema)
+              align1(rest, ptail, (rel.name, prop) :: res)
+            case msg :: _ => throw new IllegalArgumentException(s"Alignment is not implemented for $msg")
+          }
         val (props, tail) = align1(data, propSeq.toList, Nil)
-        (RecordInstance(props.toSeq), tail)
+        (RecordInstance(props.toMap), tail)
       case AnnotatedSchema(s) =>
         align0(data, s)
       case _ => throw new IllegalArgumentException(s"Alignment is not implemented for $schema")
@@ -293,8 +327,8 @@ trait OperationsDefs extends SimpleOperationsDefs {
     res
   }
 
-  /** Aligns raw tuple (list of any) with the schema. Every data element
-    * is attached to apropriate property of the schema. */
+  /** Converts schema-based instance to a raw tuple (list of any).
+    */
   def unalign[T](data: InstanceWithMeta[T]): List[Any] = data match {
     case InstanceWithMeta(SimpleInstance(v), _) =>
       List(v)
@@ -309,6 +343,7 @@ trait OperationsDefs extends SimpleOperationsDefs {
       throw new IllegalArgumentException(s"Unalignment is not implemented for $data")
   }
 
+  def flatten[T](data: InstanceWithMeta[T]): List[Any] = unalign(data)
 }
 
 trait Navigation extends InstanceDefs {

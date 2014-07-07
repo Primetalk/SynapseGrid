@@ -79,4 +79,13 @@ class RelationsTest extends FunSuite {
     val w1 = navigate(globalInstance, path1width)
     assert(w0 === w1)
   }
+
+  val boxBuilder = new Builder(boxSchema)
+  boxBuilder.set(width, simple(10))
+  boxBuilder.set(height, simple(20))
+  val b4 = boxBuilder.toInstance
+  test("builder"){
+    assert(b1 === b4)
+  }
+
 }
