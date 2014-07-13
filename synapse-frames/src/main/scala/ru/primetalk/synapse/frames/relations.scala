@@ -12,9 +12,9 @@
  */
 package ru.primetalk.synapse.frames
 
+import scala.collection.mutable
 import scala.language.{existentials, higherKinds, implicitConversions, reflectiveCalls}
 import scala.reflect._
-import scala.collection.mutable
 
 /**
  * Relations are named binary relations between two types.
@@ -45,7 +45,7 @@ trait RelationsDefs {
   /**
    * An arbitrary relation identifier.
    **/
-  sealed trait Relation[-L, R]
+  trait Relation[-L, R]
 
   /** A single instance of type R can be traversed to
     * from  an instance of type L using the given name.
@@ -63,10 +63,6 @@ trait RelationsDefs {
 
   case class IntId[T](id: Int) extends Relation[Seq[T], T]
 
-  /** Sometimes we can index elements with their key property and
-    * select using given property value. */
-  case class PropValueId[T, TId](keyProperty: Relation[T, TId], value: TId) extends Relation[Seq[T], T]
-
   /**
    * A special relation between the collection and its's element.
    * Can be used when we do not know exact identifier of an object within the collection.
@@ -78,6 +74,22 @@ trait RelationsDefs {
   /** A composition of two relations. */
   case class Rel2[-L, M, R](_1: Relation[L, M], _2: Relation[M, R]) extends Relation[L, R]
 
+  /** Special relations for Tuple2Schema */
+  case class _1[T]() extends Relation[(T, _), T]
+
+  case class _2[T]() extends Relation[(_, T), T]
+
+  /** Analogous to Seq but uses TId as a key to access instance of type T. */
+  trait IndexedCollection[TId, T]
+
+  /** Index is a special kind of property of a collection that
+    * allows to refer to an element by it's property value.
+    */
+  case class Index[TId, T](keyProperty: Relation[T, TId]) extends Relation[Seq[T], IndexedCollection[TId, T]]
+
+  /** It's a key in the indexed collection. */
+  case class IndexValue[TId, T](value: TId) extends Relation[IndexedCollection[TId, T], T]
+
 }
 
 trait RelationOps extends RelationsDefs {
@@ -86,9 +98,9 @@ trait RelationOps extends RelationsDefs {
     def /[R2](r2: Relation[R, R2]): Relation[L, R2] = Rel2[L, R, R2](r, r2)
   }
 
-  //  implicit class CollectionEx[T](r: Relation[Seq[T], T]) {
-  //    def #[R2](r2: Relation[R, R2]): Relation[L, R2] = Rel2[L, R, R2](r, r2)
-  //  }
+  implicit class RelEx2[L, R](r: Relation[L, R]) {
+    def index = Index[R, L](r)
+  }
 
 }
 
@@ -108,6 +120,7 @@ trait SchemaDefs extends RelationsDefs with RelationOps {
     * */
   case class RecordSchema[T](props: Seq[RelWithRSchema[T, _]])(implicit val classTag: ClassTag[T]) extends Schema[T] {
     lazy val map = props.map(p => (p.rel.name, p.schema.asInstanceOf[Schema[_]])).toMap[String, Schema[_]]
+    lazy val keySet = map.keySet
   }
 
   sealed class Tag[Tg, T]
@@ -131,14 +144,44 @@ trait SchemaDefs extends RelationsDefs with RelationOps {
     def classTag = schema.classTag
   }
 
-  //  case class PlainSchema(schemas: List[(TypeTag[T], Schema[T]) forSome {type T}])
-
   case class Gen1Schema[T, S[T]](tag: Any, schema: Schema[T])(implicit val classTag: ClassTag[S[T]]) extends Schema[S[T]]
 
   /** The user may use another way of type description. */
   case class CustomSchema[T, CS](tag: Any, cs: CS)(implicit val classTag: ClassTag[T]) extends Schema[T]
 
+  /** Helper trait for constructing record schemas.
+    */
+  trait PropertySeq[L] {
 
+    implicit val classTag: ClassTag[L] = scala.reflect.classTag[L]
+
+    private
+    val propertiesBuffer = mutable.ListBuffer[RelWithRSchema[L, _]]()
+
+    protected
+    def property[R](name: String)(implicit schema: Schema[R]) = {
+      val r = Rel[L, R](name)
+      propertiesBuffer += RelWithRSchema(r, schema)
+      r
+    }
+
+    protected
+    def simpleProperty[R](name: String)(implicit classTag: ClassTag[R]) =
+      property(name)(SimpleSchema())
+
+
+    protected
+    def importProperties[L2 >: L](schema: RecordSchema[L2]) {
+      propertiesBuffer ++= schema.props
+    }
+
+    def toSchema =
+      RecordSchema[L](propertiesBuffer.toSeq)
+
+  }
+
+  implicit def propertySeqToSchema[L](ps: PropertySeq[L]): Schema[L] =
+    ps.toSchema
 }
 
 trait InstanceDefs extends SchemaDefs {
@@ -192,7 +235,7 @@ trait InstanceDefs extends SchemaDefs {
 }
 
 trait SimpleOperationsDefs extends InstanceDefs {
-  // this implicit leads to v
+  // NB! this implicit leads to poor behavior. It tries to convert everything to simpleInstance. Do not remove this comment
   //  implicit def toInstance[T](value: T)(implicit simpleSchema: SimpleSchema[T]) = SimpleInstance[T](value)
 
   implicit def toExistentialRelWithRSchema[T, T2](rel: Rel[T, T2])(implicit schema: Schema[T2]): RelWithRSchema[T, _] = RelWithRSchema(rel, schema)
@@ -215,15 +258,6 @@ trait SimpleOperationsDefs extends InstanceDefs {
     def set[T2, Anc >: T](prop: Rel[Anc, T2], value: Instance[T2]): RecordInstance[T] =
       i.copy(i.map + ((prop.name, value)))
 
-    //    def set[T2, Anc >: T](prop: Rel[Anc, T2], value: T2): RecordInstance[T] =
-    //      i.copy(i.values :+(prop.name, SimpleInstance(value)))
-
-    //    def get[T2, Anc >: T](prop: Rel[Anc, T2]) = i.map(prop.name)
-    //    def get[T2, Anc >: T](path: Relation[Anc, T2]) = path match {
-    //      case r@Rel => get(r)
-    //      case Rel2(_1, _2) =>
-    //        get(_1)
-    //    }
   }
 
   def simple[T](value: T) = SimpleInstance(value)
@@ -252,6 +286,17 @@ trait SimpleOperationsDefs extends InstanceDefs {
       this
     }
 
+    def fillFromInstance(i: RecordInstance[T]) = {
+      val schemaNames = schema.map.keySet
+      for {
+        propName <- i.keySet
+        if schemaNames.contains(propName)
+        value = i.map(propName)
+      }
+        map(propName) = value
+      this
+    }
+
     def toInstance = {
       val diff = schema.map.keySet -- map.keySet
       if (diff.isEmpty)
@@ -269,12 +314,22 @@ trait OperationsDefs extends SimpleOperationsDefs {
   implicit class RecordSchemaEx[T](schema: RecordSchema[T]) {
     def hasAllProperties(i: RecordInstance[T]) =
       schema.props.map(_.rel.name).forall(i.keySet.contains)
+
+    def ++[T2 >: T](other: RecordSchema[T2]): RecordSchema[T] =
+      RecordSchema(schema.props ++ other.props)(schema.classTag)
+
   }
+
+  def isMatching[T](i: Instance[T], schema: Schema[T]) =
+    unmatches(i, schema).isEmpty
+
+  def nonMatching[T](i: Instance[T], schema: Schema[T]) =
+    unmatches(i, schema).nonEmpty
 
   /** Checks match and returns Seq() if matches. Otherwise returns the list of non-matching
     * elements. */
-  def isMatching[T](i: Instance[T], schema: Schema[T]): Seq[InstanceWithMeta[_]] = {
-    def isMatching0(p: InstanceWithMeta[_]): Seq[InstanceWithMeta[_]] = p match {
+  def unmatches[T](i: Instance[T], schema: Schema[T]): Seq[InstanceWithMeta[_]] = {
+    def unmatches0(p: InstanceWithMeta[_]): Seq[InstanceWithMeta[_]] = p match {
       case InstanceWithMeta(i: SimpleInstance[_], s: SimpleSchema[_]) =>
 
         if (s.classTag.runtimeClass.isPrimitive //TODO: implement for primitive types
@@ -283,18 +338,21 @@ trait OperationsDefs extends SimpleOperationsDefs {
         else
           Seq(p)
       case InstanceWithMeta(r@RecordInstance(_), s@RecordSchema(props)) =>
-        for {
-          v <- r.values
-          if s.map.contains(v._1)
-          iwm = InstanceWithMeta(v._2.asInstanceOf[Instance[Any]], s.map(v._1).asInstanceOf[Schema[Any]])
-          matchResult <- isMatching0(iwm)
-        } yield matchResult
+        if ((s.keySet -- r.keySet).isEmpty)
+          for {
+            v <- r.values
+            if s.map.contains(v._1)
+            iwm = InstanceWithMeta(v._2.asInstanceOf[Instance[Any]], s.map(v._1).asInstanceOf[Schema[Any]])
+            matchResult <- unmatches0(iwm)
+          } yield matchResult
+        else
+          Seq(p)
       case InstanceWithMeta(i, AnnotatedSchema(s)) =>
-        isMatching0(InstanceWithMeta(i, s))
+        unmatches0(InstanceWithMeta(i, s))
       case _ =>
         throw new IllegalArgumentException("isMatching is not implemented for " + p)
     }
-    isMatching0(InstanceWithMeta(i, schema))
+    unmatches0(InstanceWithMeta(i, schema))
   }
 
 
@@ -356,7 +414,9 @@ trait Navigation extends InstanceDefs {
 
   }
 
-  object Element
+  sealed trait SpecialProperties
+
+  object Element extends SpecialProperties
 
   implicit class SchemaEx2[T](schema: Schema[Seq[T]]) {
 
