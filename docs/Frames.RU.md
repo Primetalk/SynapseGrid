@@ -76,3 +76,4 @@
     assert(isMatching(circ10 , fullInfoAboutACircle).nonEmpty)
 </pre>
 
+Текущая версия (на момент составления документации) - ru.primetalk:synapse-frames_2.10:1.3.3. 
