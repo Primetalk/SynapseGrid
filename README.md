@@ -56,3 +56,4 @@ See also (English)
 4. [Работа с подсистемами](docs/Subsystems.RU.md).
 5. [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
 6. [Распределённые системы](docs/Distributed.RU.md).
+7. [Строго типизированные фреймы](docs/Frames.RU.md).
