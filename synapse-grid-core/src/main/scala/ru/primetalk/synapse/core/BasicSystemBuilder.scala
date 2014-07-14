@@ -19,27 +19,31 @@ import scala.collection.mutable
 /**
  * This builder supports step-by-step creation of contact system. At the end
  * one must convert it to [[ru.primetalk.synapse.core.StaticSystem]].
+ *
+ * The builder supports the notion of extensions (much like akka actor system extensions).
+ * When we need to store additional information during system construction,
+ * we may request an extention instance from the builder. The builder creates
+ * the singleton instance if it is not available yet.
  */
 trait BasicSystemBuilder {
-	private var name =
-		if (getClass.isAnonymousClass)
-			""
-		else
-			getClass.getSimpleName.
-				replaceAllLiterally("Builder", "").
-				replaceAllLiterally("BuilderC", "").
-				replaceAllLiterally("$", "")
+  private var name =
+    if (getClass.isAnonymousClass)
+      ""
+    else
+      getClass.getSimpleName.
+        replaceAllLiterally("Builder", "").
+        replaceAllLiterally("BuilderC", "").
+        replaceAllLiterally("$", "")
 
-  def setSystemName(name : String) {
+  def setSystemName(name: String) {
     this.name = name
   }
 
   def systemName = name
 
-  def systemName_=(name : String) {
+  def systemName_=(name: String) {
     this.name = name
   }
-
 
 
   private[core] val contacts = mutable.ListBuffer[Contact[_]]()
@@ -87,11 +91,11 @@ trait BasicSystemBuilder {
   /**
    * Create StateHandle and add it to the system
    */
-  def state[S](name : String, initialValue : S) : StateHandle[S] = {
+  def state[S](name: String, initialValue: S): StateHandle[S] = {
     assertWritable()
-    addStateHandle( StateHandle[S](name, initialValue))
+    addStateHandle(StateHandle[S](name, initialValue))
   }
-  
+
   def inputs(lc: Contact[_]*) {
     inputContacts ++= lc
   }
@@ -112,15 +116,17 @@ trait BasicSystemBuilder {
   /**
    * Add StateHandle to the system
    */
-  def addStateHandle[S](sh : StateHandle[S]) : StateHandle[S] = {
+  def addStateHandle[S](sh: StateHandle[S]): StateHandle[S] = {
     assertWritable()
     privateStateHandles.
-    	find(sh0 =>  sh0.name == sh.name && sh0.s0 == sh.s0).
-    	getOrElse{privateStateHandles += sh; sh}.
-    	asInstanceOf[StateHandle[S]]
-//    if(!privateStateHandles.contains(sh))
-//      privateStateHandles += sh
-//    sh
+      find(sh0 => sh0.name == sh.name && sh0.s0 == sh.s0).
+      getOrElse {
+      privateStateHandles += sh; sh
+    }.
+      asInstanceOf[StateHandle[S]]
+    //    if(!privateStateHandles.contains(sh))
+    //      privateStateHandles += sh
+    //    sh
   }
 
   def addLink[T1, T2](from: Contact[T1], to: Contact[T2], name: String, info: LinkInfo[T1, T2]): Contact[T2] = {
@@ -130,15 +136,15 @@ trait BasicSystemBuilder {
 
   /**
     */
-  def addLink[T1, T2](link : Link[T1, T2, T1, T2]):Contact[T2] = {
+  def addLink[T1, T2](link: Link[T1, T2, T1, T2]): Contact[T2] = {
     assertWritable()
-    if(outputContacts.contains(link.from))
+    if (outputContacts.contains(link.from))
       throw new IllegalArgumentException(s"The link $link cannot be added because ${link.from.name} is output contact.")
     links += link
     link.to
   }
 
-  def addComponent(component:Component){
+  def addComponent(component: Component) {
     components += component
   }
 
@@ -149,16 +155,16 @@ trait BasicSystemBuilder {
    * If the subsystem has output contacts (it usually has), then the result of subsystem
    * processing will appear on the same contacts of the parent system.
    */
-  def addSubsystem[T](system:T, sharedStateHandles: StateHandle[_]*)(implicit ev:T=>StaticSystem):T= {
-    val s = system:StaticSystem
+  def addSubsystem[T](system: T, sharedStateHandles: StateHandle[_]*)(implicit ev: T => StaticSystem): T = {
+    val s = system: StaticSystem
     sharedStateHandles.foreach(addStateHandle(_))
     val s0withoutShared = s.s0 -- sharedStateHandles
-    components += new InnerSystem(s, state(s.name+"State", s0withoutShared), sharedStateHandles.toList)
+    components += new InnerSystem(s, state(s.name + "State", s0withoutShared), sharedStateHandles.toList)
     system
   }
 
-  /** Adds a few subsystems at once. Useful for super systems construction.*/
-  def addSubsystems(subsystems:StaticSystem*) {
+  /** Adds a few subsystems at once. Useful for super systems construction. */
+  def addSubsystems(subsystems: StaticSystem*) {
     subsystems.foreach(subsystem => addSubsystem(subsystem)(identity))
   }
 
@@ -166,27 +172,27 @@ trait BasicSystemBuilder {
   // Static analysis of the system's graph
 
   /** returns one step successors from the given contact */
-  def successors(c:Contact[_]):List[Contact[_]] = {
+  def successors(c: Contact[_]): List[Contact[_]] = {
     val linkSuccessors = links.toList.filter(_.from == c).map(_.to)
     val compSuccessors = components.toList.filter(_.inputContacts.contains(c)).flatMap(_.outputContacts)
     (linkSuccessors ++ compSuccessors).distinct
   }
 
   /** returns one step successors from the given contact */
-  def predecessors(c:Contact[_]):List[Contact[_]] = {  	
+  def predecessors(c: Contact[_]): List[Contact[_]] = {
     val linkPredecessors = links.toList.filter(_.to == c).map(_.from)
     val compPredecessors = components.toList.filter(_.outputContacts.contains(c)).flatMap(_.inputContacts)
     (linkPredecessors ++ compPredecessors).distinct
   }
 
   /** Calculates the number of transitions from c1 to that contact. If the contact is not reachable
-    *  then the distance is equals = -1*/
-  def minDistance(c1 : Contact[_], c2 : Contact[_]) = {
+    * then the distance is equals = -1 */
+  def minDistance(c1: Contact[_], c2: Contact[_]) = {
     @tailrec
-    def minDistance(toCheck:Set[Contact[_]], exclude:Set[Contact[_]], dist:Int = 0):Int = {
-      if(toCheck.isEmpty)
+    def minDistance(toCheck: Set[Contact[_]], exclude: Set[Contact[_]], dist: Int = 0): Int = {
+      if (toCheck.isEmpty)
         -1
-      else if(toCheck.contains(c2))
+      else if (toCheck.contains(c2))
         dist
       else
         minDistance((toCheck flatMap successors) -- exclude, exclude ++ toCheck, dist + 1)
@@ -194,10 +200,10 @@ trait BasicSystemBuilder {
     minDistance(Set(c1), Set())
   }
 
-  def extend[T<:SystemBuilderExtension](implicit extensionId:SystemBuilderExtensionId[T]):T =
-  	extensions.
-  		getOrElseUpdate(extensionId, 
-  				extensionId.extend(this)).
-  		asInstanceOf[T]
-  
+  def extend[T <: SystemBuilderExtension](implicit extensionId: SystemBuilderExtensionId[T]): T =
+    extensions.
+      getOrElseUpdate(extensionId,
+        extensionId.extend(this)).
+      asInstanceOf[T]
+
 }

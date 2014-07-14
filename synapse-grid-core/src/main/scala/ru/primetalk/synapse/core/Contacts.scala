@@ -51,23 +51,84 @@ class Contact[T](name1: String = null, val contactStyle: ContactStyle = NormalCo
   val name = if (name1 == null) getClass.getSimpleName.replaceAllLiterally("$", "") else name1
 
   override def toString = "C(" + name + ")"
-
-  //  @throws(classOf[IOException])
-  //  private def writeObject(out: ObjectOutputStream): Unit = {
-  //    out.defaultWriteObject();
-  //    out.writeString(name)
-  //  }
-  //
-  //  @throws(classOf[IOException])
-  //  private def readObject(in: ObjectInputStream): Unit = {
-  //    in.defaultReadObject();
-  //  }
 }
 
 object Contact {
   def unapply(c: Any): Option[(String, ContactStyle)] =
     c match {
       case contact: Contact[_] => Some(contact.name, contact.contactStyle)
+      case _ => None
+    }
+}
+
+/**
+ * Signal is a pair of contact and data on it.
+ * Two methods are provided to match those of pairs - _1 and _2.
+ */
+case class Signal[T](contact: Contact[T], data: T) {
+  def _1 = contact
+
+  def _2 = data
+}
+
+
+/**
+ * Contact reference with respect to path of the system where the contact resides.
+ * @param path path to a system with the contact
+ * @param contact the original contact of the system
+ */
+case class ContactP[T](path: SystemPath, contact: Contact[T])
+
+/**
+ * Signal with path to the contact.
+ * @param contact contactP
+ * @param data the  value at the contact
+ * @tparam T value type
+ */
+case class SignalP[T](contact: ContactP[T], data: T)
+
+/** Signal for remote transfer. The contacts are not quite well serializable (see Contact for details).
+  */
+case class SignalDist(contactId: Int, data: AnyRef)
+
+/** Sometimes signals are processed as a batch of data on the same contact.
+  * The Batch can be used interchangeably with List[Signal[T]] */
+case class Batch[T](contact: Contact[T], data: List[T]) {
+  def _1 = contact
+
+  lazy val signals = data.map(Signal(contact, _))
+}
+
+object Batch {
+  implicit def batchToSignals[T](b: Batch[T]) = b.signals
+}
+
+
+/**
+ * Stateful elements of the system
+ */
+trait Stateful[State] extends Named {
+  type StateType = State
+  /**
+   * The initial state of the element
+   */
+  val s0: State
+}
+
+/**
+ * Permanent contacts store shared state that can be updated with stateful
+ * links.
+ */
+class StateHandle[S](name: String, val s0: S) extends Contact[S](name, StateContact) with Stateful[S] {
+  override def toString = "S(" + name + ")"
+}
+
+object StateHandle {
+  def apply[S](name: String, s0: S) = new StateHandle(name, s0)
+
+  def unapply(s: Any): Option[(String, _)] =
+    s match {
+      case stateHandle: StateHandle[_] => Some(stateHandle.name, stateHandle.s0)
       case _ => None
     }
 }

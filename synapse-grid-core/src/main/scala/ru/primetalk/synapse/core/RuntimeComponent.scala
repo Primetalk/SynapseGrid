@@ -70,8 +70,7 @@ case class RuntimeComponentStateFlatMap[S](
 case class RuntimeComponentMultiState(
                                        name: String,
                                        stateHandles: List[Contact[_]],
-                                       f: (Context, Signal[_]) =>
-                                         TrellisElement) extends RuntimeComponent {
+                                       f: TotalTrellisProducer) extends RuntimeComponent {
   def isStateful: Boolean = true
 }
 
