@@ -46,7 +46,8 @@ See also (English)
 3. [License (BSD-like)](LICENSE.md).
 4. [Subsystems](docs/Subsystems.EN.md).
 5. [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
-
+6. [Distrubuted systems](docs/Distributed.EN.md)
+7. [Typed frames](docs/Frames.EN.md).
 
 См. также (See also in Russian)
 ---------
@@ -54,6 +55,7 @@ See also (English)
 2. [Actors support (in Russian)](docs/Actors.RU.md).
 3. [Лицензия](docs/LICENSE.RU.md).
 4. [Работа с подсистемами](docs/Subsystems.RU.md).
-5. [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
+5. [Blog about SynapseGrid (en)](http://synapse-grid.primetalk.ru/)
 6. [Распределённые системы](docs/Distributed.RU.md).
 7. [Строго типизированные фреймы](docs/Frames.RU.md).
+8. [Хабрахабр: Строго типизированное представление неполных данных](http://habrahabr.ru/post/229035/)

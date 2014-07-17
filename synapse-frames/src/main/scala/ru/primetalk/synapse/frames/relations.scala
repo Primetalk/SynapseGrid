@@ -201,8 +201,11 @@ trait InstanceDefs extends SchemaDefs {
     lazy val keySet = map.keySet
     lazy val values = map.toSeq
 
-    def get[V](rel: Rel[T, V]): Instance[V] =
-      map(rel.name).asInstanceOf[Instance[V]]
+    def get[V](rel: Relation[T, V]): Instance[V] = rel match {
+      case Rel(name) =>
+        map(name).asInstanceOf[Instance[V]]
+      case
+    }
 
   }
 
