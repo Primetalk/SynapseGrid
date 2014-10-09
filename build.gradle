@@ -1,6 +1,9 @@
 // Troubleshooting:
 // gradle OutOfMemoryError: PermGen space:
 // JAVAOPTS="-Xmx1024M -XX:MaxPermSize=512M"
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.1'
+}
 
 gradle.taskGraph.whenReady { taskGraph ->
     if (enableSigning && taskGraph.allTasks.any { it instanceof Sign }) {
@@ -144,9 +147,9 @@ subprojects {
                 configuration = configurations.deployerJars
 //                "https://oss.sonatype.org/service/local/staging/deploy/maven2"
 //                "https://oss.sonatype.org/content/repositories/snapshots"
-                repository(url: repositoryUrl) {
-                    authentication(userName: repositoryUsername, password: repositoryPassword)
-                }
+//                repository(url: repositoryUrl) {
+//                    authentication(userName: repositoryUsername, password: repositoryPassword)
+//                }
 //              repository (url: nexusRep) {
 //					authentication(userName: nexusUsername, password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
 //				}
