@@ -266,3 +266,13 @@ project(':synapse-frames') {
 
     }
 }
+
+project(':synapse-typed-expressions') {
+    dependencies {
+        compile project(':russian-lang')
+    }
+}
+project(':russian-lang') {
+    dependencies {
+    }
+}
