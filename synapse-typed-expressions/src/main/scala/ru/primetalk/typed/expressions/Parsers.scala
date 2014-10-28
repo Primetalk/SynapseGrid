@@ -1,17 +1,11 @@
 package ru.primetalk.typed.expressions
 
-import ru.primetalk.language.russian.RussianNumerals
-
 /**
  * Parsers that can match a substring of a stream of words.
  *
  * @author zhizhelev, 21.10.14.
  */
 trait Parsers extends Numerals4 {
-
-  //  type Stream = LemmaStream
-//  type ParseResult[U] = Result[(U, LemmaStream)]
-
 
   sealed trait ParseResult[+T] {
     def isSuccess:Boolean
@@ -81,9 +75,19 @@ trait Parsers extends Numerals4 {
   }
 
   def backTrackingParser[U](sequencerHandler: SequencerHandler[U] = defaultSequencerHandler _)(e: Expression[LemmaStream, U]): Parser[U] = e match {
-    case DirectMapExpr(l, u) =>
+    case Epsilon(u) => s => Success(u, s)
+    case ConstExpr(l, u) =>
       (s: LemmaStream) => startsWithAndTail(l, s).map(t=>u)
-    case SelectorN(_, lst) =>
+    case SelectorMap(lst) =>
+      val parsers =
+        lst.map(backTrackingParser(sequencerHandler)).toStream
+      (s: LemmaStream) =>
+        parsers.
+          map(parser => parser(s)).
+          dropWhile(_.isFailure).
+          headOption.getOrElse(Failure())
+    case s@Selector2(_, e1, e2) =>
+      val lst = s.exprs.asInstanceOf[Iterable[Expression[LemmaStream, U]]]
       val parsers =
         lst.map(backTrackingParser(sequencerHandler)).toStream
       (s: LemmaStream) =>
@@ -96,8 +100,27 @@ trait Parsers extends Numerals4 {
       (s: LemmaStream) =>
         val res = parsers.foldLeft(Success[List[U]](Nil, s):ParseResult[List[U]])(_.next(_))
         res.map{lst => val list = lst.reverse; sequencerHandler(sequencer)(list.head, list.tail.head)}
+    case Pair2(e1: Expression[_, _], e2: Expression[_, _]) =>
+      val parsers: List[Parser[U]] =
+        backTrackingParser(sequencerHandler)(e1.asInstanceOf[Expression[LemmaStream, U]]) ::
+          backTrackingParser(sequencerHandler)(e2.asInstanceOf[Expression[LemmaStream, U]]) :: Nil
+      (s: LemmaStream) =>
+        val res = parsers.foldLeft(Success[List[U]](Nil, s): ParseResult[List[U]])(_.next(_))
+        res.map { lst => val list = lst.reverse; (list.head, list.tail.head).asInstanceOf[U]}
     case Labelled(_, expr) =>
       backTrackingParser(sequencerHandler)(expr)
+    case Transformed(innerExpression: Expression[_, _], t) =>
+      val innerParser = backTrackingParser(sequencerHandler.asInstanceOf[SequencerHandler[Any]])(innerExpression)
+      val converter: Any => U = t.asInstanceOf[Any] match {
+        case ModSplit(_) => {
+          case (l: Long, r: Long) => (l + r).asInstanceOf[U]
+        }: (Any => U)
+        case OrderSplit(order) => {
+          case ((l: Long, o: Long), r: Long) if o == order => (l * o + r).asInstanceOf[U]
+        }: (Any => U)
+      }
+      (s: LemmaStream) =>
+        innerParser(s).map(converter)
     case _ => throw new IllegalArgumentException(s"backTrackingParser is not implemented for expression $e")
   }
 

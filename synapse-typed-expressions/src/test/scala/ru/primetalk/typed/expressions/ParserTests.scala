@@ -13,16 +13,16 @@ class ParserTests extends FunSuite {
 
     override type Lemma = LemmaGrammarCategory.Lemma
 
-    override def wordToLemma(word:String) = RussianNumerals.toLemma(word)
+    override def wordToLemma(word: String) = RussianNumerals.toLemma(word)
 
     override def lemmasForNumber(n: Long): LemmaStream =
       Seq(LemmaGrammarCategory.NumericalLemma(n))
 
-    val p:Parser[Long]
+    val p: Parser[Long]
 
-    lazy val parser:SimpleParser[Long] = p
+    lazy val parser: SimpleParser[Long] = p
 
-    def parse(text:String):Long = parser(text)
+    def parse(text: String): Long = parser(text)
   }
 
   test("simple direct mapping") {
@@ -66,23 +66,24 @@ class ParserTests extends FunSuite {
       val p = backTrackingParser()(range1To999Order(1e6.toLong))
 
       assert(parse("двадцать семь миллионов три тысячи двести сорок пять") === 27003245L)
-      assert(parse("одна тысяча") === 1000L)
     }
   }
-  case class A[T](value:T)
-  case class B[T](value:T)
 
-  case class MyPair[T<:Int](a:A[T], b:B[T])
+  case class A[T](value: T)
 
-  def swap[T](p:Any): (A[Int], B[Int]) =
+  case class B[T](value: T)
+
+  case class MyPair[T <: Int](a: A[T], b: B[T])
+
+  def swap[T](p: Any): (A[Int], B[Int]) =
     p match {
-      case MyPair(a,b) =>
+      case MyPair(a, b) =>
         (A(b.value), B(a.value))
     }
 
-  test("case "){
+  test("case ") {
 
-    val x = MyPair[Int](A(1),B(2))
+    val x = MyPair[Int](A(1), B(2))
     val y = swap(x)
 
     assert(y._1.value === 2)
