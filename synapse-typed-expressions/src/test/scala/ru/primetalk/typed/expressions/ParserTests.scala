@@ -28,7 +28,7 @@ class ParserTests extends FunSuite {
   test("simple direct mapping") {
     new MyParsers {
 
-      val p = backTrackingParser()(`[0]`)
+      val p = backTrackingParser(`[0]`)
 
       val res = p(Seq("ноль").map(wordToLemma))
 
@@ -37,7 +37,7 @@ class ParserTests extends FunSuite {
   }
   test("Small numbers") {
     new MyParsers {
-      val p = backTrackingParser()(`[1..19]`)
+      val p = backTrackingParser(`[1..19]`)
       val res = parse("пять")
       assert(res === 5L)
     }
@@ -45,7 +45,7 @@ class ParserTests extends FunSuite {
   test("two digit numbers") {
     new MyParsers {
 
-      val p = backTrackingParser()(`[1..99]`)
+      val p = backTrackingParser(`[1..99]`)
 
       assert(parse("двадцать семь") === 27L)
       assert(parse("тридцать") === 30L)
@@ -54,7 +54,7 @@ class ParserTests extends FunSuite {
   test("thousands") {
     new MyParsers {
 
-      val p = backTrackingParser()(`[1..999 999]`)
+      val p = backTrackingParser(`[1..999 999]`)
 
       assert(parse("двадцать семь тысяч двести одиннадцать") === 27211L)
       assert(parse("одна тысяча") === 1000L)
@@ -63,7 +63,7 @@ class ParserTests extends FunSuite {
   test("millions") {
     new MyParsers {
 
-      val p = backTrackingParser()(range1To999Order(1e6.toLong))
+      val p = backTrackingParser(range1To999Order(1e6.toLong))
 
       assert(parse("двадцать семь миллионов три тысячи двести сорок пять") === 27003245L)
     }

@@ -74,43 +74,35 @@ trait Parsers extends Numerals4 {
     case MulSequencer => l * r
   }
 
-  def backTrackingParser[U](sequencerHandler: SequencerHandler[U] = defaultSequencerHandler _)(e: Expression[LemmaStream, U]): Parser[U] = e match {
+  def backTrackingParser[U](e: Expression[LemmaStream, U]): Parser[U] = e match {
     case Epsilon(u) => s => Success(u, s)
-    case ConstExpr(l, u) =>
-      (s: LemmaStream) => startsWithAndTail(l, s).map(t=>u)
-    case SelectorMap(lst) =>
-      val parsers =
-        lst.map(backTrackingParser(sequencerHandler)).toStream
+    case ConstExpr(l, u) => (s: LemmaStream) => startsWithAndTail(l, s).map(t => u)
+    case Labelled(_, expr) => backTrackingParser(expr)
+    case MapSelector(lst) =>
+      val parsers = lst.map(backTrackingParser).toStream
       (s: LemmaStream) =>
         parsers.
           map(parser => parser(s)).
           dropWhile(_.isFailure).
           headOption.getOrElse(Failure())
-    case s@Selector2(_, e1, e2) =>
+    case s@BinarySelector(_, e1, e2) =>
       val lst = s.exprs.asInstanceOf[Iterable[Expression[LemmaStream, U]]]
       val parsers =
-        lst.map(backTrackingParser(sequencerHandler)).toStream
+        lst.map(backTrackingParser).toStream
       (s: LemmaStream) =>
         parsers.
           map(parser => parser(s)).
           dropWhile(_.isFailure).
           headOption.getOrElse(Failure())
-    case Pair(sequencer, e1: Expression[LemmaStream, U], e2: Expression[LemmaStream, U]) =>
-      val parsers: List[Parser[U]] = backTrackingParser(sequencerHandler)(e1) :: backTrackingParser(sequencerHandler)(e2) :: Nil
-      (s: LemmaStream) =>
-        val res = parsers.foldLeft(Success[List[U]](Nil, s):ParseResult[List[U]])(_.next(_))
-        res.map{lst => val list = lst.reverse; sequencerHandler(sequencer)(list.head, list.tail.head)}
-    case Pair2(e1: Expression[_, _], e2: Expression[_, _]) =>
+    case Pair(e1: Expression[_, _], e2: Expression[_, _]) =>
       val parsers: List[Parser[U]] =
-        backTrackingParser(sequencerHandler)(e1.asInstanceOf[Expression[LemmaStream, U]]) ::
-          backTrackingParser(sequencerHandler)(e2.asInstanceOf[Expression[LemmaStream, U]]) :: Nil
+        backTrackingParser(e1.asInstanceOf[Expression[LemmaStream, U]]) ::
+          backTrackingParser(e2.asInstanceOf[Expression[LemmaStream, U]]) :: Nil
       (s: LemmaStream) =>
         val res = parsers.foldLeft(Success[List[U]](Nil, s): ParseResult[List[U]])(_.next(_))
         res.map { lst => val list = lst.reverse; (list.head, list.tail.head).asInstanceOf[U]}
-    case Labelled(_, expr) =>
-      backTrackingParser(sequencerHandler)(expr)
     case Transformed(innerExpression: Expression[_, _], t) =>
-      val innerParser = backTrackingParser(sequencerHandler.asInstanceOf[SequencerHandler[Any]])(innerExpression)
+      val innerParser = backTrackingParser(innerExpression)
       val converter: Any => U = t.asInstanceOf[Any] match {
         case ModSplit(_) => {
           case (l: Long, r: Long) => (l + r).asInstanceOf[U]

@@ -29,32 +29,32 @@ class GeneratorTests extends FunSuite {
 
   test("single word") {
     new MyGenerator {
-      override val gen: Generator[Long] = constructGenerator(`[0]`)
+      override val gen: Generator[Long] = constructGenerator(numeralTransformers, numeralSelectors)(`[0]`)
       assert(generate(0L) === "ноль")
     }
   }
   test("1..99") {
     new MyGenerator {
-      override val gen: Generator[Long] = constructGenerator(`[1..99]`)
+      override val gen: Generator[Long] = constructGenerator(numeralTransformers, numeralSelectors)(`[1..99]`)
       assert(generate(81L) === "восемьдесят один")
     }
   }
 
   test("1..999 999") {
     new MyGenerator {
-      override val gen: Generator[Long] = constructGenerator(`[1..999 999]`)
+      override val gen: Generator[Long] = constructGenerator(numeralTransformers, numeralSelectors)(`[1..999 999]`)
       assert(generate(12345L) === "двенадцать тысяч триста сорок пять")
     }
   }
   test("millions") {
     new MyGenerator {
-      override val gen: Generator[Long] = constructGenerator(range1To999Order(1e6.toLong))
+      override val gen: Generator[Long] = constructGenerator(numeralTransformers, numeralSelectors)(range1To999Order(1e6.toLong))
       assert(generate(27003245L) === "двадцать семь миллионов три тысячи двести сорок пять")
     }
   }
 
   val generator = new MyGenerator {
-    override val gen: Generator[Long] = constructGenerator(range1To999Order(1e6.toLong))
+    override val gen: Generator[Long] = constructGenerator(numeralTransformers, numeralSelectors)(range1To999Order(1e6.toLong))
   }
 
   test("a few numbers") {
