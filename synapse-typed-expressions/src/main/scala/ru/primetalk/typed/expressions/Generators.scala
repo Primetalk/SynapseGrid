@@ -17,7 +17,7 @@ trait Generators extends Numerals4 {
     case ModSplit(m) =>
       (u) => (u / m * m, u % m)
     case OrderSplit(order) =>
-      (u) => ((u / order, order), u % order)
+      (u) => (u / order, order)
     case _ => throw new IllegalArgumentException(s"Unknown transformer $t")
   }
 
@@ -43,7 +43,7 @@ trait Generators extends Numerals4 {
           val (u1, u2) = u
           g1(u1) ++ g2(u2)
 
-      case BinarySelector(sel, e1, e2) =>
+      case BinarySelector(sel: Selector[U], e1, e2) =>
         val selector = selGen(sel).asInstanceOf[Any => Boolean]
         val g1 = constructGenerator0(e1)
         val g2 = constructGenerator0(e2)

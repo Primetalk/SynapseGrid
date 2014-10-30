@@ -8,40 +8,60 @@ package ru.primetalk.typed.expressions
 trait Parsers extends Numerals4 {
 
   sealed trait ParseResult[+T] {
-    def isSuccess:Boolean
+    def isSuccess: Boolean
+
     def isFailure = !isSuccess
+
     def orElse[U >: T](other: => ParseResult[U]): ParseResult[U]
-    def value:T
+
+    def value: T
+
     def flatMap[T2](f: (T) => ParseResult[T2]): ParseResult[T2]
-    def map[T2](f:T => T2): ParseResult[T2]
-    def tail:LemmaStream
-    def next[E](parser:Parser[E])(implicit ev:T<:<List[E]):ParseResult[List[E]]
+
+    def map[T2](f: T => T2): ParseResult[T2]
+
+    def tail: LemmaStream
+
+    def next[E](parser: Parser[E])(implicit ev: T <:< List[E]): ParseResult[List[E]]
   }
 
-  case class Success[+T](value: T, tail:LemmaStream) extends ParseResult[T] {
+  case class Success[+T](value: T, tail: LemmaStream) extends ParseResult[T] {
     def isSuccess = true
+
     def orElse[U >: T](other: => ParseResult[U]): ParseResult[U] = this
-    def reason:String = throw new IllegalStateException("Success have no reason to fail")
+
+    def reason: String = throw new IllegalStateException("Success have no reason to fail")
+
     def flatMap[T2](f: (T) => ParseResult[T2]): ParseResult[T2] = f(value)
-    def map[T2](f:T => T2): ParseResult[T2] = Success(f(value), tail)
-    def next[E](parser:Parser[E])(implicit ev:T<:<List[E]):ParseResult[List[E]] =
+
+    def map[T2](f: T => T2): ParseResult[T2] = Success(f(value), tail)
+
+    def next[E](parser: Parser[E])(implicit ev: T <:< List[E]): ParseResult[List[E]] =
       parser(tail).map(r => r :: value)
   }
 
   case class Failure[+T]() extends ParseResult[T] {
     def isSuccess = false
+
     def orElse[U >: T](other: => ParseResult[U]): ParseResult[U] = other
-    def value:T = throw new IllegalStateException("No value")
-    def tail:LemmaStream = throw new IllegalStateException("No tail")
+
+    def value: T = throw new IllegalStateException("No value")
+
+    def tail: LemmaStream = throw new IllegalStateException("No tail")
+
     def flatMap[T2](f: (T) => ParseResult[T2]): ParseResult[T2] = Failure()
-    def map[T2](f:T => T2): ParseResult[T2] = Failure()
-    def next[E](parser:Parser[E])(implicit ev:T<:<List[E]):ParseResult[List[E]] = Failure()
+
+    def map[T2](f: T => T2): ParseResult[T2] = Failure()
+
+    def next[E](parser: Parser[E])(implicit ev: T <:< List[E]): ParseResult[List[E]] = Failure()
   }
 
   object ParseResult {
-    def success[T](value: T, tail:LemmaStream):ParseResult[T] = Success(value, tail)
-    def fail[T]:ParseResult[T] = Failure()
+    def success[T](value: T, tail: LemmaStream): ParseResult[T] = Success(value, tail)
+
+    def fail[T]: ParseResult[T] = Failure()
   }
+
   /** A parser takes an expression and a stream of lemmas. Returns the
     * result of matching the expression over the beginning of the input stream.
     * tparam U - result type
@@ -69,57 +89,57 @@ trait Parsers extends Numerals4 {
   // combines the given arguments according to sequencer
   type SequencerHandler[U] = (Any) => (U, U) => U
 
-  def defaultSequencerHandler(sequencer: Any)(l: Long, r: Long) = sequencer match {
-    case SumSequencer => l + r
-    case MulSequencer => l * r
+  def defaultSequencerHandler(sequencer: Transformer[_, Long]): (Any => Long) = sequencer match {
+    case ModSplit(_) => {
+      case (l: Long, r: Long) => l + r
+    }
+    case OrderSplit(order) => {
+      case (l: Long, o: Long) => l * o
+    }
   }
 
-  def backTrackingParser[U](e: Expression[LemmaStream, U]): Parser[U] = e match {
-    case Epsilon(u) => s => Success(u, s)
-    case ConstExpr(l, u) => (s: LemmaStream) => startsWithAndTail(l, s).map(t => u)
-    case Labelled(_, expr) => backTrackingParser(expr)
-    case MapSelector(lst) =>
-      val parsers = lst.map(backTrackingParser).toStream
-      (s: LemmaStream) =>
-        parsers.
-          map(parser => parser(s)).
-          dropWhile(_.isFailure).
-          headOption.getOrElse(Failure())
-    case s@BinarySelector(_, e1, e2) =>
-      val lst = s.exprs.asInstanceOf[Iterable[Expression[LemmaStream, U]]]
-      val parsers =
-        lst.map(backTrackingParser).toStream
-      (s: LemmaStream) =>
-        parsers.
-          map(parser => parser(s)).
-          dropWhile(_.isFailure).
-          headOption.getOrElse(Failure())
-    case Pair(e1: Expression[_, _], e2: Expression[_, _]) =>
-      val parsers: List[Parser[U]] =
-        backTrackingParser(e1.asInstanceOf[Expression[LemmaStream, U]]) ::
-          backTrackingParser(e2.asInstanceOf[Expression[LemmaStream, U]]) :: Nil
-      (s: LemmaStream) =>
-        val res = parsers.foldLeft(Success[List[U]](Nil, s): ParseResult[List[U]])(_.next(_))
-        res.map { lst => val list = lst.reverse; (list.head, list.tail.head).asInstanceOf[U]}
-    case Transformed(innerExpression: Expression[_, _], t) =>
-      val innerParser = backTrackingParser(innerExpression)
-      val converter: Any => U = t.asInstanceOf[Any] match {
-        case ModSplit(_) => {
-          case (l: Long, r: Long) => (l + r).asInstanceOf[U]
-        }: (Any => U)
-        case OrderSplit(order) => {
-          case ((l: Long, o: Long), r: Long) if o == order => (l * o + r).asInstanceOf[U]
-        }: (Any => U)
-      }
-      (s: LemmaStream) =>
-        innerParser(s).map(converter)
-    case _ => throw new IllegalArgumentException(s"backTrackingParser is not implemented for expression $e")
+  def backTrackingParser[U](e: Expression[LemmaStream, U]): Parser[U] = {
+    implicit def uncheckedGenerics[T[_], O](t: T[_]): T[O] = t.asInstanceOf[T[O]]
+    implicit def uncheckedGenerics2[T[_, _], O, P](t: T[_, _]): T[O, P] = t.asInstanceOf[T[O, P]]
+
+    def backTrackingParser0(e: Expression[_, _]): Parser[_] = e match {
+      case Epsilon(u) => s => Success(u, s)
+      case ConstExpr(l: LemmaStream, u) => (s: LemmaStream) => startsWithAndTail(l, s).map(t => u)
+      case Labelled(_, expr) => backTrackingParser0(expr)
+      case MapSelector(lst) =>
+        val parsers = lst.map(backTrackingParser0).toStream
+        (s: LemmaStream) =>
+          parsers.
+            map(parser => parser(s)).
+            dropWhile(_.isFailure).
+            headOption.getOrElse(Failure())
+      case BinarySelector(_, e1, e2) =>
+        val parsers = Stream(e1, e2).map(backTrackingParser0)
+        (s: LemmaStream) =>
+          parsers.
+            map(parser => parser(s)).
+            dropWhile(_.isFailure).
+            headOption.getOrElse(Failure())
+      case Pair(e1, e2) =>
+        val parsers = List(e1, e2).map(backTrackingParser0)
+        (s: LemmaStream) =>
+          val res = parsers.foldLeft(Success[List[U]](Nil, s): ParseResult[List[U]])(_.next(_))
+          res.map { lst => val list = lst.reverse; (list.head, list.tail.head).asInstanceOf[U]}
+      case Transformed(innerExpression: Expression[_, _], t) =>
+        val innerParser = backTrackingParser0(innerExpression)
+        val converter = defaultSequencerHandler(t)
+        (s: LemmaStream) =>
+          innerParser(s).map(converter)
+      case _ => throw new IllegalArgumentException(s"backTrackingParser0 is not implemented for expression $e")
+    }
+    uncheckedGenerics(backTrackingParser0(e))
   }
 
-  def wordToLemma(word:String):Lemma
-  implicit def toSimpleParser[T](p:Parser[T]):SimpleParser[T] = (text:String) => {
+  def wordToLemma(word: String): Lemma
+
+  implicit def toSimpleParser[T](p: Parser[T]): SimpleParser[T] = (text: String) => {
     val res = p(text.split(" ").map(wordToLemma))
-    if(res.tail.nonEmpty)
+    if (res.tail.nonEmpty)
       throw new IllegalArgumentException(s"Cannot parse '$text'")
     res.value
   }

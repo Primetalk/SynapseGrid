@@ -1,5 +1,7 @@
 package ru.primetalk.typed.expressions
 
+import scala.math.ScalaNumber
+
 /**
  * Defines russian numerals construction rules.
  * @author zhizhelev, 16.10.14.
@@ -13,6 +15,7 @@ trait Numerals4 {
   type Lemma // the type of word identifier. The lowest level
   /** The sequence of lemmas that we parse or synthesize. */
   type LemmaStream = Iterable[Lemma]
+  type Num <: ScalaNumber
   /** Numeral expression corresponds to either a part of a LemmaStream or to some Long number.*/
   type NE = Expression[LemmaStream, Long]
 
@@ -58,22 +61,21 @@ trait Numerals4 {
 
   implicit def mapSingleNumber(n: Long): ConstExpr[LemmaStream, Long] = ConstExpr(lemmasForNumber(n), n)
 
-  case object MulSequencer
-  case object SumSequencer
-
   case class EqualsSelector[U](value: U) extends Selector[U]
 
   case class LessThanSelector[U](lt: U) extends Selector[U]
 
+  /** Divide a number into quotient and residue */
   case class ModSplit(module: Long) extends Transformer[(Long, Long), Long]
 
-  case class OrderSplit(order: Long) extends Transformer[((Long, Long), Long), Long]
+  /** Divide a number by order. Put the order in the second part of the resulting pair. */
+  case class OrderSplit(order: Long) extends Transformer[(Long, Long), Long]
 
   implicit class ExprAdv[L, M](e: Expression[L, M]) {
 
     def ~[M2](other: Expression[L, M2]) = Pair(e, other)
 
-    def transformed[U](t: Transformer[M, U]) = Transformed(e, t)
+    def ^^[U](t: Transformer[M, U]) = Transformed(e, t)
 
     def |?(defaultValue: M) = BinarySelector(EqualsSelector(defaultValue), e, Epsilon[L, M](defaultValue))
 
@@ -91,35 +93,36 @@ trait Numerals4 {
   val `[10..19]` = 10L to 19L:NE
   val `[1..19]` = 1L to 19L:NE
   val `[20..90/10]` = 20L to 90L by 10L:NE
-  val `[20..99]` = `[20..90/10]` ~ (`[1..9]` |? 0L) transformed ModSplit(10L)
+  val `[20..99]` = `[20..90/10]` ~ (`[1..9]` |? 0L) ^^ ModSplit(10L)
   val `[1..99]` = `[20..99]` | `[1..19]` selectBy LessThanSelector(20L)
 
 
   val `[100..900/100]` = 100L to 900 by 100:NE
 
-  val `[100..999]` = `[100..900/100]` ~ (`[1..99]` |? 0L) transformed ModSplit(100L)
+  val `[100..999]` = `[100..900/100]` ~ (`[1..99]` |? 0L) ^^ ModSplit(100L)
   val `[1..999]` = `[100..999]` | `[1..99]` selectBy LessThanSelector(100L) labelled "1..999"
   val `[0..999]` = `[1..999]` | `[0]` selectBy LessThanSelector(1L)
 
   /* For minutes. */
   val `[20..50/10]` = 20L to 50 by 10:NE
-  val `[20..59]` = `[20..50/10]` ~ (`[1..9]` |? 0L) transformed ModSplit(10L)
+  val `[20..59]` = `[20..50/10]` ~ (`[1..9]` |? 0L) ^^ ModSplit(10L)
   val `[1..59]` = `[20..59]` | `[1..19]` selectBy LessThanSelector(20L) labelled "1..59"
 
   /* For hours.*/
   val `[1..3]` = 1L to 3:NE
   //	val `[4..19]` = 4L to 19:TE[Long]
-  val `[20..23]` = (20L: NE) ~ (`[1..3]` |? 0L) transformed ModSplit(10L)
+  val `[20..23]` = (20L: NE) ~ (`[1..3]` |? 0L) ^^ ModSplit(10L)
   val `[1..23]` = `[20..23]` | `[1..19]` selectBy LessThanSelector(20L)
   val `[0..23]` = `[1..23]` | `[0]` selectBy LessThanSelector(1L)
 
   /* Thousands and higher*/
   val `[1 000]` = 1000L:NE
-  val `[1 000..999 999]` = `[1..999]` ~ `[1 000]` ~ (`[1..999]` |? 0L) transformed OrderSplit(1000L)
+  val `[1 000..999 999]` = (`[1..999]` ~ `[1 000]` ^^ OrderSplit(1000L)) ~ (`[1..999]` |? 0L) ^^ ModSplit(1000L)
   val `[1..999 999]` = `[1 000..999 999]` | `[1..999]` selectBy LessThanSelector(1000L)
 
   val `[1 000 000]` = 1000000L:NE
-  val `[1 000 000..999 999 999]` = `[1..999]` ~ `[1 000 000]` ~ (`[1..999 999]` |? 0L) transformed OrderSplit(1000000L)
+  val `[1 000 000..999 999 999]` = (`[1..999]` ~ `[1 000 000]` ^^ OrderSplit(1000000L)) ~ (`[1..999 999]` |? 0L) ^^ ModSplit(1000000L)
+
   val `[1..999 999 999]` = `[1 000 000..999 999 999]` | `[1..999 999]` selectBy LessThanSelector(1000000L)
 
 
@@ -130,7 +133,7 @@ trait Numerals4 {
     case 1L => `[1..999]`
     case _ =>
       val lower = range1To999Order(order / 1000)
-      val upper = `[1..999]` ~ order ~ (lower |? 0L) transformed OrderSplit(order)
+      val upper = (`[1..999]` ~ order ^^ OrderSplit(order)) ~ (lower |? 0L) ^^ ModSplit(order)
       upper | lower selectBy LessThanSelector(order)
   }
 }
