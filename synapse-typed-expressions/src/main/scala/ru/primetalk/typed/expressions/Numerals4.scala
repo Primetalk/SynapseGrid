@@ -24,7 +24,6 @@ trait Numerals4 {
 
   type SemanticTag = Any
 
-  sealed trait Selector[U]
 
   /** A transformer that converts lower level to upper level and vice versa. */
   sealed trait Transformer[L, U]
@@ -34,15 +33,23 @@ trait Numerals4 {
     * @param lower the concrete value
     * @param upper the abstract value
     */
-  case class ConstExpr[L, U](lower: L, upper: U) extends Expression[L, U]
+  case class ConstExpression[L, U](lower: L, upper: U) extends Expression[L, U]
+
+  sealed trait SemanticSelector[U]
+
+  case class EqualsSelector[U](value: U) extends SemanticSelector[U]
+
+  case class LessThanSelector[U](lt: U) extends SemanticSelector[U]
+
   /** Selects either e1 or e2 depending on the semantics.
-    * When parsing it is considered as e1 | e2*/
-  case class BinarySelector[L, U](selector: Selector[U], e1: Expression[L, U], e2: Expression[L, U]) extends Expression[L, U] {
-    def exprs = Iterable(e1, e2)
-  }
+    * When parsing it is considered as e1 | e2.
+    * */
+  case class BooleanAlternative[L, U](selector: SemanticSelector[U], e1: Expression[L, U], e2: Expression[L, U]) extends Expression[L, U]
+
+
   /** Selects one of the given expressions.
     * When parsing it is considered as e(0) | e(1) | ... | e(size-1) */
-  case class MapSelector[L, U](exprs: Iterable[ConstExpr[L, U]]) extends Expression[L, U]
+  case class MapAlternative[L, U](exprs: Iterable[ConstExpression[L, U]]) extends Expression[L, U]
 
   case class Pair[L, U1, U2](e1: Expression[L, U1], e2: Expression[L, U2]) extends Expression[L, (U1, U2)]
 
@@ -57,13 +64,10 @@ trait Numerals4 {
   case class Transformed[L, M, U](e: Expression[L, M], t: Transformer[M, U]) extends Expression[L, U]
 
   /** Creates a direct mapping between a number and a lemma stream that consists of only a single lemma.*/
-  implicit def mapSingleWordNumber(numbers: Iterable[Long]): NE = MapSelector(numbers map mapSingleNumber)
+  implicit def mapSingleWordNumber(numbers: Iterable[Long]): NE = MapAlternative(numbers map mapSingleNumber)
 
-  implicit def mapSingleNumber(n: Long): ConstExpr[LemmaStream, Long] = ConstExpr(lemmasForNumber(n), n)
+  implicit def mapSingleNumber(n: Long): ConstExpression[LemmaStream, Long] = ConstExpression(lemmasForNumber(n), n)
 
-  case class EqualsSelector[U](value: U) extends Selector[U]
-
-  case class LessThanSelector[U](lt: U) extends Selector[U]
 
   /** Divide a number into quotient and residue */
   case class ModSplit(module: Long) extends Transformer[(Long, Long), Long]
@@ -77,11 +81,11 @@ trait Numerals4 {
 
     def ^^[U](t: Transformer[M, U]) = Transformed(e, t)
 
-    def |?(defaultValue: M) = BinarySelector(EqualsSelector(defaultValue), e, Epsilon[L, M](defaultValue))
+    def |?(defaultValue: M) = BooleanAlternative(EqualsSelector(defaultValue), e, Epsilon[L, M](defaultValue))
 
     def |(other: Expression[L, M]) = new {
-      def selectBy(selector: Selector[M]): Expression[L, M] =
-        BinarySelector(selector, e, other)
+      def selectBy(selector: SemanticSelector[M]): Expression[L, M] =
+        BooleanAlternative(selector, e, other)
     }
 
     def labelled(label: String): Expression[L, M] = Labelled(label, e)
@@ -110,14 +114,14 @@ trait Numerals4 {
 
   /* For hours.*/
   val `[1..3]` = 1L to 3:NE
-  //	val `[4..19]` = 4L to 19:TE[Long]
   val `[20..23]` = (20L: NE) ~ (`[1..3]` |? 0L) ^^ ModSplit(10L)
   val `[1..23]` = `[20..23]` | `[1..19]` selectBy LessThanSelector(20L)
   val `[0..23]` = `[1..23]` | `[0]` selectBy LessThanSelector(1L)
 
   /* Thousands and higher*/
   val `[1 000]` = 1000L:NE
-  val `[1 000..999 999]` = (`[1..999]` ~ `[1 000]` ^^ OrderSplit(1000L)) ~ (`[1..999]` |? 0L) ^^ ModSplit(1000L)
+  val `[1 000..999 000/1000]` = `[1..999]` ~ `[1 000]` ^^ OrderSplit(1000L)
+  val `[1 000..999 999]` = `[1 000..999 000/1000]` ~ (`[1..999]` |? 0L) ^^ ModSplit(1000L)
   val `[1..999 999]` = `[1 000..999 999]` | `[1..999]` selectBy LessThanSelector(1000L)
 
   val `[1 000 000]` = 1000000L:NE
@@ -131,9 +135,10 @@ trait Numerals4 {
     */
   def range1To999Order(order:Long):NE = order match {
     case 1L => `[1..999]`
-    case _ =>
+    case o if o >= 1000 =>
       val lower = range1To999Order(order / 1000)
       val upper = (`[1..999]` ~ order ^^ OrderSplit(order)) ~ (lower |? 0L) ^^ ModSplit(order)
       upper | lower selectBy LessThanSelector(order)
+    case _ => throw new IllegalArgumentException(s"Cannot construct expression for $order. Only multiple thousand orders are supported.")
   }
 }

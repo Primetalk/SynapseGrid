@@ -98,33 +98,46 @@ trait Parsers extends Numerals4 {
     }
   }
 
+  /** Helper for pattern matching different classes that represent alternatives. */
+  object Alternatives {
+    def unapply(a: Expression[_, _]): Option[Stream[Expression[_, _]]] = a match {
+      case MapAlternative(lst) => Some(lst.toStream)
+      case BooleanAlternative(_, e1, e2) => Some(Stream(e1, e2))
+      case _ => None
+    }
+  }
+
+  object Sequences {
+    def unapply(a: Expression[_, _]): Option[List[Expression[_, _]]] = a match {
+      case Pair(e1, e2) => Some(List(e1, e2))
+      case _ => None
+    }
+  }
+
   def backTrackingParser[U](e: Expression[LemmaStream, U]): Parser[U] = {
     implicit def uncheckedGenerics[T[_], O](t: T[_]): T[O] = t.asInstanceOf[T[O]]
     implicit def uncheckedGenerics2[T[_, _], O, P](t: T[_, _]): T[O, P] = t.asInstanceOf[T[O, P]]
 
     def backTrackingParser0(e: Expression[_, _]): Parser[_] = e match {
       case Epsilon(u) => s => Success(u, s)
-      case ConstExpr(l: LemmaStream, u) => (s: LemmaStream) => startsWithAndTail(l, s).map(t => u)
+      case ConstExpression(l: LemmaStream, u) => (s: LemmaStream) => startsWithAndTail(l, s).map(t => u)
       case Labelled(_, expr) => backTrackingParser0(expr)
-      case MapSelector(lst) =>
-        val parsers = lst.map(backTrackingParser0).toStream
+      case Alternatives(expressions) =>
+        val parsers = expressions.map(backTrackingParser0)
         (s: LemmaStream) =>
           parsers.
             map(parser => parser(s)).
             dropWhile(_.isFailure).
             headOption.getOrElse(Failure())
-      case BinarySelector(_, e1, e2) =>
-        val parsers = Stream(e1, e2).map(backTrackingParser0)
+      case Sequences(expressions) =>
+        val parsers = expressions.map(backTrackingParser0)
         (s: LemmaStream) =>
           parsers.
-            map(parser => parser(s)).
-            dropWhile(_.isFailure).
-            headOption.getOrElse(Failure())
-      case Pair(e1, e2) =>
-        val parsers = List(e1, e2).map(backTrackingParser0)
-        (s: LemmaStream) =>
-          val res = parsers.foldLeft(Success[List[U]](Nil, s): ParseResult[List[U]])(_.next(_))
-          res.map { lst => val list = lst.reverse; (list.head, list.tail.head).asInstanceOf[U]}
+            foldLeft(ParseResult.success(List[U](), s))(_.next(_)).
+            map {
+            lst =>
+              (lst.tail.head, lst.head).asInstanceOf[U]
+          }
       case Transformed(innerExpression: Expression[_, _], t) =>
         val innerParser = backTrackingParser0(innerExpression)
         val converter = defaultSequencerHandler(t)
