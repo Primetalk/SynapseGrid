@@ -346,7 +346,7 @@ object SystemConverting {
     val lst = contactsProcessors2.groupBy(_._1).map(p ⇒ (p._1, p._2.map(_._2)))
     val signalProcessors = lst.toMap[Contact[_], List[RuntimeComponent]].withDefault(c ⇒ List())
 
-    RuntimeSystem(system.name, signalProcessors, stopContacts)
+    RuntimeSystem(system.name, signalProcessors, stopContacts, system.unhandledExceptionHandler)
   }
 
   def toRuntimeSystem(system: StaticSystem,

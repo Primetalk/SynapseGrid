@@ -58,13 +58,15 @@ trait Indexed {
 
 case class ContactsIndexImpl(contacts: Seq[Contact[_]]) extends ContactsIndex
 
-case class StaticSystem(
-                         /** A subset of contacts */
+case class StaticSystem( /** A subset of contacts */
                          inputs: List[Contact[_]],
                          outputs: List[Contact[_]],
                          privateStateHandles: List[StateHandle[_]],
                          components: List[Component],
-                         name: String) extends Named
+                         name: String,
+                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
+                         = defaultUnhandledExceptionHandler
+                         ) extends Named
 with Component
 with Stateful[Map[Contact[_], Any]]
 with ComponentWithInternalStructure

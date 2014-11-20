@@ -14,8 +14,8 @@
 package ru.primetalk.synapse
 
 import java.io.{File, PrintWriter}
-import scala.language.implicitConversions
-import scala.language.reflectiveCalls
+
+import scala.language.{implicitConversions, reflectiveCalls}
 
 package object core extends SystemBuilderImplicits2 {
 
@@ -157,6 +157,7 @@ package object core extends SystemBuilderImplicits2 {
   type Context = Map[Contact[_], _]
 
   type TrellisElement = (Context, List[Signal[_]])
+  type TrellisElementTracking = (Context, List[Trace])
 
   type ContextUpdater = List[(Contact[_], _)]
 
@@ -171,11 +172,30 @@ package object core extends SystemBuilderImplicits2 {
 
   /** A function that makes single(?) step over time. */
   type TrellisProducer = TrellisElement => TrellisElement
+  type TrellisProducerTracking = TrellisElementTracking => TrellisElementTracking
   /** A function that takes a single signal on input and returns the last trellis element. */
   type TotalTrellisProducer = ((Context, Signal[_]) => TrellisElement)
+  type TotalTrellisProducerTracking = ((Context, Signal[_]) => TrellisElementTracking)
   type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
 
   type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem => TotalTrellisProducer
+
+  /** The type of a handler that will handle exceptions during signal processing.
+    * If the exception is recoverable, then the handler should provide a new Context
+    * for further processing.
+    * If not recoverable - throw some exception (or rethrow the original one).
+    * */
+  type UnhandledProcessingExceptionHandler = (Throwable, String, Signal[_], Context) => Context
+
+  val defaultUnhandledExceptionHandler : UnhandledProcessingExceptionHandler = (e, name, signal, context) => e match {
+    case e:Exception =>
+      val message: String =
+        s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.\n" +
+          s"Context value before processing:\n" + context.mkString("\n")
+      throw new RuntimeException(message,e)
+    case other =>
+      throw other
+  }
 
   implicit class RichRuntimeSystem(runtimeSystem: RuntimeSystem) {
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */

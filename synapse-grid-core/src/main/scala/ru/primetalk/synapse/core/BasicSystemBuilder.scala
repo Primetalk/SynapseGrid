@@ -52,6 +52,7 @@ trait BasicSystemBuilder {
   private[core] val components = mutable.ListBuffer[Component]()
   private[core] val inputContacts = mutable.Set[Contact[_]]()
   private[core] val outputContacts = mutable.Set[Contact[_]]()
+  private[core] var unhandledExceptionHandler = defaultUnhandledExceptionHandler
 
   protected val extensions = mutable.Map[SystemBuilderExtensionId[_], Any]()
 
@@ -205,5 +206,9 @@ trait BasicSystemBuilder {
       getOrElseUpdate(extensionId,
         extensionId.extend(this)).
       asInstanceOf[T]
+
+  def handleExceptions(handler:UnhandledProcessingExceptionHandler): Unit = {
+    unhandledExceptionHandler = handler
+  }
 
 }

@@ -14,10 +14,10 @@
  */
 package ru.primetalk.synapse.core
 
-import scala.language.existentials
 import scala.Predef._
-import scala.collection.mutable
 import scala.annotation.tailrec
+import scala.collection.mutable
+import scala.language.existentials
 
 /** This contact is used to enable special simultaneous processing of signals.
   * For instance the contact can be used for debug purposes.
@@ -50,16 +50,19 @@ object SubsystemSpecialAnswerContact extends Contact[SubsystemDirectSignal0]
   * organized by Contacts and is ready for direct processing of TrellisElement.*/
 case class RuntimeSystem(name:String,
                          signalProcessors: ContactToSubscribersMap,
-                         stopContacts: Set[Contact[_]]
+                         stopContacts: Set[Contact[_]],
+                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
+                         = defaultUnhandledExceptionHandler
                           ){
   lazy val contacts = signalProcessors.keySet
   lazy val isTrellisContactUsed = contacts.contains(TrellisContact)
 }
 
 class RuntimeSystemForTrellisProcessing(val runtimeSystem:RuntimeSystem) {
+
   import runtimeSystem._
 
-  def processSignal(signal:Signal[_], initialState:Context, newSignals:mutable.ListBuffer[Signal[_]]):Context= {
+  def processSignal(signal:Signal[_], initialState:Context, newSignals : mutable.ListBuffer[Signal[_]]):Context= {
     val c = signal.contact
     var currentState = initialState
     for (proc ← signalProcessors(c)) {
@@ -67,7 +70,8 @@ class RuntimeSystemForTrellisProcessing(val runtimeSystem:RuntimeSystem) {
         proc match {
           case r@ RuntimeComponentMultiState(_, _, f) =>
             val (ctx, signals) = f(currentState, signal)
-            assert(ctx.keySet == currentState.keySet, s"RuntimeComponentHeavy $r has changed the set of keys.\nWas\n$ctx\nBecome\nnewState")
+            assert(ctx.keySet == currentState.keySet,
+              s"RuntimeComponentHeavy $r has changed the set of keys.\n\tWas\n$currentState\n\tBecome\n$ctx")
             currentState = ctx
             newSignals ++= signals
           case RuntimeComponentFlatMap(_, _, _, f) =>
@@ -80,9 +84,8 @@ class RuntimeSystemForTrellisProcessing(val runtimeSystem:RuntimeSystem) {
             newSignals ++= signals
         }
       } catch {
-        case e: Exception => throw new RuntimeException(
-          s"Exception ${e.getClass.getSimpleName} in handler during processing '$signal' in system '$name'.\n" +
-            s"Context value before processing:\n"+currentState.mkString("\n"),e)
+        case e:Throwable =>
+          unhandledExceptionHandler(e, name, signal, currentState)
       }
     }
     currentState
@@ -108,21 +111,22 @@ case class TrellisProducerSpeedy(runtimeSystemForTrellisProcessing:RuntimeSystem
       else
         t._2
 
+
     @tailrec
     def processAllSignals(signalsToProcess:List[Signal[_]],
                           context:Context,
-                          newSignalsBuffer:mutable.ListBuffer[Signal[_]]):(Context, List[Signal[_]]) =
+                          nextStepSignalsBuffer:mutable.ListBuffer[Signal[_]]):(Context, List[Signal[_]]) =
       signalsToProcess match {
         case Nil =>
-          (context, newSignalsBuffer.toList)
+          (context, nextStepSignalsBuffer.toList)
         case signal :: tail =>
           val newState =
-            if (stopContacts.contains(signal.contact)){
-              newSignalsBuffer += signal
-              context
+            if (stopContacts.contains(signal.contact)){// signals on contacts from stop-list are not processed.
+              nextStepSignalsBuffer += signal
+              context // the state is not changed
             }else
-              processSignal(signal, context, newSignalsBuffer)
-          processAllSignals(tail, newState, newSignalsBuffer)
+              processSignal(signal, context, nextStepSignalsBuffer)
+          processAllSignals(tail, newState, nextStepSignalsBuffer)
       }
 
     processAllSignals(toProcess, t._1,mutable.ListBuffer[Signal[_]]())

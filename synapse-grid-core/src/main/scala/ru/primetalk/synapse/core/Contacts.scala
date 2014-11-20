@@ -134,5 +134,19 @@ object StateHandle {
 }
 
 
+/** The trace of a signal towards the original one.
+  *
+  * @param signalsReversed a list of signals starting from the last produced one and
+  *                        collecting the signals that have lead to the production of the last signal.
+  * @param processorsReversed a list of processors that have worked for the production of the current signal.
+  *                   The length of the processors list is usually by one shorter than the length of the signals.
+  *                   However if it is a "lost trace" (the one that didn't produce output), then the last processor
+  *                   is added but the signal is not added. Thus the lengths are the same.
+  */
+case class Trace(signalsReversed:List[Signal[_]], processorsReversed:List[RuntimeComponent] = Nil){
+  def this(signal:Signal[_]) = this(List(signal))
+  def signal = signalsReversed.head
+}
+
 
 
