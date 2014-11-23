@@ -157,7 +157,6 @@ package object core extends SystemBuilderImplicits2 {
   type Context = Map[Contact[_], _]
 
   type TrellisElement = (Context, List[Signal[_]])
-  type TrellisElementTracking = (Context, List[Trace])
 
   type ContextUpdater = List[(Contact[_], _)]
 
@@ -172,10 +171,8 @@ package object core extends SystemBuilderImplicits2 {
 
   /** A function that makes single(?) step over time. */
   type TrellisProducer = TrellisElement => TrellisElement
-  type TrellisProducerTracking = TrellisElementTracking => TrellisElementTracking
   /** A function that takes a single signal on input and returns the last trellis element. */
   type TotalTrellisProducer = ((Context, Signal[_]) => TrellisElement)
-  type TotalTrellisProducerTracking = ((Context, Signal[_]) => TrellisElementTracking)
   type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
 
   type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem => TotalTrellisProducer
@@ -205,6 +202,13 @@ package object core extends SystemBuilderImplicits2 {
       val loopy = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
       loopy
     }
+//    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
+//    def toTotalTrellisProducerTracking: TotalTrellisProducerTracking = {
+//      val rsftp = new RuntimeSystemForTrellisProcessingTracking(runtimeSystem)
+//      val step = TrellisProducerSpeedyTracking(rsftp)
+//      val loopy = TrellisProducerLoopyTracking(step, runtimeSystem.stopContacts)
+//      loopy
+//    }
   }
 
   implicit class RichTotalTrellisProducer(ttp: TotalTrellisProducer) {
