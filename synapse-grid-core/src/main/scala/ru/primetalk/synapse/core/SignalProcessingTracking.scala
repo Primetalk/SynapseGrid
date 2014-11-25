@@ -102,8 +102,7 @@ trait SignalProcessing0 {
   }
 
   /** A component that does single step along the trellis. */
-  case class TrellisProducerSpeedyTracking(runtimeSystemForTrellisProcessing: RuntimeSystemForTrellisProcessingTracking)
-    extends TrellisProducerTracking {
+  case class TrellisProducerSpeedyTracking(runtimeSystemForTrellisProcessing: RuntimeSystemForTrellisProcessingTracking) {
 
     import runtimeSystemForTrellisProcessing._
     import runtimeSystem._
@@ -149,12 +148,12 @@ trait SignalProcessing0 {
     * It works as follows. Constructs a lazy evaluated Stream of TrellisElement s (method `from`).
     * Then searches within the stream for a first element that contains only signals at stop contacts.
     * */
-  case class TrellisProducerLoopyTracking(trellisProducer: TrellisProducerTracking,
+  case class TrellisProducerLoopyTracking(trellisProducer: TrellisProducerSpeedyTracking,
                                           stopContacts: Set[Contact[_]]) extends TotalTrellisProducerTracking {
 
     def apply(context: Context, signal: Signal[_]): TrellisElementTracking = {
       val totalTrellisBuilderTracking = newTotalTrellisBuilder(context)
-      val trellisProducer1 = trellisProducer(totalTrellisBuilderTracking)
+      val trellisProducer1 = trellisProducer(totalTrellisBuilderTracking)(_)
       try {
         def from(t0: TSignals): Stream[TSignals] =
           t0 #:: from(trellisProducer1(t0))
@@ -201,7 +200,7 @@ object SignalProcessingTracking extends SignalProcessing0 {
       }
     }
 
-    override def toTrellisElement: (Context, List[TSignal]) = (currentState, newTraces.toList)
+    override def toTrellisElement: TSignals = newTraces.toList
 
     override def currentState: Context = totalTrellisBuilderTracking.currentState
 
@@ -256,7 +255,7 @@ object SignalProcessingSimple extends SignalProcessing0 {
       }
     }
 
-    override def toTrellisElement: (Context, List[TSignal]) = (currentState, newTraces.toList)
+    override def toTrellisElement: TSignals = newTraces.toList
 
     override def currentState: Context = totalTrellisBuilderTracking.currentState
 
