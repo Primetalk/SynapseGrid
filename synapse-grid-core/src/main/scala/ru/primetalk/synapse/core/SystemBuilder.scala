@@ -14,9 +14,10 @@
 package ru.primetalk.synapse
 package core
 
-import scala.reflect.ClassTag
 import scala.collection.{GenTraversableOnce, mutable}
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
+import scala.util.Try
 
 /**
  * Doesn't work because T2 is unknown when it is called implicitly.
@@ -89,7 +90,7 @@ class LabellingExt(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
  * DSL methods for implicit conversion*/
 class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuilder) {
 
-  import core._
+  import ru.primetalk.synapse.core._
 
   def labelNext(label: String*) = {
     sb.labels(label: _*)
@@ -246,7 +247,7 @@ class ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb: BasicSystemBuil
 class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
   require(c != null, "Contact is null. " +
     "This can usually happen when the contact is declared using val, " +
-    "but it is placed further down the source code and thus has not been initilized yet.")
+    "but it is placed further down the source code and thus has not been initialized yet.")
 
   def labelNext(label: String*) = {
     sb.labels(label: _*)
@@ -325,6 +326,10 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
   /** Creates another contact and links it to this one with transformation f. */
   def map[T2](f: T ⇒ T2, name: String = ""): Contact[T2] =
     (c, sb.auxContact[T2]).map(f, sb.nextLabel(name, "map(" + f + ")"))
+
+  /** Creates another contact and links it to this one with transformation f. */
+  def tryMap[T2](f: T ⇒ T2, name: String = ""): Contact[Try[T2]] =
+    map((t:T)=>Try(f(t)), sb.nextLabel(name, "tryMap(" + f + ")"))
 
   def mapTo[T2](f: T ⇒ T2, auxContact1: Contact[T2] = sb.auxContact[T2]): Contact[T2] =
     (c, auxContact1).map(f, sb.nextLabel("", "mapTo(" + f + ")"))
@@ -528,6 +533,16 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
   //  }
 }
 
+class TryContactOps[T](val c: Contact[Try[T]])(sb: BasicSystemBuilder) {
+  def recover:Contact[Throwable] =
+    new core.ContactOps[Try[T]](c)(sb).flatMap(t=>if(t.isSuccess) Seq() else Seq(t.failed.get))
+}
+
+class TryFlatMapContactOps[T](val c: Contact[Try[TraversableOnce[T]]])(sb: BasicSystemBuilder) {
+  def flatten:Contact[T] =
+    new core.ContactOps[Try[TraversableOnce[T]]](c)(sb).flatMap(t=>if(t.isSuccess) t.get else Seq())
+}
+
 class StateOps[S](s: StateHandle[S])(sb: BasicSystemBuilder) {
   def >>:(c: Contact[S]) = {
     new ContactOps(c)(sb).saveTo(s)
@@ -564,6 +579,13 @@ trait SystemBuilderImplicits2 {
   implicit def contactOps[T](c: core.Contact[T])(implicit sb: BasicSystemBuilder): core.ContactOps[T] =
     new core.ContactOps(c)(sb)
 
+  implicit def tryContactOps[T](c: core.Contact[Try[T]])(implicit sb: BasicSystemBuilder): core.TryContactOps[T] =
+    new core.TryContactOps(c)(sb)
+
+  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]])(implicit sb: BasicSystemBuilder): core.TryFlatMapContactOps[T] =
+    new core.TryFlatMapContactOps(c)(sb)
+
+
 }
 
 trait SystemBuilderImplicits {
@@ -593,6 +615,10 @@ trait SystemBuilderImplicits {
 
   implicit def contactOps[T](c: core.Contact[T]): core.ContactOps[T] = new core.ContactOps(c)(sb)
 
+  implicit def tryContactOps[T](c: core.Contact[Try[T]]): core.TryContactOps[T] = new core.TryContactOps(c)(sb)
+
+  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]]): core.TryFlatMapContactOps[T] = new core.TryFlatMapContactOps(c)(sb)
+
 }
 
 trait SystemBuilderAdv extends SystemBuilderImplicits {
@@ -602,7 +628,7 @@ trait SystemBuilderAdv extends SystemBuilderImplicits {
 
   //	import sb._
 
-  import core._
+  import ru.primetalk.synapse.core._
 
   def nextContactName =
     sb.extend(AuxContactNumberingExtId).nextContactName
