@@ -193,13 +193,25 @@ package object core extends SystemBuilderImplicits2 {
     case other =>
       throw other
   }
+  val rethrowUnhandledExceptionHandler : UnhandledProcessingExceptionHandler = (e, name, signal, context) => e match {
+    case any =>
+      throw any
+  }
 
   implicit class RichRuntimeSystem(runtimeSystem: RuntimeSystem) {
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
-    def toTotalTrellisProducer: TotalTrellisProducer = {
+    def toTotalTrellisProducerOld: TotalTrellisProducer = {
       val rsftp = new RuntimeSystemForTrellisProcessing(runtimeSystem)
       val step = TrellisProducerSpeedy(rsftp)
       val loopy = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
+      loopy
+    }
+    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
+    def toTotalTrellisProducer: TotalTrellisProducer = {
+      import ru.primetalk.synapse.core.SignalProcessingSimple._
+      val rsftp = new RuntimeSystemForTrellisProcessingTracking(runtimeSystem)
+      val step = TrellisProducerSpeedyTracking(rsftp)
+      val loopy = TrellisProducerLoopyTracking(step, runtimeSystem.stopContacts)
       loopy
     }
 //    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */

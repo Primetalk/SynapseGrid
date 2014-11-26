@@ -4,8 +4,8 @@
 package ru.primetalk.synapse.core
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
 /**
  * @author nehaev
@@ -95,11 +95,11 @@ class ManagedStateTest extends FunSuite {
 		val abcCalc = abcSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
 		val outSigs1 = abcCalc.receive(aSig)
-		assert(outSigs1.size === 0)
+		assert(outSigs1.size === 0, s"outSigs1 === $outSigs1")
 		
 		val bSig = BInput.createSignal(3)
 		val outSigs2 = abcCalc.receive(bSig)
-		assert(outSigs2.size === 1)
+		assert(outSigs2.size === 1, s"outSigs2 === $outSigs2")
 		assert(ABOutput.filterFunction(outSigs2).head.data === 7)
 	}
 	
@@ -132,13 +132,13 @@ class ManagedStateTest extends FunSuite {
 		
 		val bSig2 = BInput.createSignal(6)
 		val outSigs4 = abcCalc.receive(bSig2)
-		assert(outSigs4.size === 2)
+		assert(outSigs4.size === 2, s"outSigs4 === $outSigs4")
 		assert(ABOutput.filterFunction(outSigs4).head.data === 10)
 		assert(ABCOutput.filterFunction(outSigs4).head.data === 50)
 		
 		val cSig2 = CInput.createSignal(2)
 		val outSigs5 = abcCalc.receive(cSig2)
-		assert(outSigs5.size === 1)
+		assert(outSigs5.size === 1, s"outSigs5 === $outSigs5")
 		assert(ABCOutput.filterFunction(outSigs5).head.data === 20)
 	}
 	

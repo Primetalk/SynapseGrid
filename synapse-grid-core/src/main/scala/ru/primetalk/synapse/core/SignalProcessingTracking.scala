@@ -28,7 +28,7 @@ trait SignalProcessing0 {
   type TrellisProducerTracking = TotalTrellisBuilder => TSignals => TSignals
   type TotalTrellisProducerTracking = ((Context, Signal[_]) => TrellisElementTracking)
 
-  def newTotalTrellisBuilder(context: Context): TotalTrellisBuilder
+  def newTotalTrellisBuilder(runtimeSystem:RuntimeSystem, context: Context): TotalTrellisBuilder
 
   trait TotalTrellisBuilder {
     var currentState: Context
@@ -40,6 +40,15 @@ trait SignalProcessing0 {
     def saveStopSignal(signal: TSignal)
 
     def newSingleStepBuilder: TrellisBuilder
+    /** Adds an exception to the trellis.
+      * Usually calls runtimeSystem.unhandledExceptionHandler.
+      * @param trace original signal that has lead to the exception
+      * @param proc  signal processor
+      */
+    def addException(trace: TSignal, proc: RuntimeComponent, exception:Throwable)
+
+    /** The list of signals on stop contacts.*/
+    def stopSignals:TSignals
   }
 
   /** Constructs trellis.
@@ -55,6 +64,12 @@ trait SignalProcessing0 {
 
     def addSignals(trace: TSignal, proc: RuntimeComponent, signals: List[Signal[_]])
 
+    /** Adds an exception to the trellis.
+      * Usually calls runtimeSystem.unhandledExceptionHandler.
+      * @param trace original signal that has lead to the exception
+      * @param proc  signal processor
+      */
+    def addException(trace: TSignal, proc: RuntimeComponent, exception:Throwable)
     def toTrellisElement: TSignals
   }
 
@@ -93,7 +108,7 @@ trait SignalProcessing0 {
           }
         } catch {
           case e: Throwable =>
-            unhandledExceptionHandler(e, name, signal, trellisBuilder.currentState)
+            trellisBuilder.currentState = unhandledExceptionHandler(e, name, signal, trellisBuilder.currentState)
         }
       }
       trellisBuilder.currentState
@@ -152,7 +167,7 @@ trait SignalProcessing0 {
                                           stopContacts: Set[Contact[_]]) extends TotalTrellisProducerTracking {
 
     def apply(context: Context, signal: Signal[_]): TrellisElementTracking = {
-      val totalTrellisBuilderTracking = newTotalTrellisBuilder(context)
+      val totalTrellisBuilderTracking = newTotalTrellisBuilder(trellisProducer.runtimeSystemForTrellisProcessing.runtimeSystem, context)
       val trellisProducer1 = trellisProducer(totalTrellisBuilderTracking)(_)
       try {
         def from(t0: TSignals): Stream[TSignals] =
@@ -164,7 +179,7 @@ trait SignalProcessing0 {
         }.get
         //WONTFIX: put final trellis on TrellisContact. This is impractical in the current architecture.
         // as it is intended only for debug purposes, thus we don't implement it not to sacrifice performance.
-        (totalTrellisBuilderTracking.currentState, finalTrellisElement)
+        (totalTrellisBuilderTracking.currentState,  totalTrellisBuilderTracking.stopSignals ++ finalTrellisElement)
       } catch {
         case e: Exception =>
           throw new RuntimeException(
@@ -200,6 +215,9 @@ object SignalProcessingTracking extends SignalProcessing0 {
       }
     }
 
+    override def addException(trace: TSignal, proc: RuntimeComponent, exception:Throwable): Unit = {
+      totalTrellisBuilderTracking.addException(trace, proc, exception)
+    }
     override def toTrellisElement: TSignals = newTraces.toList
 
     override def currentState: Context = totalTrellisBuilderTracking.currentState
@@ -209,20 +227,26 @@ object SignalProcessingTracking extends SignalProcessing0 {
     }
   }
 
-  def newTotalTrellisBuilder(context: Context): TotalTrellisBuilder = new TotalTrellisBuilderTracking(context)
+  def newTotalTrellisBuilder(runtimeSystem:RuntimeSystem,context: Context): TotalTrellisBuilder = new TotalTrellisBuilderTracking(runtimeSystem,context)
 
-  class TotalTrellisBuilderTracking(initialState: Context) extends TotalTrellisBuilder {
+  class TotalTrellisBuilderTracking(runtimeSystem:RuntimeSystem,initialState: Context) extends TotalTrellisBuilder {
     val lostTraces: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal]()
-    val stopSignals: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal]()
+    val stopSignalsBuilder: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal]()
+    /** The list of signals on stop contacts.*/
+    def stopSignals:TSignals = stopSignalsBuilder.toList
+
     var currentState: Context = initialState
 
     /** Saves the signal that is the last one in a trace. It didn't produce output. */
     override def saveTerminatedSignal(signal: TSignal): Unit = lostTraces += signal
 
     /** Save the signal that appeared on the stop-contact. */
-    override def saveStopSignal(signal: TSignal): Unit = stopSignals += signal
+    override def saveStopSignal(signal: TSignal): Unit = stopSignalsBuilder += signal
 
     def newSingleStepBuilder: TrellisBuilder = new TrackingTrellisBuilder(mutable.ListBuffer[TSignal](), this)
+    override def addException(trace: TSignal, proc: RuntimeComponent, exception:Throwable): Unit ={
+      currentState = runtimeSystem.unhandledExceptionHandler(exception, "", tSignalToSignal(trace), currentState)
+    }
   }
 
   def rsToTrellisProducer(runtimeSystem: RuntimeSystem): TotalTrellisProducerTracking = {
@@ -255,6 +279,9 @@ object SignalProcessingSimple extends SignalProcessing0 {
       }
     }
 
+    override def addException(trace: TSignal, proc: RuntimeComponent, exception:Throwable): Unit = {
+      totalTrellisBuilderTracking.addException(trace, proc, exception)
+    }
     override def toTrellisElement: TSignals = newTraces.toList
 
     override def currentState: Context = totalTrellisBuilderTracking.currentState
@@ -264,20 +291,25 @@ object SignalProcessingSimple extends SignalProcessing0 {
     }
   }
 
-  def newTotalTrellisBuilder(context: Context): TotalTrellisBuilder = new TotalTrellisBuilderTracking(context)
+  def newTotalTrellisBuilder(runtimeSystem:RuntimeSystem, context: Context): TotalTrellisBuilder = new TotalTrellisBuilderTracking(runtimeSystem, context)
 
-  class TotalTrellisBuilderTracking(initialState: Context) extends TotalTrellisBuilder {
+  class TotalTrellisBuilderTracking(runtimeSystem:RuntimeSystem, initialState: Context) extends TotalTrellisBuilder {
     val lostTraces: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal]()
-    val stopSignals: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal]()
+    val stopSignalsBuilder: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal]()
+    /** The list of signals on stop contacts.*/
+    def stopSignals:TSignals = stopSignalsBuilder.toList
+    /** Save the signal that appeared on the stop-contact. */
+    override def saveStopSignal(signal: TSignal): Unit = stopSignalsBuilder += signal
     var currentState: Context = initialState
 
     /** Saves the signal that is the last one in a trace. It didn't produce output. */
     override def saveTerminatedSignal(signal: TSignal): Unit = lostTraces += signal
 
-    /** Save the signal that appeared on the stop-contact. */
-    override def saveStopSignal(signal: TSignal): Unit = stopSignals += signal
 
     def newSingleStepBuilder: TrellisBuilder = new TrackingTrellisBuilder(mutable.ListBuffer[TSignal](), this)
+    override def addException(trace: TSignal, proc: RuntimeComponent, exception:Throwable): Unit ={
+      currentState = runtimeSystem.unhandledExceptionHandler(exception, "", trace, currentState)
+    }
   }
 
   def rsToTrellisProducer(runtimeSystem: RuntimeSystem): TotalTrellisProducerTracking = {
