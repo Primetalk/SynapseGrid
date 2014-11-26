@@ -109,12 +109,18 @@ class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuild
     sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
       new FlatMapLink[T1, T2](f))
 
-  def splitToElements(name: String = "")(implicit ev: T1 <:< TraversableOnce[T2]): Contact[T2] =
-    flatMap(t => ev(t), sb.nextLabel(name, "split"))
+  def splitToElements(name: String = "")(implicit ev: T1 <:< GenTraversableOnce[T2]): Contact[T2] =
+    flatMap((t:T1) => ev(t), sb.nextLabel(name, "split"))
+
 
   def optionalMap(f: T1 ⇒ Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
     sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
       new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
+//  // this variant of flatMap is conflicting with flatMap-GenTraversableOnce.
+//  // It seems converting Option to Traversable is better.
+//  def flatMap(f: T1 ⇒ Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
+//    sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
+//      new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
 
   /** Cast data to the given class if possible. If the data cannot be cast, then it is filtered out. */
   def castFilter[T3 <: T2](t2Class: Class[T3], name: String = "") = {
@@ -141,7 +147,7 @@ class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuild
   }
 
   def collect(f: PartialFunction[T1, T2], name: String = "") =
-    flatMap(t => {
+    flatMap((t:T1) => {
       if (f.isDefinedAt(t)) Seq(f(t)) else Seq()
     }, name)
 
@@ -159,7 +165,16 @@ class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuild
       new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
 }
+class TryLinkBuilderOps[T1, T2](c: (Contact[T1], Contact[Try[T2]]))(sb: BasicSystemBuilder) {
 
+  import ru.primetalk.synapse.core._
+
+  /** If map is used with a try-contact, then it will automatically encapsulate
+    * function into Try.*/
+  def map(f: T1 ⇒ T2, name: String = ""): Contact[Try[T2]] =
+    sb.addLink(c._1, c._2, sb.nextLabel(name, "Try{" + f+"}"),
+      new FlatMapLink[T1, Try[T2]](x => Seq(Try{f(x)})))
+}
 class StateLinkBuilder2Ops[T1, T2, S](p: (core.ContactWithState[T1, S], Contact[T2]))(sb: BasicSystemBuilder) {
 
   def stateMap(f: (S, T1) ⇒ (S, T2), name: String = "") =
@@ -288,7 +303,7 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
   // The difference is only in the signature of the user function.
 
   def stock(f: T ⇒ Any, name: String = "") = {
-    (c -> core.devNull).flatMap(x => Seq(f(x)), sb.nextLabel(name, ">>null"))
+    (c -> core.devNull).flatMap((x:T) => Seq(f(x)), sb.nextLabel(name, ">>null"))
     c
   }
 
@@ -534,13 +549,15 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
 }
 
 class TryContactOps[T](val c: Contact[Try[T]])(sb: BasicSystemBuilder) {
+  /** Extracts an exception from Try. It only produces a signal when there was an exception.*/
   def recover:Contact[Throwable] =
-    new core.ContactOps[Try[T]](c)(sb).flatMap(t=>if(t.isSuccess) Seq() else Seq(t.failed.get))
+    new core.ContactOps[Try[T]](c)(sb).flatMap(t=>if(t.isSuccess) Seq() else Seq(t.failed.get), "recover")
 }
 
 class TryFlatMapContactOps[T](val c: Contact[Try[TraversableOnce[T]]])(sb: BasicSystemBuilder) {
+  /** Flatterns the output of a tryMap. If there was an exception, an empty list is returned*/
   def flatten:Contact[T] =
-    new core.ContactOps[Try[TraversableOnce[T]]](c)(sb).flatMap(t=>if(t.isSuccess) t.get else Seq())
+    new core.ContactOps[Try[TraversableOnce[T]]](c)(sb).flatMap(t=>if(t.isSuccess) t.get else Seq(), "flatten")
 }
 
 class StateOps[S](s: StateHandle[S])(sb: BasicSystemBuilder) {
@@ -560,6 +577,9 @@ trait SystemBuilderImplicits2 {
 
   implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder) =
     new core.LinkBuilderOps(c)(sb)
+
+  implicit def implTryLinkBuilder[T1, T2](p: (Contact[T1], Contact[Try[T2]]))(implicit sb: BasicSystemBuilder) =
+    new core.TryLinkBuilderOps(p)(sb)
 
   implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder) =
     new core.DirectLinkBuilderOps(p)(sb)
@@ -605,6 +625,8 @@ trait SystemBuilderImplicits {
 
   implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) = new core.LinkBuilderOps(c)(sb)
 
+  implicit def implTryLinkBuilder[T1, T2](p: (Contact[T1], Contact[Try[T2]])) = new core.TryLinkBuilderOps(p)(sb)
+
   implicit def implRichContactPair[S, T](c: Contact[(S, T)]) = new core.ContactPairOps(c)(sb)
 
   implicit def zippingLink[S, T](c: (Contact[T], Contact[(S, T)])) = new core.ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
@@ -613,11 +635,11 @@ trait SystemBuilderImplicits {
 
   implicit def richState[S](s: StateHandle[S]) = new core.StateOps(s)(sb)
 
-  implicit def contactOps[T](c: core.Contact[T]): core.ContactOps[T] = new core.ContactOps(c)(sb)
+  implicit def contactOps[T](c: core.Contact[T]) = new core.ContactOps(c)(sb)
 
-  implicit def tryContactOps[T](c: core.Contact[Try[T]]): core.TryContactOps[T] = new core.TryContactOps(c)(sb)
+  implicit def tryContactOps[T](c: core.Contact[Try[T]]) = new core.TryContactOps(c)(sb)
 
-  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]]): core.TryFlatMapContactOps[T] = new core.TryFlatMapContactOps(c)(sb)
+  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]]) = new core.TryFlatMapContactOps(c)(sb)
 
 }
 
