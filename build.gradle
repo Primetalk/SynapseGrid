@@ -164,7 +164,8 @@ subprojects {
                             '-concurrent - running systems directly over ExecutorContext without the need for Akka, ' +
 
                             '-examples - a few test systems. Also there are ' +
-                            '-frames - a framework for type construction with meta information (see relations.scala).'
+                            '-frames - a framework for type construction with meta information (see relations.scala).'+
+                            '-typed-expressions - a framework for defining parsers and generators for natural language.'
                     url 'https://github.com/Primetalk/SynapseGrid'
                     parent {
                         groupId 'org.sonatype.oss'
