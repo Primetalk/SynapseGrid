@@ -165,13 +165,18 @@ class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuild
       new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
 }
+
+
+//TODO:[ ] поддержка timeout exception - и особая обработка. Возможность создания future и ожидания результата с таймаутом. mapFuture
+//TODO:[ ] создание вокруг подсистемы механизма Try и обработка исключений на уровне родительской системы
+
 class TryLinkBuilderOps[T1, T2](c: (Contact[T1], Contact[Try[T2]]))(sb: BasicSystemBuilder) {
 
   import ru.primetalk.synapse.core._
 
   /** If map is used with a try-contact, then it will automatically encapsulate
     * function into Try.*/
-  def map(f: T1 ⇒ T2, name: String = ""): Contact[Try[T2]] =
+  def tryMap(f: T1 ⇒ T2, name: String = ""): Contact[Try[T2]] =
     sb.addLink(c._1, c._2, sb.nextLabel(name, "Try{" + f+"}"),
       new FlatMapLink[T1, Try[T2]](x => Seq(Try{f(x)})))
 }
@@ -232,9 +237,9 @@ class ContactWithState[T1, S](val c1: Contact[T1], val stateHandle: StateHandle[
 class ContactPairOps[S, T](c: Contact[(S, T)])(sb: BasicSystemBuilder) {
   require(c != null, "Contact is null")
 
-  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])) = new core.DirectLinkBuilderOps(p)(sb)
+  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new core.DirectLinkBuilderOps(p)(sb)
 
-  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) = new core.LinkBuilderOps(c)(sb)
+  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new core.LinkBuilderOps(c)(sb)
 
   /** Converts data to pair with current state value. */
   def unzipWithState(stateHandle: StateHandle[S], name: String = ""): Contact[T] = {
@@ -279,9 +284,9 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
     c
   }
 
-  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])) = new core.DirectLinkBuilderOps(p)(sb)
+  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new core.DirectLinkBuilderOps(p)(sb)
 
-  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) = new core.LinkBuilderOps(c)(sb)
+  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new core.LinkBuilderOps(c)(sb)
 
   /** Declares the first contact as input and creates link to the second */
   def inputMappedTo[T2 >: T](c2: Contact[T2]) = {
@@ -459,7 +464,7 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
   def getState[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
     (zipWithState(stateHolder) -> sb.auxContact[S]).map(_._1, sb.nextLabel(name, "_._1"))
 
-  implicit def zippingLink[S](c: (Contact[T], Contact[(S, T)]))(sb: BasicSystemBuilder) = new ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
+  implicit def zippingLink[S](c: (Contact[T], Contact[(S, T)]))(sb: BasicSystemBuilder): ZippingLinkOps[S, T] = new ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
 
   /** Converts data to pair with current state value. */
   def zipWithState[S](stateHolder: StateHandle[S], name: String = ""): Contact[(S, T)] =
@@ -575,25 +580,25 @@ trait SystemBuilderImplicits2 {
   implicit def basicSystemBuilderToAdvanced(implicit sb: BasicSystemBuilder): SystemBuilderAdv =
     new SystemBuilderAdvC(sb)
 
-  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder) =
+  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder): LinkBuilderOps[T1, T2] =
     new core.LinkBuilderOps(c)(sb)
 
-  implicit def implTryLinkBuilder[T1, T2](p: (Contact[T1], Contact[Try[T2]]))(implicit sb: BasicSystemBuilder) =
+  implicit def implTryLinkBuilder[T1, T2](p: (Contact[T1], Contact[Try[T2]]))(implicit sb: BasicSystemBuilder): TryLinkBuilderOps[T1, T2] =
     new core.TryLinkBuilderOps(p)(sb)
 
-  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder) =
+  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder): DirectLinkBuilderOps[T1, T2] =
     new core.DirectLinkBuilderOps(p)(sb)
 
-  implicit def implRichContactPair[S, T](c: Contact[(S, T)])(implicit sb: BasicSystemBuilder) =
+  implicit def implRichContactPair[S, T](c: Contact[(S, T)])(implicit sb: BasicSystemBuilder): ContactPairOps[S, T] =
     new core.ContactPairOps(c)(sb)
 
-  implicit def zippingLink[S, T](c: (Contact[T], Contact[(S, T)]))(implicit sb: BasicSystemBuilder) =
+  implicit def zippingLink[S, T](c: (Contact[T], Contact[(S, T)]))(implicit sb: BasicSystemBuilder): ZippingLinkOps[S, T] =
     new core.ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
 
-  implicit def stateLinkBuilder2Ops[T1, T2, S](p: (core.ContactWithState[T1, S], Contact[T2]))(implicit sb: BasicSystemBuilder) =
+  implicit def stateLinkBuilder2Ops[T1, T2, S](p: (core.ContactWithState[T1, S], Contact[T2]))(implicit sb: BasicSystemBuilder): StateLinkBuilder2Ops[T1, T2, S] =
     new core.StateLinkBuilder2Ops(p)(sb)
 
-  implicit def richState[S](s: StateHandle[S])(implicit sb: BasicSystemBuilder) =
+  implicit def richState[S](s: StateHandle[S])(implicit sb: BasicSystemBuilder): StateOps[S] =
     new core.StateOps(s)(sb)
 
   implicit def contactOps[T](c: core.Contact[T])(implicit sb: BasicSystemBuilder): core.ContactOps[T] =
@@ -621,25 +626,25 @@ trait SystemBuilderImplicits {
    * }
    * </pre>
    */
-  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])) = new core.DirectLinkBuilderOps(p)(sb)
+  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new core.DirectLinkBuilderOps(p)(sb)
 
-  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) = new core.LinkBuilderOps(c)(sb)
+  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new core.LinkBuilderOps(c)(sb)
 
-  implicit def implTryLinkBuilder[T1, T2](p: (Contact[T1], Contact[Try[T2]])) = new core.TryLinkBuilderOps(p)(sb)
+  implicit def implTryLinkBuilder[T1, T2](p: (Contact[T1], Contact[Try[T2]])): TryLinkBuilderOps[T1, T2] = new core.TryLinkBuilderOps(p)(sb)
 
-  implicit def implRichContactPair[S, T](c: Contact[(S, T)]) = new core.ContactPairOps(c)(sb)
+  implicit def implRichContactPair[S, T](c: Contact[(S, T)]): ContactPairOps[S, T] = new core.ContactPairOps(c)(sb)
 
-  implicit def zippingLink[S, T](c: (Contact[T], Contact[(S, T)])) = new core.ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
+  implicit def zippingLink[S, T](c: (Contact[T], Contact[(S, T)])): ZippingLinkOps[S, T] = new core.ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
 
-  implicit def stateLinkBuilder2Ops[T1, T2, S](p: (core.ContactWithState[T1, S], Contact[T2])) = new core.StateLinkBuilder2Ops(p)(sb)
+  implicit def stateLinkBuilder2Ops[T1, T2, S](p: (core.ContactWithState[T1, S], Contact[T2])): StateLinkBuilder2Ops[T1, T2, S] = new core.StateLinkBuilder2Ops(p)(sb)
 
-  implicit def richState[S](s: StateHandle[S]) = new core.StateOps(s)(sb)
+  implicit def richState[S](s: StateHandle[S]): StateOps[S] = new core.StateOps(s)(sb)
 
-  implicit def contactOps[T](c: core.Contact[T]) = new core.ContactOps(c)(sb)
+  implicit def contactOps[T](c: core.Contact[T]): ContactOps[T] = new core.ContactOps(c)(sb)
 
-  implicit def tryContactOps[T](c: core.Contact[Try[T]]) = new core.TryContactOps(c)(sb)
+  implicit def tryContactOps[T](c: core.Contact[Try[T]]): TryContactOps[T] = new core.TryContactOps(c)(sb)
 
-  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]]) = new core.TryFlatMapContactOps(c)(sb)
+  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]]): TryFlatMapContactOps[T] = new core.TryFlatMapContactOps(c)(sb)
 
 }
 
@@ -763,7 +768,7 @@ class SwitcherBuilder[T](c: Contact[T], name: String = "")(sb: BasicSystemBuilde
     sCase(defaultId)
   }
 
-  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) = new core.LinkBuilderOps(c)(sb)
+  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new core.LinkBuilderOps(c)(sb)
 
   private def compileSelector() {
     completed = true

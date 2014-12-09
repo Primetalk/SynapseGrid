@@ -80,7 +80,7 @@ package object core extends SystemBuilderImplicits2 {
 
   }
 
-  implicit def pairToSignal[T](p: (Contact[T], T)) = Signal(p._1, p._2)
+  implicit def pairToSignal[T](p: (Contact[T], T)): Signal[T] = Signal(p._1, p._2)
 
   implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem

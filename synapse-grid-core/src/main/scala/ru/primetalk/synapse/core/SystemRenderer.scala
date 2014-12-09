@@ -13,8 +13,9 @@
  */
 package ru.primetalk.synapse.core
 
+import java.io.{File, PrintWriter}
+
 import scala.collection.mutable
-import java.io.{PrintWriter, File}
 /**
  * A customizable renderer of StaticSystem2 
  * @author А.Жижелев
@@ -148,7 +149,7 @@ trait SystemRenderer {
 		graphKind+" \"" +graphId+ "\" "+content
 	}
 }
-object SystemRenderer extends SystemRenderer with Function1[StaticSystem, String] {
+object SystemRenderer extends SystemRenderer with ((StaticSystem) => String) {
 	def apply(s:StaticSystem) = staticSystem2ToDot(s)
 
 }

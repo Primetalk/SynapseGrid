@@ -100,7 +100,7 @@ case class Batch[T](contact: Contact[T], data: List[T]) {
 }
 
 object Batch {
-  implicit def batchToSignals[T](b: Batch[T]) = b.signals
+  implicit def batchToSignals[T](b: Batch[T]): List[Signal[T]] = b.signals
 }
 
 

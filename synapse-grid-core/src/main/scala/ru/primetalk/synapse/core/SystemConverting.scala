@@ -289,7 +289,7 @@ object SystemConverting {
                   (context, r)
                 case RuntimeComponentStateFlatMap(_, _, _, sh, f) =>
                   val s = context(sh)
-                  val r = f(s, signal)
+                  val r = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])](s, signal)
                   (context.updated(sh, r._1), r._2)
               }
             }.

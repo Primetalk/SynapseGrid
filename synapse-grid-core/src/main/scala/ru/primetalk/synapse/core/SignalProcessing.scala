@@ -79,7 +79,7 @@ class RuntimeSystemForTrellisProcessing(val runtimeSystem:RuntimeSystem) {
             newSignals ++= signals
           case RuntimeComponentStateFlatMap(_, _, _, sh, f) =>
             val s = currentState.asInstanceOf[Map[Contact[Any], Any]](sh)
-            val (ns, signals) = f.asInstanceOf[Function2[Any, Signal[_], (Any, List[Signal[_]])]](s, signal)
+            val (ns, signals) = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])](s, signal)
             currentState = currentState.asInstanceOf[Map[Contact[Any], Any]].updated(sh, ns).asInstanceOf[Context]
             newSignals ++= signals
         }

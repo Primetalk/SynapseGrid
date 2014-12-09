@@ -9,7 +9,7 @@ import scala.collection.mutable
   * The simple one do not save traces. So it requires less memory for processing.
   *
   * Keeping traces can greatly help with debugging. One may see which signals and processors have lead to 
-  * the result.
+  * the result. It may be worth to save trellis to dot file.
   *
   * Having a common ancestor for both types of processing is advantageous because there will
   * be no code duplication among processors.
@@ -39,7 +39,12 @@ trait SignalProcessing0 {
     /** Save the signal that appeared on the stop-contact. */
     def saveStopSignal(signal: TSignal)
 
+    /** Completes the previous step and starts a new time moment.
+      *
+      * @return builder for the next part of the trellis.
+      */
     def newSingleStepBuilder: TrellisBuilder
+
     /** Adds an exception to the trellis.
       * Usually calls runtimeSystem.unhandledExceptionHandler.
       * @param trace original signal that has lead to the exception
@@ -102,7 +107,7 @@ trait SignalProcessing0 {
               trellisBuilder.addSignals(trace, proc, signals)
             case RuntimeComponentStateFlatMap(_, _, _, sh, f) =>
               val s = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]](sh)
-              val (ns, signals) = f.asInstanceOf[Function2[Any, Signal[_], (Any, List[Signal[_]])]](s, signal)
+              val (ns, signals) = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])](s, signal)
               trellisBuilder.currentState = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]].updated(sh, ns).asInstanceOf[Context]
               trellisBuilder.addSignals(trace, proc, signals)
           }
