@@ -12,18 +12,13 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import ru.primetalk.synapse.core._
-import scala.concurrent.{Await, Future, ExecutionContext}
-import scala.language.existentials
-import ru.primetalk.synapse.core.Signal
-import ru.primetalk.synapse.core.RuntimeComponentStateFlatMap
-import ru.primetalk.synapse.core.DynamicSystem
-import ru.primetalk.synapse.core.RuntimeComponentFlatMap
-import ru.primetalk.synapse.core.RuntimeComponentMultiState
-import ru.primetalk.synapse.core.RuntimeSystem
+import ru.primetalk.synapse.core.{DynamicSystem, RuntimeComponentFlatMap, RuntimeComponentMultiState, RuntimeComponentStateFlatMap, RuntimeSystem, Signal, _}
+
 import scala.annotation.tailrec
-import scala.concurrent.duration.Duration
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.language.existentials
 
 
 /** The prerequisites for the UnitOfComputation
@@ -215,7 +210,7 @@ class ComputationState(rs: RuntimeSystem,
       runningCalculationsSorted = runningCalculationsSorted.filterNot(_.u eq computation)
       statesToRelease.foreach(stateHandleAtTime => variables(stateHandleAtTime.value).lock.release())
     }
-    if (!statesToRelease.isEmpty)
+    if (statesToRelease.nonEmpty)
       fastCheckPlan() // check plan only if there were states.
   }
 
@@ -304,7 +299,7 @@ class ComputationState(rs: RuntimeSystem,
       if (failureIsDefined || (runningHeadOpt.isEmpty && computationQueueIsEmpty))
         ()
       else {
-        if (!runningHeadOpt.isEmpty)
+        if (runningHeadOpt.isDefined)
           Await.result(runningHeadOpt.get.future, atMostPerAwaitableFuture)
         else
           checkPlan()

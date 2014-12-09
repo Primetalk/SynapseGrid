@@ -1,5 +1,6 @@
 package ru.primetalk.typed.expressions
 
+import scala.language.implicitConversions
 /**
  * @author zhizhelev, 24.10.14.
  */
@@ -51,12 +52,12 @@ trait Generators extends Numerals4 {
           else
             g1(u)
       case MapAlternative(lst) =>
-        val map = lst.map(c => (c.upper, c.lower)).toMap: Map[Any, LemmaStream]
+        val map = lst.map(c => (c.upper:Any, c.lower.asInstanceOf[LemmaStream])).toMap
         (u) =>
           map.getOrElse(u, throw new IllegalArgumentException(s"Cannot generate text for $u by $e"))
       case Transformed(innerExpression, t) =>
         val innerGen = constructGenerator0(innerExpression)
-        val transformer = tGen(t)
+        val transformer = tGen(t.asInstanceOf[Transformer[Any, U]])
         (u: U) => innerGen(transformer(u))
       case _ => throw new IllegalArgumentException(s"constructGenerator is not implemented for expression $e")
     }
