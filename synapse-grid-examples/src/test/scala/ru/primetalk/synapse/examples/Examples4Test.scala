@@ -13,10 +13,13 @@
  */
 package ru.primetalk.synapse.examples
 
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.examples.Examples4.SentenceSplitterBuilder
 
+@RunWith(classOf[JUnitRunner])
 class Examples4Test extends FunSuite {
   test("Dump SentenceSplitterBuilder"){
     assert(orphanContactsRec(SentenceSplitterBuilder) === List())

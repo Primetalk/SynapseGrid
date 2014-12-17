@@ -12,14 +12,17 @@
  */
 package ru.primetalk.synapse.akka.distributed
 
-import org.scalatest.FunSuite
 import akka.actor.{ActorSystem, Props}
-import ru.primetalk.synapse.core._
-import com.typesafe.config.ConfigFactory
-import ru.primetalk.synapse.akka._
 import akka.serialization.SerializationExtension
+import com.typesafe.config.ConfigFactory
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 import org.slf4j.LoggerFactory
+import ru.primetalk.synapse.akka._
+import ru.primetalk.synapse.core._
 
+@RunWith(classOf[JUnitRunner])
 class DistributedTest extends FunSuite {
 
   /** The simple system that does nothing.

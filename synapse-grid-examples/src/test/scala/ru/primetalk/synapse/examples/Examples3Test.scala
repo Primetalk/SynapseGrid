@@ -13,11 +13,13 @@
  */
 package ru.primetalk.synapse.examples
 
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-
+import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.examples.Examples3.SuperSystemBuilder
 
+@RunWith(classOf[JUnitRunner])
 class Examples3Test extends FunSuite {
   test("Dump"){
     val ss = new SuperSystemBuilder()

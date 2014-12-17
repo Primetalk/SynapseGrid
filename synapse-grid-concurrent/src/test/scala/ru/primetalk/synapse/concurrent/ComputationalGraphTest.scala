@@ -12,12 +12,13 @@
  */
 package ru.primetalk.synapse.concurrent
 
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
+import ru.primetalk.synapse.concurrent.ComputationState._
 import ru.primetalk.synapse.core.BaseTypedSystem
 
-import ComputationState._
-import scala.concurrent.ExecutionContext
-
+@RunWith(classOf[JUnitRunner])
 class ComputationalGraphTest extends FunSuite{
   class SimpleFunctional extends BaseTypedSystem{
     import sb._
@@ -26,7 +27,6 @@ class ComputationalGraphTest extends FunSuite{
     i1.flatMap(t=>0 until t).map((i:Int) => i*i) >> o1
   }
   test("pure functional system"){
-    import ExecutionContext.Implicits.global
     val d = new SimpleFunctional
     val f = d.toStaticSystem.toParallelDynamicSystem.toTransducer(d.i1, d.o1)
     val n = 5
@@ -51,7 +51,7 @@ class ComputationalGraphTest extends FunSuite{
       } >> o1
   }
   test("stateful system"){
-    import ExecutionContext.Implicits.global
+
     val d = new SimpleStateful
     val f = d.toStaticSystem.toParallelDynamicSystem.toTransducer(d.i1, d.o1)
     val n = 5

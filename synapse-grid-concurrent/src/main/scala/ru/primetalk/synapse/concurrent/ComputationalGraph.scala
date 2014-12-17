@@ -122,7 +122,7 @@ class ComputationState(rs: RuntimeSystem,
         map(sh =>
         (sh,
           variables(sh).asInstanceOf[SafeVariable[Any]].get)).
-        toMap
+        toMap[Contact[_], Any]
     }
 
   /** Add a single signal.
@@ -160,7 +160,7 @@ class ComputationState(rs: RuntimeSystem,
         return
       import t._
       t.stateRequirement.stateHandles.foreach { stateHandle =>
-        variables(stateHandle).lock.acquire()
+        variables(stateHandle).acquire()
       }
       val signal = signalAtTime.value
       val time = signalAtTime.time
@@ -208,7 +208,7 @@ class ComputationState(rs: RuntimeSystem,
     this.synchronized {
       // TODO O(n)->O(1) (map)
       runningCalculationsSorted = runningCalculationsSorted.filterNot(_.u eq computation)
-      statesToRelease.foreach(stateHandleAtTime => variables(stateHandleAtTime.value).lock.release())
+      statesToRelease.foreach(stateHandleAtTime => variables(stateHandleAtTime.value).release())
     }
     if (statesToRelease.nonEmpty)
       fastCheckPlan() // check plan only if there were states.
@@ -274,7 +274,7 @@ class ComputationState(rs: RuntimeSystem,
             if (
               stateHandles.forall(sh =>
                 !alreadyRequiredStates.contains(sh) &&
-                  variables(sh).lock.available)
+                  variables(sh).isLockAvailable)
             )
               start(unit)
             else {

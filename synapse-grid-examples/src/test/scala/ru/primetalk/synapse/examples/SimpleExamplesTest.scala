@@ -13,10 +13,13 @@
  */
 package ru.primetalk.synapse.examples
 
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class SimpleExamplesTest extends FunSuite{
-  import SimpleExamples._
+  import ru.primetalk.synapse.examples.SimpleExamples._
   test("example 1"){
     assert(e1("hello") === 5)
   }

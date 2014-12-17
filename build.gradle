@@ -40,13 +40,13 @@ ext {
 // The artifacts should appear in Maven Central.
 //
 
-    aVersion = '1.3.5-SNAPSHOT'
+    aVersion = '1.3.6-SNAPSHOT'
     enableSigning = false
-//    aVersion = '1.3.4'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.3.5'//'1.2.0-SNAPSHOT'
 //    enableSigning = true
 
 
-    scalaMajorVersion = '2.10'
+    scalaMajorVersion = '2.11'
     scalaFullVersion = "${scalaMajorVersion}.4"
 
     scalaLib = "org.scala-lang:scala-library:${scalaFullVersion}"
@@ -55,8 +55,12 @@ ext {
     akkaVersion = '2.3.7'
     slf4j = 'org.slf4j:slf4j-api:1.7.7'
     logback = 'ch.qos.logback:logback-classic:1.1.2'
-    shapelessDep = "com.chuusai:shapeless_${scalaFullVersion}:2.0.0"
     rxDep = 'com.netflix.rxjava:rxjava-scala:0.20.7'
+    junit = 'junit:junit:4.11'
+//    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
+    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.2"
+//    shapelessDep = "com.chuusai:shapeless_${scalaFullVersion}:2.0.0"
+    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.0.0"
 }
 
 allprojects {
@@ -86,8 +90,8 @@ subprojects {
     dependencies {
         compile scalaLib
 
-        testCompile "junit:junit:4.11"
-        testCompile "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
+        testCompile junit
+        testCompile scalaTest
     }
 
     // making source.jar
@@ -167,10 +171,11 @@ subprojects {
                             '-akka contains everything to run systems over Akka actors, ' +
                             '-slf4j - enables logging, ' +
                             '-concurrent - running systems directly over ExecutorContext without the need for Akka, ' +
-
                             '-examples - a few test systems. Also there are ' +
-                            '-frames - a framework for type construction with meta information (see relations.scala).'+
-                            '-typed-expressions - a framework for defining parsers and generators for natural language.'
+                            '-frames - a framework for type construction with meta information (see relations.scala). '+
+                            '-typed-expressions - a framework for defining parsers and generators for natural language. ' +
+                            '' +
+                            "The current version is $aVersion"
                     url 'https://github.com/Primetalk/SynapseGrid'
                     parent {
                         groupId 'org.sonatype.oss'

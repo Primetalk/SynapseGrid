@@ -12,11 +12,13 @@
  */
 package ru.primetalk.synapse.concurrent
 
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
+import ru.primetalk.synapse.concurrent.ComputationState._
 import ru.primetalk.synapse.core.BaseTypedSystem
 
-import ComputationState._
-
+@RunWith(classOf[JUnitRunner])
 class SubsystemTest extends FunSuite{
 
   class TwoStatesInnerSubsystem(name:String) extends BaseTypedSystem{
@@ -59,7 +61,6 @@ class SubsystemTest extends FunSuite{
 
   }
   def performTest() {
-    import scala.concurrent.ExecutionContext.Implicits.global
     val d = new OuterSystem
     val f = d.toStaticSystem.toParallelSimpleSignalProcessor.toMapTransducer(d.outerInput1, d.outerOutput1)
     val n = 50

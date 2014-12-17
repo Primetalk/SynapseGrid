@@ -12,24 +12,38 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import scala.concurrent.Lock
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** A variable with synchronized access*/
 class SafeVariable[T](initialValue:T) {
   private var value = initialValue
-  val lock = new Lock
-  def update(u:T=>T) {
+
+  /** Public lock for explicit locking by ComputationalGraph.*/
+  private
+  val lock = new AtomicBoolean(true)
+  /** Private lock. Can be avoided indeed.*/
+  private def locked[T2](body: => T2): T2 =
     this.synchronized{
+      body
+    }
+
+  def update(u:T=>T) {
+    locked{
       value = u(value)
     }
   }
   def update2[T2](u:T=>(T, T2)):T2 =
-    this.synchronized{
+    locked{
       val (newValue, result) = u(value)
       value = newValue
       result
     }
 
-  def get:T = this.synchronized{ value }
-  override def toString = "SV("+value+"; "+lock.available+")"
+  def isLockAvailable =
+    lock.get()
+
+  def acquire() = lock.compareAndSet(true, false)
+  def release() = lock.compareAndSet(false, true)
+  def get:T = locked{ value }
+  override def toString = "SV("+get+")"
 }
