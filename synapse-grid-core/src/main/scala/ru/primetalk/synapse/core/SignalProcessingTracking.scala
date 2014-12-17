@@ -2,6 +2,7 @@ package ru.primetalk.synapse.core
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 /** A generic trait for different signal processing methods.
   * There are two descendants - a tracking one and a simple one.

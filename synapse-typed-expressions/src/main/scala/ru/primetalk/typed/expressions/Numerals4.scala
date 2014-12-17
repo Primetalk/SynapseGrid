@@ -1,5 +1,6 @@
 package ru.primetalk.typed.expressions
 
+import scala.language.{implicitConversions, reflectiveCalls}
 import scala.math.ScalaNumber
 
 /**

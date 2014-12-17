@@ -12,12 +12,17 @@
  */
 package ru.primetalk.synapse.frames
 
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
+import scala.language.existentials
+
+@RunWith(classOf[JUnitRunner])
 class SlotsTest extends FunSuite {
 
-  import SlotsOntology._
-  import slots._
+  import ru.primetalk.synapse.frames.SlotsOntology._
+  import ru.primetalk.synapse.frames.slots._
 
   test("slots test") {
     val ps = name :: SNil

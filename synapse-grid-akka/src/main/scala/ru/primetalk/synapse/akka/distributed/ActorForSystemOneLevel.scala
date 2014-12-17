@@ -14,11 +14,11 @@ package ru.primetalk.synapse.akka.distributed
 
 import akka.actor._
 import akka.util.Timeout
-import ru.primetalk.synapse.core._
-import ru.primetalk.synapse.core
 import ru.primetalk.synapse.akka._
+import ru.primetalk.synapse.core
 import ru.primetalk.synapse.core.SystemConvertingSupport._
-import ru.primetalk.synapse.core.RuntimeComponentMultiState
+import ru.primetalk.synapse.core.{RuntimeComponentMultiState, _}
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -39,7 +39,7 @@ class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
     if (systemPath.isEmpty) // for the root system.
       None
     else {
-      implicit val timeout = Timeout(5 seconds)
+      implicit val timeout = Timeout(5.seconds)
       val name = realm.getRouterPath(systemPath.take(systemPath.size - 1))
       val actorSelection = context.actorSelection(name)
       log.info(s"Name=$name, sel=$actorSelection")

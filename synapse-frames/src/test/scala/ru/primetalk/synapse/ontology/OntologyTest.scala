@@ -12,11 +12,14 @@
  */
 package ru.primetalk.synapse.ontology
 
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class OntologyTest extends FunSuite {
 
-  import resources._
+  import ru.primetalk.synapse.ontology.resources._
 
   trait Person
 

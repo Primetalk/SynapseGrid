@@ -1,5 +1,7 @@
 package ru.primetalk.typed.expressions
 
+import scala.language.{higherKinds, implicitConversions}
+
 /**
  * Parsers that can match a substring of a stream of words.
  *
@@ -119,7 +121,7 @@ trait Parsers extends Numerals4 {
     implicit def uncheckedGenerics2[T[_, _], O, P](t: T[_, _]): T[O, P] = t.asInstanceOf[T[O, P]]
 
     def backTrackingParser0(e: Expression[_, _]): Parser[_] = e match {
-      case Epsilon(u) => s => Success(u, s)
+      case Epsilon(u) => (s:LemmaStream) => Success(u, s)
       case ConstExpression(l: LemmaStream, u) => (s: LemmaStream) => startsWithAndTail(l, s).map(t => u)
       case Labelled(_, expr) => backTrackingParser0(expr)
       case Alternatives(expressions) =>
@@ -140,12 +142,12 @@ trait Parsers extends Numerals4 {
           }
       case Transformed(innerExpression: Expression[_, _], t) =>
         val innerParser = backTrackingParser0(innerExpression)
-        val converter = defaultSequencerHandler(t)
+        val converter = defaultSequencerHandler(t.asInstanceOf[Transformer[Any,Long]])
         (s: LemmaStream) =>
           innerParser(s).map(converter)
       case _ => throw new IllegalArgumentException(s"backTrackingParser0 is not implemented for expression $e")
     }
-    uncheckedGenerics(backTrackingParser0(e))
+    uncheckedGenerics[Parser, U](backTrackingParser0(e))
   }
 
   def wordToLemma(word: String): Lemma

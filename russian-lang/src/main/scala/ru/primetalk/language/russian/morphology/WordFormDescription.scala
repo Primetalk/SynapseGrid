@@ -1,5 +1,7 @@
 package ru.primetalk.language.russian.morphology
 
+import scala.language.implicitConversions
+
 /**
  * Морфологическая форма. Содержит ряд значений грамматических категорий,
  * однозначно адресующих конкретную словоформу для заданной леммы.
@@ -61,7 +63,7 @@ case class WordFormAssociation(text: String, wordform: WordFormDescription) {
 object WordFormDescription {
   val empty = WordFormDescription(Nil)
 
-  implicit def valuesToWordFormDescription(iterable: Iterable[GrammarCategoryValue]) = WordFormDescription(iterable.toList)
+  implicit def valuesToWordFormDescription(iterable: Iterable[GrammarCategoryValue]): WordFormDescription = WordFormDescription(iterable.toList)
 
   object Numerical {
     def apply(i: Long) = new WordFormDescription(LemmaGrammarCategory.NumericalLemma(i))

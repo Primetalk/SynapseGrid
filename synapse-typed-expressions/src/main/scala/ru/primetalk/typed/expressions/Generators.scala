@@ -1,6 +1,6 @@
 package ru.primetalk.typed.expressions
 
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 /**
  * @author zhizhelev, 24.10.14.
  */

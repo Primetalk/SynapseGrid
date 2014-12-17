@@ -12,7 +12,9 @@
  */
 package ru.primetalk.synapse.frames
 
-import types._
+import ru.primetalk.synapse.frames.types._
+
+import scala.language.existentials
 
 object slots {
 

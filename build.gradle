@@ -2,7 +2,7 @@
 // gradle OutOfMemoryError: PermGen space:
 // JAVAOPTS="-Xmx1024M -XX:MaxPermSize=512M"
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.1'
+    gradleVersion = '2.2.1'
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
@@ -28,7 +28,7 @@ ext {
     aGroup = 'ru.primetalk'
 // To publish to maven central:
 // 1. change version — remove SNAPSHOT.
-// 2. put _${scalaMajorVersion} in artifact names. (already done
+// 2. put _${scalaMajorVersion} in artifact names. (already done)
 // 3. enableSigning = true
 // 4. issue at shell:
 //     gradle uploadArchives
@@ -40,9 +40,9 @@ ext {
 // The artifacts should appear in Maven Central.
 //
 
-    aVersion = '1.3.4-SNAPSHOT'
+    aVersion = '1.3.5-SNAPSHOT'
     enableSigning = false
-//    aVersion = '1.3.3'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.3.4'//'1.2.0-SNAPSHOT'
 //    enableSigning = true
 
 
@@ -52,11 +52,11 @@ ext {
     scalaLib = "org.scala-lang:scala-library:${scalaFullVersion}"
     scalaReflect = "org.scala-lang:scala-reflect:${scalaFullVersion}"
 
-    akkaVersion = '2.3.3'
+    akkaVersion = '2.3.7'
     slf4j = 'org.slf4j:slf4j-api:1.7.7'
     logback = 'ch.qos.logback:logback-classic:1.1.2'
     shapelessDep = "com.chuusai:shapeless_${scalaFullVersion}:2.0.0"
-    rxDep = 'com.netflix.rxjava:rxjava-scala:0.18.3'
+    rxDep = 'com.netflix.rxjava:rxjava-scala:0.20.7'
 }
 
 allprojects {
@@ -66,11 +66,6 @@ allprojects {
 //        mavenLocal()
         mavenCentral()
     }
-}
-
-tasks.withType(ScalaCompile) {
-    scalaCompileOptions.useAnt = false
-    scalaCompileOptions.feature = true
 }
 
 
@@ -115,6 +110,16 @@ subprojects {
         archives javadocJar
     }
 
+    tasks.withType(ScalaCompile) {
+        scalaCompileOptions.useAnt = false
+        scalaCompileOptions.useCompileDaemon = true
+        // optionally specify host and port of the daemon:
+        scalaCompileOptions.daemonServer = "localhost:4243"
+
+        scalaCompileOptions.additionalParameters = ["-feature"]
+    }
+
+
 /*  publishing {
         publications {
             mavenJava(MavenPublication) {
@@ -147,9 +152,9 @@ subprojects {
                 configuration = configurations.deployerJars
 //                "https://oss.sonatype.org/service/local/staging/deploy/maven2"
 //                "https://oss.sonatype.org/content/repositories/snapshots"
-//                repository(url: repositoryUrl) {
-//                    authentication(userName: repositoryUsername, password: repositoryPassword)
-//                }
+                repository(url: repositoryUrl) {
+                    authentication(userName: repositoryUsername, password: repositoryPassword)
+                }
 //              repository (url: nexusRep) {
 //					authentication(userName: nexusUsername, password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
 //				}
