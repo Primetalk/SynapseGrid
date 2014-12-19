@@ -63,7 +63,8 @@ trait BasicSystemBuilder {
     outputContacts.toList.distinct,
     privateStateHandles.toList,
     components.toList reverse_::: links.toList,
-    name: String)
+    name: String,
+    unhandledExceptionHandler)
 
   /**
    * Sets this builder to the read only mode. Subsequent modifications will lead to

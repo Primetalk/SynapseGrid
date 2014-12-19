@@ -210,6 +210,16 @@ class DirectLinkBuilderOps[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(sb: Basi
           else
             Seq[T2]()
       })) //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
+  def filterNot(predicateInv: T1 ⇒ Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
+    sb.addLink(p._1, p._2,
+      sb.nextLabel(name, if (name endsWith "?") name else name + "?"),
+      new FlatMapLink[T1, T2]({
+        x ⇒
+          if (!predicateInv(x))
+            Seq(x: T2)
+          else
+            Seq[T2]()
+      })) //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
 }
 
 class ContactWithState[T1, S](val c1: Contact[T1], val stateHandle: StateHandle[S])(sb: BasicSystemBuilder) {
@@ -335,6 +345,8 @@ class ContactOps[T](val c: Contact[T])(sb: BasicSystemBuilder) {
    */
   def filter(predicate: T ⇒ Boolean, name: String = ""): Contact[T] =
     (c -> sb.auxContact[T]).filter(predicate, sb.nextLabel(name, "" + predicate + "?"))
+  def filterNot(predicateInv: T ⇒ Boolean, name: String = ""): Contact[T] =
+    (c -> sb.auxContact[T]).filterNot(predicateInv, sb.nextLabel(name, "!" + predicateInv + "?"))
 
   /**
    * Filters the data from this contact. Returns another contact that will get filtered data.
