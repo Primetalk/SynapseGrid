@@ -61,6 +61,7 @@ class SubsystemTest extends FunSuite{
 
   }
   def performTest() {
+    import scala.concurrent.ExecutionContext.Implicits.global
     val d = new OuterSystem
     val f = d.toStaticSystem.toParallelSimpleSignalProcessor.toMapTransducer(d.outerInput1, d.outerOutput1)
     val n = 50

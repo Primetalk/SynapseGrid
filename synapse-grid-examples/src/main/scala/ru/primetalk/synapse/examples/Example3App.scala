@@ -22,15 +22,15 @@ import scala.concurrent.duration._
 object Example3App extends App  {
   implicit val actorSystem = ActorSystem()
   val actor = new SuperSystemBuilder(actorSystem).toStaticSystem.toActorTree(actorSystem)
+  implicit val i = inbox()
   actor ! Signal(Control,"start")
   Thread.sleep(20000)
-  implicit val i = inbox()
 
 //  val mb = akka.actor.Actor actorSystem.
   actor ! Signal(Control,"stop")
   i.receive(1.second) match {
     case Signal(_, data) =>
       println("out="+data)
-      actorSystem.shutdown()
   }
+  actorSystem.shutdown()
 }

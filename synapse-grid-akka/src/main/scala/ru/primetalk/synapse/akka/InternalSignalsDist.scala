@@ -27,7 +27,9 @@ import scala.language.postfixOps
   *                  or a signal processor for output signals.
   *                  It is stored by parent system and is handled exclusively by parent.
   */
-case class InternalSignalsDist(path: List[String], list: List[SignalDist])
+case class InternalSignalsDist(path: List[String], list: List[SignalDist]){
+  require(path.nonEmpty, "Path to subsystem should not be empty.")
+}
 
 ///** Signals from external systems.*/
 // @deprecated("Signals should come one by one", "01.07.2013")

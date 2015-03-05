@@ -17,6 +17,7 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.concurrent.ComputationState._
 import ru.primetalk.synapse.core.BaseTypedSystem
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
 class ComputationalGraphTest extends FunSuite{

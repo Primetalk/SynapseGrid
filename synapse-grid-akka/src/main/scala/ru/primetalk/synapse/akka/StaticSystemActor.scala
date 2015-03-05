@@ -78,7 +78,7 @@ trait AbstractStaticSystemActor extends Actor {
         systemState = systemState ++ res._1
         res._2
     }
-    if (!results.isEmpty) {
+    if (results.nonEmpty) {
       log.info("inner results:" + results)
       val sigs = InternalSignalsDist(systemPath, results.map(system.index.convertSignalToSignalDist))
       outputFun.foreach(_(sigs))
@@ -86,16 +86,11 @@ trait AbstractStaticSystemActor extends Actor {
     }
   }
 
-  def convertInternalSignalsDist(msg: InternalSignalsDist): List[Signal[_]] = {
-    val InternalSignalsDist(path, signalsDist) = msg
-    log.info(getClass.getSimpleName + " received " + msg)
-    //      val subsystem = getSubsystem(path):StaticSystem
-
-    val relPath = if (path.startsWith(systemPath)) path.drop(systemPath.size) else throw new IllegalArgumentException("Cannot process path " + path + " at systemPath=" + systemPath)
+  def convertInternalSignalsDist(relPath: List[String], signalsDist: List[SignalDist]): List[Signal[_]] = {
     val signals =
       relPath.reverse match {
         case Nil =>
-          throw new IllegalArgumentException("The current system should not get signals from itself: " + msg)
+          throw new IllegalArgumentException("The current system should not get signals from itself: " + signalsDist)
         //          case head::Nil =>
         //            system.
         //            signalsDist.map (sd => system.index (sd) )
@@ -124,7 +119,18 @@ trait AbstractStaticSystemActor extends Actor {
     /** InternalSignalsDist - message from grand child subsystem.
       * Immediate subsystems are processed by the current system. Others are sent to SubsystemSpecialContact */
     case msg: InternalSignalsDist =>
-      processSignals(convertInternalSignalsDist(msg))
+      val InternalSignalsDist(path, signalsDist) = msg
+      log.info(getClass.getSimpleName + " received " + msg)
+      val relPath = if (path.startsWith(systemPath)) path.drop(systemPath.size) else throw new IllegalArgumentException("Cannot process path " + path + " at systemPath=" + systemPath)
+      if(relPath.isEmpty) {
+        throw new IllegalArgumentException("Obtained signals without system name: "+msg+". sender = "+sender)
+//        log.info(getClass.getSimpleName + " received " + msg)
+//        val innerSignals = signalsDist.map(sd => system.index(sd))
+//        processSignals(innerSignals)
+      }else {
+        val signalsDist1 = convertInternalSignalsDist(relPath, signalsDist)
+        processSignals(signalsDist1)
+      }
     case sd: SignalDist =>
       val signal = system.index(sd)
       processSignals(List(signal))
@@ -160,6 +166,7 @@ class StaticSystemActor(override val systemPath: core.SystemPath,
                         override val system: StaticSystem,
                         override val outputFun: Option[InternalSignalsDist => Any] = None,
                         override val supervisorStrategy: SupervisorStrategy) extends AbstractStaticSystemActor {
+  require(systemPath.nonEmpty, "System path should include at least the system's name")
 
   val parentSystemRef: Option[ActorRef] = Option(context.parent)
 
@@ -196,7 +203,7 @@ object StaticSystemActor {
     val actorInnerSubsystemConverter: ComponentDescriptorConverter = {
       case ComponentDescriptor(ActorInnerSubsystem(subsystem, supervisorStrategy), path1, _) =>
         val actorRef = actorRefFactory.actorOf(Props(
-          new StaticSystemActor(path1, subsystem, None, supervisorStrategy)),
+          new StaticSystemActor(path1 :+ subsystem.name, subsystem, None, supervisorStrategy)),
           subsystem.name)
         RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal) => {
           actorRef.tell(signal, self)
@@ -221,11 +228,11 @@ object StaticSystemActor {
   /** Converts top level system to top level actor. */
   def toActorTree(actorRefFactory: ActorRefFactory,
                   supervisorStrategy: SupervisorStrategy =
-                  defaultSupervisorStrategy)(path: List[String],
+                  defaultSupervisorStrategy)(path: SystemPath,
                                              system: StaticSystem,
                                              outputFun: Option[InternalSignalsDist => Any] = None): ActorRef =
     actorRefFactory.actorOf(Props(
-      new StaticSystemActor(path, system, outputFun, supervisorStrategy)),
+      new StaticSystemActor(path :+ system.name, system, outputFun, supervisorStrategy)),
       system.name)
 
 }

@@ -31,6 +31,7 @@ class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
                              override val supervisorStrategy: SupervisorStrategy,
                              val realm: RealmDescriptor) extends AbstractStaticSystemActor {
 
+  require(systemPath.nonEmpty, "System path should include at least the system's name")
   override
   val outputFun: Option[InternalSignalsDist => Any] = None
 

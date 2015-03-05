@@ -39,12 +39,16 @@ trait ContactsIndex {
   /** Signal should be from the current system. */
   def convertSignalToSignalDist(s: Signal[_]): SignalDist = {
     val id: Int = reversedContactsIndex(s.contact)
-    SignalDist(id, s.data.asInstanceOf[java.lang.Object])
+    val res = SignalDist(id, s.data.asInstanceOf[java.lang.Object])
+//    println(s"cnt.1:$s -> $res")
+    res
   }
 
   def convertSignalDistToSignal(s: SignalDist): Signal[_] = {
     val c = contacts(s.contactId).asInstanceOf[Contact[AnyRef]]
-    Signal(c, s.data)
+    val res = Signal(c, s.data)
+//    println(s"cnt.2:$s -> $res")
+    res
   }
 
   def apply(s: Signal[_]): SignalDist = convertSignalToSignalDist(s)
@@ -56,7 +60,14 @@ trait Indexed {
   def index: ContactsIndex
 }
 
-case class ContactsIndexImpl(contacts: Seq[Contact[_]]) extends ContactsIndex
+case class ContactsIndexImpl(contacts: Seq[Contact[_]]) extends ContactsIndex {
+  {
+    val duplicates = contacts.map(_.name).groupBy(identity).filter(_._2.size>1)
+    require(duplicates.size == 0,
+      "There are duplicated contact names: "+
+        duplicates.map(p => p._1 + "(" + p._2.size + ")").mkString(", "))
+  }
+}
 
 case class StaticSystem( /** A subset of contacts */
                          inputs: List[Contact[_]],
@@ -97,7 +108,7 @@ with Indexed {
     (inputs.toSeq ++
       components.flatMap(_.inputContacts).toSeq ++
       components.flatMap(_.outputContacts).toSeq ++
-      outputContacts.toSeq).toArray.toSeq
+      outputContacts.toSeq).toArray.toSeq.distinct
   )
 }
 

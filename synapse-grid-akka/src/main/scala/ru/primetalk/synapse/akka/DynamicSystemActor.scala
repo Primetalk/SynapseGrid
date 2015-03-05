@@ -28,12 +28,13 @@ import scala.language.postfixOps
  */
 class DynamicSystemActor(path: List[String], system: DynamicSystem) extends EscalatingActor {
 
+  require(path.nonEmpty,"The system's path should  not be empty")
   val log = Logging(context.system, this)
 
   private def innerProcessSignals(ls: List[Signal[_]]) {
     MDC.put("akkaSource", "" + self.path)
     val results = ls.flatMap(system.receive)
-    if (!results.isEmpty)
+    if (results.nonEmpty)
       context.parent ! InternalSignalsDist(path, results.map(system.index.convertSignalToSignalDist))
   }
 
