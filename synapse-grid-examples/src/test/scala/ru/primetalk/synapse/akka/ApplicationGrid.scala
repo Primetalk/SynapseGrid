@@ -1,12 +1,11 @@
 package ru.primetalk.synapse.akka
 
 import akka.actor.ActorRef
-import ru.primetalk.synapse.akka.SpecialActorContacts.ContextInput
 import ru.primetalk.synapse.core._
-import ru.primetalk.synapse.akka._
+//import ru.primetalk.synapse.akka._ // do not import because the tests are in the same package.
 
 trait ProcessGrid extends BaseTypedSystem{
-  def prefix:String
+  def prefix:String// = "system"
   val start = input[Unit](prefix+".start")
 
   val initialized = output[Unit](prefix+".initialized")

@@ -23,7 +23,9 @@ import scala.collection.mutable
  * The builder supports the notion of extensions (much like akka actor system extensions).
  * When we need to store additional information during system construction,
  * we may request an extention instance from the builder. The builder creates
- * the singleton instance if it is not available yet.
+ * the singleton instance if it is not available yet and returns it.
+ *
+ * The builder is used in BaseTypedSystem as a DSL for system's construction.
  */
 trait BasicSystemBuilder {
   private var name =

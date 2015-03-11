@@ -2,7 +2,7 @@
 // gradle OutOfMemoryError: PermGen space:
 // JAVAOPTS="-Xmx1024M -XX:MaxPermSize=512M"
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.2.1'
+    gradleVersion = '2.3'
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
@@ -40,27 +40,39 @@ ext {
 // The artifacts should appear in Maven Central.
 //
 
-    aVersion = '1.3.7-SNAPSHOT'
+    aVersion = '1.3.9-SNAPSHOT'
     enableSigning = false
-//    aVersion = '1.3.6'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.3.8'//'1.2.0-SNAPSHOT'
 //    enableSigning = true
 
 
-    scalaMajorVersion = '2.11'
-    scalaFullVersion = "${scalaMajorVersion}.4"
+//    scalaMajorVersion = '2.11'
+//    scalaFullVersion = "${scalaMajorVersion}.6"
+//    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.4"
+//    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.1.0"
+    scalaMajorVersion = '2.10'
+    scalaFullVersion = "${scalaMajorVersion}.5"
+    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.4"
+    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}.4:2.1.0"
 
     scalaLib = "org.scala-lang:scala-library:${scalaFullVersion}"
     scalaReflect = "org.scala-lang:scala-reflect:${scalaFullVersion}"
 
-    akkaVersion = '2.3.7'
-    slf4j = 'org.slf4j:slf4j-api:1.7.7'
+    akkaVersion = '2.3.9'
+    slf4j = 'org.slf4j:slf4j-api:1.7.10'
     logback = 'ch.qos.logback:logback-classic:1.1.2'
     rxDep = 'com.netflix.rxjava:rxjava-scala:0.20.7'
-    junit = 'junit:junit:4.11'
-//    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:1.9.1"
-    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.2"
-//    shapelessDep = "com.chuusai:shapeless_${scalaFullVersion}:2.0.0"
-    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.0.0"
+    junit = 'junit:junit:4.12'
+    pegdown = 'org.pegdown:pegdown:1.4.2'
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath "com.github.maiflai:gradle-scalatest:0.6-5-g9065d91"
+    }
 }
 
 allprojects {
@@ -79,6 +91,7 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
     apply plugin: 'eclipse'
+    apply plugin: "com.github.maiflai.scalatest"
 
     group = aGroup
     version = aVersion
@@ -91,6 +104,7 @@ subprojects {
         compile scalaLib
 
         testCompile junit
+        testRuntime pegdown // it is required by scalatest gradle plugin.
         testCompile scalaTest
     }
 
@@ -229,6 +243,7 @@ project(':synapse-grid-slf4j') {
     dependencies {
         compile project(':synapse-grid-core')
         compile slf4j
+        testRuntime logback
     }
 }
 
@@ -239,7 +254,7 @@ project(':synapse-grid-akka') {
         compile "com.typesafe.akka:akka-remote_$scalaMajorVersion:$akkaVersion"
         compile "com.typesafe.akka:akka-slf4j_$scalaMajorVersion:$akkaVersion"
 
-        testCompile logback
+        testRuntime logback
     }
 }
 
@@ -268,6 +283,7 @@ project(':synapse-grid-examples') {
     dependencies {
         compile project(':synapse-grid-akka')
         compile project(':synapse-grid-rx')
+        testRuntime logback
     }
 }
 

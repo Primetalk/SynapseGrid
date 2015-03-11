@@ -85,7 +85,21 @@ package object core extends SystemBuilderImplicits2 {
   implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem
   }
+  /** Enriches arbitrary type with implicit converter to StaticSystem. Adds a few useful methods.*/
+  implicit class RichType[T](t:T)(implicit cvt:T => StaticSystem){
+    def toDot = SystemRenderer.staticSystem2ToDot(t:StaticSystem)
 
+    def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(t:StaticSystem, level = level)
+
+    def toDynamicSystem = SystemConverting.toDynamicSystem(List(), t:StaticSystem, _.toTotalTrellisProducer)
+
+    def toSimpleSignalProcessor = SystemConverting.toSimpleSignalProcessor(List(), t:StaticSystem, _.toTotalTrellisProducer)
+
+    def toRuntimeSystem = SystemConverting.toRuntimeSystem(t:StaticSystem, (t:StaticSystem).outputContacts, _.toTotalTrellisProducer)
+
+    def allContacts = (t:StaticSystem).index.contacts
+
+  }
   implicit class RichStaticSystem(system: StaticSystem) {
     def toDot = SystemRenderer.staticSystem2ToDot(system)
 
