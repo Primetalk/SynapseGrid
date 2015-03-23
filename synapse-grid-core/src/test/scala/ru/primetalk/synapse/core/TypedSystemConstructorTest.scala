@@ -28,15 +28,14 @@ class TypedSystemConstructorTest extends FunSuite {
   implicit object MySystemImplementation extends TypedSystemConstructor[MySystemInterface]{
     override def apply(outer: MySystemInterface): StaticSystem = {
       import outer._
-      implicit val sb = new SystemBuilderC(name)
-      sb.inputs(i1,i2)
-      sb.outputs(o1)
+      implicit val sb = systemBuilderTyped(name)(i1,i2)(o1)
       i1 >> o1
       i2 >> o1
       sb.toStaticSystem
     }
   }
 
+  // create a pure instance of the system's outer interface without any connection to SystemBuilder
   val s = new MySystemInterface
 
   test("copy"){

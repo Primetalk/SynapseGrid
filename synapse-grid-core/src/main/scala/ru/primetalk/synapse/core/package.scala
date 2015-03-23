@@ -21,14 +21,23 @@ package object core extends SystemBuilderImplicits2 {
 
   def contact[T](name: String) = new Contact[T](name)
 
+  /** A system builder with inputs and outputs given in advance.
+    * */
+  def systemBuilderTyped(name:String)(_inputs:Contact[_]*)(_outputs:Contact[_]*):SystemBuilder = {
+    val res = new SystemBuilderC(name)
+    res.inputs(_inputs:_*)
+    res.outputs(_outputs:_*)
+    res
+  }
+
   /**
    * Special contact for consuming unnecessary data values.
    */
   lazy val devNull = new Contact[Any]("devNull", DevNullContact)
 
   implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: BasicSystemBuilder)(
-    implicit extensionInstance: SystemBuilderExtensionId[T]): T =
-    sb.extend(extensionInstance)
+    implicit extensionInstanceId: SystemBuilderExtensionId[T]): T =
+    sb.extend(extensionInstanceId)
 
   implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId(new AuxContactNumberingExt(_))
   implicit val LabellingExtId = new SystemBuilderExtensionId(new LabellingExt(_))
@@ -43,13 +52,16 @@ package object core extends SystemBuilderImplicits2 {
    * Extractor of contacts' data from result.
    */
   implicit class ContactExtractor[T](c: Contact[T]) {
-
+    /** construct a signal on this contact. */
     def signal(d: T) = Signal(c, d)
 
     def createSignal(d: T) = Signal(c, d)
-
+    /** Create signals from the given data sequence. */
     def createSignals(ds: T*): List[Signal[T]] = ds.map(Signal(c, _)).toList
 
+    /** projection of the list of signals over the contact. Only the
+      * data on the contact is retained.
+      * see also #filterFunction */
     def get(signals: List[Signal[_]]): List[T] = {
       val C = c
       signals.collect {
@@ -80,8 +92,10 @@ package object core extends SystemBuilderImplicits2 {
 
   }
 
+  /** One may use notation (contact -> data) to represent a signal*/
   implicit def pairToSignal[T](p: (Contact[T], T)): Signal[T] = Signal(p._1, p._2)
 
+  /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
   implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem
   }

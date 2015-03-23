@@ -53,6 +53,10 @@ class Contact[T](name1: String = null, val contactStyle: ContactStyle = NormalCo
   override def toString = "C(" + name + ")"
 }
 
+/** Contact with runtime type information.
+  * Can be used for static analysis of the system.*/
+class RttiContact[T](name1: String = null, contactStyle: ContactStyle = NormalContact)(implicit val classTag:scala.reflect.ClassTag[T]) extends Contact[T](name1, contactStyle)
+
 object Contact {
   def unapply(c: Any): Option[(String, ContactStyle)] =
     c match {
@@ -87,7 +91,8 @@ case class ContactP[T](path: SystemPath, contact: Contact[T])
  */
 case class SignalP[T](contact: ContactP[T], data: T)
 
-/** Signal for remote transfer. The contacts are not quite well serializable (see Contact for details).
+/** Signal for remote transfer. The real contacts are not quite well serializable (see Contact for details).
+  * Thus we use the number of the contact in system's index.
   */
 case class SignalDist(contactId: Int, data: AnyRef)
 
@@ -105,12 +110,12 @@ object Batch {
 
 
 /**
- * Stateful elements of the system
+ * Stateful elements of the system.
  */
 trait Stateful[State] extends Named {
   type StateType = State
   /**
-   * The initial state of the element
+   * The initial state of the element.
    */
   val s0: State
 }
