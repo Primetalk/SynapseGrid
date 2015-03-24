@@ -44,48 +44,6 @@ import scala.util.Try
 //  }
 //
 
-class AuxContactNumberingExt(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
-  private var auxContactNumber = 0
-
-  def nextContactName = {
-    sb.assertWritable()
-    auxContactNumber += 1
-    "c" + (auxContactNumber - 1)
-  }
-
-  def auxContact[T] =
-    new Contact[T](nextContactName, AuxiliaryContact)
-
-}
-
-/** An extension that adds easy labelling to System builder. */
-class LabellingExt(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
-  private[synapse] var proposedLabels = List[String]()
-
-  /** Adds a few labels for subsequent links. */
-  def labels(labels: String*) {
-    sb.assertWritable()
-    proposedLabels = labels.toList ::: proposedLabels
-  }
-
-  /** Gives the next label according to the following rules:
-    * - use userProvidedLabel if the user mention it directly;
-    * - looks for the next label in the list of labels previously set by user;
-    * - constructs a new label using defaultLabel if there are no labels.
-    */
-  def nextLabel(userProvidedLabel: String, defaultLabel: => String): String = {
-
-    (userProvidedLabel, proposedLabels) match {
-      case ("", List()) ⇒ defaultLabel
-      case ("", head :: tail) ⇒
-        sb.assertWritable()
-        proposedLabels = tail
-        head
-      case (label, _) => label
-    }
-  }
-}
-
 /**
  * DSL methods for implicit conversion*/
 class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(sb: BasicSystemBuilder) {
@@ -584,46 +542,7 @@ class StateOps[S](s: StateHandle[S])(sb: BasicSystemBuilder) {
   }
 }
 
-trait SystemBuilderImplicits2 {
-  def extendBasicSystemBuilder[T <: SystemBuilderExtension]( implicit sb: BasicSystemBuilder,
-        extensionInstance: SystemBuilderExtensionId[T]): T =
-    sb.extend(extensionInstance)
 
-  implicit def basicSystemBuilderToAdvanced(implicit sb: BasicSystemBuilder): SystemBuilderAdv =
-    new SystemBuilderAdvC(sb)
-
-  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder): LinkBuilderOps[T1, T2] =
-    new core.LinkBuilderOps(c)(sb)
-
-  implicit def implTryLinkBuilder[T1, T2](p: (Contact[T1], Contact[Try[T2]]))(implicit sb: BasicSystemBuilder): TryLinkBuilderOps[T1, T2] =
-    new core.TryLinkBuilderOps(p)(sb)
-
-  implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: BasicSystemBuilder): DirectLinkBuilderOps[T1, T2] =
-    new core.DirectLinkBuilderOps(p)(sb)
-
-  implicit def implRichContactPair[S, T](c: Contact[(S, T)])(implicit sb: BasicSystemBuilder): ContactPairOps[S, T] =
-    new core.ContactPairOps(c)(sb)
-
-  implicit def zippingLink[S, T](c: (Contact[T], Contact[(S, T)]))(implicit sb: BasicSystemBuilder): ZippingLinkOps[S, T] =
-    new core.ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
-
-  implicit def stateLinkBuilder2Ops[T1, T2, S](p: (core.ContactWithState[T1, S], Contact[T2]))(implicit sb: BasicSystemBuilder): StateLinkBuilder2Ops[T1, T2, S] =
-    new core.StateLinkBuilder2Ops(p)(sb)
-
-  implicit def richState[S](s: StateHandle[S])(implicit sb: BasicSystemBuilder): StateOps[S] =
-    new core.StateOps(s)(sb)
-
-  implicit def contactOps[T](c: core.Contact[T])(implicit sb: BasicSystemBuilder): core.ContactOps[T] =
-    new core.ContactOps(c)(sb)
-
-  implicit def tryContactOps[T](c: core.Contact[Try[T]])(implicit sb: BasicSystemBuilder): core.TryContactOps[T] =
-    new core.TryContactOps(c)(sb)
-
-  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]])(implicit sb: BasicSystemBuilder): core.TryFlatMapContactOps[T] =
-    new core.TryFlatMapContactOps(c)(sb)
-
-
-}
 
 trait SystemBuilderImplicits {
 
@@ -665,23 +584,19 @@ trait SystemBuilderAdv extends SystemBuilderImplicits {
 
   // TODO: macros like: `state counterS:Int = 0` and `contact myContact:String`
 
-  //	import sb._
-
-  import ru.primetalk.synapse.core._
-
   def nextContactName =
-    sb.extend(AuxContactNumberingExtId).nextContactName
+    sb.extend(ru.primetalk.synapse.core.AuxContactNumberingExtId).nextContactName
 
   /**
    * Defines the sequence of labels to be used for superscription of links.
    */
   def labels(labels: String*) = {
-    sb.extend(LabellingExtId).labels(labels: _*)
+    sb.extend(ru.primetalk.synapse.core.LabellingExtId).labels(labels: _*)
     this
   }
 
   private[synapse] def nextLabel(userProvidedLabel: String, defaultLabel: => String): String = {
-    val lsb = sb.extend(LabellingExtId)
+    val lsb = sb.extend(ru.primetalk.synapse.core.LabellingExtId)
     (userProvidedLabel, lsb.proposedLabels) match {
       case ("", List()) ⇒ defaultLabel
       case ("", head :: tail) ⇒

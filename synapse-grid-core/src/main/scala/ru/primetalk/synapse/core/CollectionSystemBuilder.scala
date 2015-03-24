@@ -14,9 +14,9 @@
 package ru.primetalk.synapse.core
 
 /**
- * TODO: unified API
+ *
  */
-trait CollectionSystemBuilder extends SystemBuilder {
+trait CollectionSystemBuilder extends SystemBuilder {//TODO: unified API
   /**
    * Collects all inputs until some other contact not issue control
    * command to pass through all collected data.
