@@ -27,7 +27,8 @@ trait SystemBuilderWithLogging extends SystemBuilder {
   val loggerNamePrefix = getClass.getName.replaceAllLiterally("$", "_") //"ru.primetalk.system2.contacts."
 
 
-  implicit def contactToLoggingContact[T](c:Contact[T]): LoggingContact[T] =new LoggingContact(c, loggerNamePrefix)(this)
+  implicit def contactToLoggingContact[T](c:Contact[T]): LoggingContact[T] =
+    new LoggingContact(c, loggerNamePrefix)(this)
 }
 class LoggingContact[T](val c: Contact[T], loggerNamePrefix:String)(implicit sb:SystemBuilderAdv) {
     require(c.name != null, "Contact name == null")

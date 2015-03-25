@@ -19,7 +19,8 @@ class ApplicationGrid extends ProcessGrid {
   def prefix = "app"
   override 
   protected def defineSystem(implicit sb:SystemBuilder): Unit = {
-    val akkaExt = implicitly[AkkaSystemBuilderExtension]//sb.extend(akkaExtensionId)
+    val akkaExt = //sb:ru.primetalk.synapse.akka.AkkaSystemBuilderExtension//..]//
+    sb.extend(akkaExtensionId)
 
     val myEtlGrid = new MyEtlGrid
     sb.addActorSubsystem(myEtlGrid)

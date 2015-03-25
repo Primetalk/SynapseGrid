@@ -527,6 +527,9 @@ class TryContactOps[T](val c: Contact[Try[T]])(sb: BasicSystemBuilder) {
   /** Extracts an exception from Try. It only produces a signal when there was an exception.*/
   def recover:Contact[Throwable] =
     new core.ContactOps[Try[T]](c)(sb).flatMap(t=>if(t.isSuccess) Seq() else Seq(t.failed.get), "recover")
+  /** pass data further if there were no exception. Unwraps Try monad.*/
+  def success:Contact[T] =
+    new core.ContactOps[Try[T]](c)(sb).flatMap(t=>if(t.isSuccess) Seq(t.get) else Seq(), "success")
 }
 
 class TryFlatMapContactOps[T](val c: Contact[Try[TraversableOnce[T]]])(sb: BasicSystemBuilder) {
