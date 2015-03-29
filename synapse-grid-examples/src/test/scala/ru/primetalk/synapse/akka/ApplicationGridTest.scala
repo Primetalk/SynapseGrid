@@ -18,7 +18,7 @@ class ApplicationGridTest extends FunSuite{
     implicit val actorSystem = ActorSystem()
     implicit val i = inbox()
     val applicationGrid: ApplicationGrid = new ApplicationGrid
-    val actor = applicationGrid.toStaticSystem.toActorTree(actorSystem)
+    val actor = applicationGrid.toStaticSystem.toTopLevelActor(actorSystem)
     actor ! Signal(applicationGrid.start, ())
 //    Thread.sleep(2000)
     i.receive(10.second) match {

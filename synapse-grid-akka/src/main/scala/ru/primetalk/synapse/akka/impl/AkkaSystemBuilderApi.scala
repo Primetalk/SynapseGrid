@@ -13,12 +13,13 @@ trait AkkaSystemBuilderApi {
   }
 
   class ActorSystemBuilderOps(implicit sb: BasicSystemBuilder) {
+    @deprecated("use system.toActorComponent", "26.03.2015")
     def addActorSubsystem[T](subsystem: T,
                              supervisorStrategy: SupervisorStrategy =
                              defaultSupervisorStrategy
                               )(implicit
                                 ev: T => StaticSystem): T = {
-      sb.addComponent(new ru.primetalk.synapse.akka.ActorInnerSubsystem(subsystem, supervisorStrategy))
+      sb.addComponent(new ru.primetalk.synapse.akka.ActorComponent(subsystem, supervisorStrategy))
       subsystem
     }
 

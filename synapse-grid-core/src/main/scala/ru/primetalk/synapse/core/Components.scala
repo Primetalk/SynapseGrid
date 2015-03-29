@@ -169,7 +169,7 @@ case class DynamicSystem(
   *                           During runtime processing current values from parent are copied to child state
   *                           before processing any signals and copied back afterwards.
   */
-case class InnerSystem(
+case class InnerSystemComponent(
                            s: StaticSystem,
 
                            /** main state handle that will hold private state of the subsystem. */

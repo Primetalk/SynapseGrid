@@ -130,7 +130,7 @@ trait SystemRenderer {
           elements += slinkToString(getId(st, StateNode), id, st, c)
         case Link(_, _, _, StatefulFlatMapLink(_, st)) ⇒
           elements += slinkToString(getId(st, StateNode), id, st, c)
-        case InnerSystem(_, st, _) ⇒
+        case InnerSystemComponent(_, st, _) ⇒
 					elements += slinkToString(getId(st, StateNode), id, st, c)
 				case StateUpdate(_, st, _, _) ⇒
 					elements += suLinkToString(id, getId(st, StateNode), c, st)

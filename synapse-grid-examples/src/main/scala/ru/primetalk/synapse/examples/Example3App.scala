@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 
 object Example3App extends App  {
   implicit val actorSystem = ActorSystem()
-  val actor = new SuperSystemBuilder(actorSystem).toStaticSystem.toActorTree(actorSystem)
+  val actor = new SuperSystemBuilder(actorSystem).toStaticSystem.toTopLevelActor(actorSystem)
   implicit val i = inbox()
   actor ! Signal(Control,"start")
   Thread.sleep(20000)

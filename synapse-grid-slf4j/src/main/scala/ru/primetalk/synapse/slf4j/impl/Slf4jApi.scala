@@ -21,21 +21,21 @@ trait Slf4jApi {
 
     def loggerName = sb.extend(SystemBuilderLoggingExtensionId).loggerNamePrefix + "." + c.name
     def logger = LoggerFactory.getLogger(loggerName)
-    /** Log at level ERROR with message */
-    def error(label: T=>String) = {
-      this.error((s:Signal[T]) =>label(s.data))
-      c
-    }
+//    /** Log at level ERROR with message */
+//    def error(label: T=>String) = {
+//      this.error((s:Signal[T]) =>label(s.data))
+//      c
+//    }
     /** Log at level ERROR with message */
     def error(f: Signal[T] ⇒ String = "" + _) = {
       c.foreach(data ⇒ logger.error(f(Signal(c, data)), data), "ERROR: " + loggerName)
       c
     }
-    /** Log at level WARN with message */
-    def warn(label: T=>String) = {
-      this.error((s:Signal[T]) =>label(s.data))
-      c
-    }
+//    /** Log at level WARN with message */
+//    def warn(label: T=>String) = {
+//      this.warn((s:Signal[T]) =>label(s.data))
+//      c
+//    }
     /** Log at level WARN with message */
     def warn(f: Signal[T] ⇒ String = "" + _) = {
       c.foreach(data ⇒ logger.warn(f(Signal(c, data)), data), "WARN: " + loggerName)

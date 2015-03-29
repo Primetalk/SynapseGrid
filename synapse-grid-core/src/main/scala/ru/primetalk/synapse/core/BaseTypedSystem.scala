@@ -32,12 +32,14 @@ abstract class BaseTypedSystem(val name:String = "") extends WithStaticSystem{
   /**
    * Create contact and add it to the builder as an input
    */
+  protected
   def input[T](name: String) =
     sb.input[T](name)
 
   /**
    * Create contact and add it to the builder as an output
    */
+  protected
   def output[T](name: String) =
     sb.output[T](name)
 
@@ -67,4 +69,11 @@ abstract class BaseTypedSystem(val name:String = "") extends WithStaticSystem{
  */
 trait TypedSystemConstructor[T] extends (T => StaticSystem){
   def apply(outer:T):StaticSystem
+}
+
+abstract class AbstractTypedSystem(val name:String) {
+  protected
+  def input[T](internalName:String):Contact[T] = new Contact[T](name+"."+internalName)
+  protected
+  def output[T](internalName:String):Contact[T] = new Contact[T](name+"."+internalName)
 }

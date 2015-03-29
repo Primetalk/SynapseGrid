@@ -16,7 +16,7 @@ import ru.primetalk.synapse.core.ComponentWithInternalStructure
 import ru.primetalk.synapse.core
 import akka.actor.{SupervisorStrategy, Props, ActorRefFactory, ActorPath}
 import ru.primetalk.synapse.akka._
-import ru.primetalk.synapse.akka.ActorInnerSubsystem
+import ru.primetalk.synapse.akka.ActorComponent
 
 /**
 Deployment of a system over a cluster of nodes
@@ -67,10 +67,10 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
     }
 
   /** Recursively finds all subsystems of the system. */
-  def actorInnerSubsystems(component: core.Component): List[(core.SystemPathReversed, ActorInnerSubsystem)] =
-    core.components(component).collect { case (pathRev, actorInnerSubsystem: ActorInnerSubsystem) => (pathRev, actorInnerSubsystem)}
+  def actorInnerSubsystems(component: core.Component): List[(core.SystemPathReversed, ActorComponent)] =
+    core.components(component).collect { case (pathRev, actorInnerSubsystem: ActorComponent) => (pathRev, actorInnerSubsystem)}
 
-  def actorInnerSubsystems2(component: core.Component): List[(core.SystemPath, ActorInnerSubsystem)] =
+  def actorInnerSubsystems2(component: core.Component): List[(core.SystemPath, ActorComponent)] =
     actorInnerSubsystems(component).map(p => (p._1.reverse, p._2))
 
 

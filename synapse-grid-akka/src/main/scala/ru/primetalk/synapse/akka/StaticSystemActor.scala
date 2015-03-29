@@ -158,7 +158,9 @@ trait AbstractStaticSystemActor extends Actor {
 /**
  * Actor that corresponds to the given static system. It will work according to
  * the schema of the system.
- * If there are ActorInnerSubsystem-s within the system, then they will become children actors of this one.
+ * If there are ActorComponent-s within the system, then they will become children actors of this one.
+ *
+ * This class is used to create Actors both for top level system and for actor components inside.
  *
  * @param systemPath the list of intermediate systems from parent actor to the system of this actor
  */
@@ -201,7 +203,7 @@ object StaticSystemActor {
                                path: core.SystemPath,
                                system: StaticSystem): TotalTrellisProducer = {
     val actorInnerSubsystemConverter: ComponentDescriptorConverter = {
-      case ComponentDescriptor(ActorInnerSubsystem(subsystem, supervisorStrategy), path1, _) =>
+      case ComponentDescriptor(ActorComponent(subsystem, supervisorStrategy), path1, _) =>
         val actorRef = actorRefFactory.actorOf(Props(
           new StaticSystemActor(path1 :+ subsystem.name, subsystem, None, supervisorStrategy)),
           subsystem.name)

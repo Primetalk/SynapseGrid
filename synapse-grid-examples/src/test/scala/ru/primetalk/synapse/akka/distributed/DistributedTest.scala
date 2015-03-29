@@ -47,7 +47,8 @@ class DistributedTest extends FunSuite {
 
     protected override
     def defineSystem(implicit sb: SystemBuilder) {
-      new ActorSystemBuilderOps().addActorSubsystem(child)
+      sb.addComponent(child.toActorComponent())
+//      new ActorSystemBuilderOps().addActorSubsystem(child)
       in.foreach(n => println("parent.in: " + n))
       in >> child.inChild
       child.outChild >> out //possibly send answer output to sender of the original signal (or design rx-java interoperability). If send to sender - don't forget to store original sender.
@@ -71,7 +72,7 @@ class DistributedTest extends FunSuite {
 
   val parentSystem = new ParentSystem
   private val system = parentSystem.toStaticSystem
-  val root: ComponentWithInternalStructure = new ActorInnerSubsystem(system, defaultSupervisorStrategy)
+  val root: ComponentWithInternalStructure = new ActorComponent(system, defaultSupervisorStrategy)
 
   root.toStaticSystem.toDot.saveTo("root.dot")
 

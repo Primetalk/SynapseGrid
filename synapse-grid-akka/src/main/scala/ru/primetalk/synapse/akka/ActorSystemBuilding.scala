@@ -19,11 +19,13 @@ import ru.primetalk.synapse.akka.SpecialActorContacts.{NonSignalWithSenderInput,
 import ru.primetalk.synapse.slf4j.SystemBuilderWithLogging
 
 /**
- * For an ActorInnerSubsystem an actor will be constructed. The state will reside in that actor.
+ * StaticSystemActorAdapter is a component that can be added to any system. When
+ * the system is converted to dynamic system this component will be converted to an actor
+ * an actor will be constructed. The state will reside in that actor.
  * @author А.Жижелев
  *
  */
-case class ActorInnerSubsystem(subsystem: StaticSystem,
+case class ActorComponent(subsystem: StaticSystem,
                                supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy)
   extends Component
   with ComponentWithInternalStructure {
@@ -36,9 +38,13 @@ case class ActorInnerSubsystem(subsystem: StaticSystem,
 }
 
 trait ActorContainerBuilder extends SystemBuilder {
+  /** Prefer to use StaticSystemActorAdapter directly.
+    * 
+    * @return the subsystem itself
+    */
   def addActorSubsystem[T](subsystem: T,
                            supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy)(implicit ev: T => StaticSystem): T = {
-    addComponent(new ActorInnerSubsystem(subsystem, supervisorStrategy))
+    addComponent(new ActorComponent(subsystem, supervisorStrategy))
     subsystem
   }
 
@@ -119,16 +125,28 @@ trait ActorSystemBuilder extends ActorContainerBuilder {
 }
 
 /** Creates subsystem that is built around some actor.
+  * The subsystem should be used inside ActorComponent.
+  * The data that appears on input contact is sent to
+  * the actor and the answer is caught and sent to output.
+  *
+  * This adapter can be used to incorporate existing Actor implementation
+  * inside synapse-grid. However it is not recommended as general mechanism.
+  * If one needs to use ordinary actors, why not created them?
+  * If
   */
 class ChildActorAdapterSnippet[TInput, TOutput](
                                                  name: String,
                                                  input: Contact[TInput],
-                                                 outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor) extends ActorSystemBuilder with SystemBuilderWithLogging {
+                                                 outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor)
+  extends ActorSystemBuilder with SystemBuilderWithLogging {
+
   inputs(ContextInput, NonSignalWithSenderInput, input)
   outputs(outputContact)
 
   setSystemName(name + "System")
+
   val actorRef = state[ActorRef](name, Actor.noSender)
+
   ContextInput debug() labelNext s"create actor $name" map {
     case contextRef ⇒
       contextRef.actorOf(Props(factory(contextRef.self)), name)

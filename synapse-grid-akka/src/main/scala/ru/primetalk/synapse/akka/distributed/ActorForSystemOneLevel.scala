@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 /** An actor for a subsystem. Whenever a message is going
   * to be sent to an inner actor or to the parent actor, it is
   * sent to the router instead. This allows to redirect the
-  * message to another host for instanse. */
+  * message to another host for instance. */
 class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
                              override val system: StaticSystem,
                              override val supervisorStrategy: SupervisorStrategy,
@@ -77,7 +77,7 @@ class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
                                        path: List[String],
                                        system: StaticSystem): TotalTrellisProducer = {
     val actorInnerSubsystemConverter: ComponentDescriptorConverter = {
-      case ComponentDescriptor(ActorInnerSubsystem(subsystem, _), path1, _) =>
+      case ComponentDescriptor(ActorComponent(subsystem, _), path1, _) =>
         // TODO: obtain ActorRef for better performance
         val childRouterPath = realm.getRouterPath(path1 ++ List(subsystem.name))
         val childRouterSelection = actorRefFactory.actorSelection(childRouterPath)

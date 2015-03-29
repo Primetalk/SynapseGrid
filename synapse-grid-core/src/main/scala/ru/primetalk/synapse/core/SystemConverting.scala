@@ -181,7 +181,7 @@ object SystemConverting {
   def innerSystemToSignalProcessor(converterRecursive: ComponentDescriptorConverter,
                                    rsToTtp: RuntimeSystemToTotalTrellisProducerConverter):
   ComponentDescriptorConverter = {
-    case ComponentDescriptor(InnerSystem(subsystem, subsystemStateHandle, sharedStateHandles), path, _) ⇒
+    case ComponentDescriptor(InnerSystemComponent(subsystem, subsystemStateHandle, sharedStateHandles), path, _) ⇒
       val rs = systemToRuntimeSystem(subsystem.name :: path,
         subsystem,
         converterRecursive,
@@ -388,7 +388,8 @@ object SystemConverting {
   def toDynamicSystem(path: List[String],
                       system: StaticSystem,
                       rsToTtp: RuntimeSystemToTotalTrellisProducerConverter) =
-    new DynamicSystem(system.inputContacts, system.outputContacts, system.name, toSimpleSignalProcessor(path, system, rsToTtp), system.index)
+    new DynamicSystem(system.inputContacts, system.outputContacts, system.name,
+      toSimpleSignalProcessor(path, system, rsToTtp), system.index)
 
 
 }

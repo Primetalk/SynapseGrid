@@ -582,7 +582,7 @@ trait SystemBuilderImplicits {
 
 }
 
-trait SystemBuilderAdv extends SystemBuilderImplicits {
+trait SystemBuilderAdv extends SystemBuilderImplicits with OuterInterfaceBuilder {
   def sb: BasicSystemBuilder
 
   // TODO: macros like: `state counterS:Int = 0` and `contact myContact:String`

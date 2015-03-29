@@ -28,6 +28,29 @@ trait StaticSystemApi {
 
     def allContacts = (t:StaticSystem).index.contacts
 
+    /**
+     * Constructs a system around another one.
+     * It's inputs and outputs are renamed to name+"."+input.name and it's name is anew.
+     * All it's state is shared.
+     *
+     * See also EncapsulationApi.
+     */
+    def encapsulate(name:String = ""):StaticSystem = {
+      val s = cvt(t)
+      val aName = if(name == "") s.name else name
+      implicit val sb = new SystemBuilderC(aName)
+      def naming(n:String) = aName+"."+n
+
+      s.inputs.map{c =>
+        sb.input(naming(c.name)) >> c
+      }
+      s.outputs.map{c =>
+        c >> sb.output(naming(c.name))
+      }
+      sb.addSubsystem(s, s.privateStateHandles:_*)
+      sb.toStaticSystem
+    }
+
   }
   implicit class RichStaticSystem(system: StaticSystem) {
     def toDot = SystemRenderer.staticSystem2ToDot(system)
@@ -41,6 +64,8 @@ trait StaticSystemApi {
     def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts, _.toTotalTrellisProducer)
 
     def allContacts = system.index.contacts
+
+
 
   }
 

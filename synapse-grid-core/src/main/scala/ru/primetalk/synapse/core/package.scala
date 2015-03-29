@@ -28,5 +28,6 @@ package object core
   with BasicSystemBuilderApi
   with DotUtilsApi
   with ContactsApi
+  with EncapsulationApi
   with AuxNumberingExt
   with NextLabelExt

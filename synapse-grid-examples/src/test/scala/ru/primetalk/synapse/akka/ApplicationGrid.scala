@@ -20,10 +20,10 @@ class ApplicationGrid extends ProcessGrid {
   override 
   protected def defineSystem(implicit sb:SystemBuilder): Unit = {
     val akkaExt = //sb:ru.primetalk.synapse.akka.AkkaSystemBuilderExtension//..]//
-    sb.extend(akkaExtensionId)
+      sb.extend(akkaExtensionId)
 
     val myEtlGrid = new MyEtlGrid
-    sb.addActorSubsystem(myEtlGrid)
+    sb.addComponent(myEtlGrid.toActorComponent())
 
 //    SpecialActorContacts.ContextInput.map(ctx => Some(ctx.sender())).saveTo(sender)
 

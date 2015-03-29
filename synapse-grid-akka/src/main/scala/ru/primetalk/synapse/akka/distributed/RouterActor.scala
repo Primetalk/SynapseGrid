@@ -17,6 +17,8 @@ import akka.event.{LoggingReceive, Logging}
 
 /** Routes everything except register/unregister commands to
   * the system that has registered with the router.
+  *
+  * Unregister command is not supported.
   */
 class RouterBecome extends Actor {
   val log = Logging(context.system, this)
@@ -26,7 +28,7 @@ class RouterBecome extends Actor {
       log.info("RouterBecome: " + self.path + " received " + Register(actor))
       context.become(LoggingReceive {
         case m =>
-          log.info("RouterBecome.recieve[" + self.path + "](" + actor + "): received " + m)
+          log.debug("RouterBecome.receive[" + self.path + "](" + actor + "): received " + m)
           actor forward m
       })
   }

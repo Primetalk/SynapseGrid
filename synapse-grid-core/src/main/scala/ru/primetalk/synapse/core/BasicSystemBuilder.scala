@@ -48,7 +48,7 @@ trait BasicSystemBuilder {
   }
 
 
-  private[core] val contacts = mutable.ListBuffer[Contact[_]]()
+//  private[core] val contacts = mutable.ListBuffer[Contact[_]]()
   private[core] val privateStateHandles = mutable.ListBuffer[StateHandle[_]]()
   private[core] val links = mutable.ListBuffer[Link[_, _, Nothing, Any]]()
   private[core] val components = mutable.ListBuffer[Component]()
@@ -56,17 +56,20 @@ trait BasicSystemBuilder {
   private[core] val outputContacts = mutable.Set[Contact[_]]()
   private[core] var unhandledExceptionHandler = defaultUnhandledExceptionHandler
 
-  protected val extensions = mutable.Map[SystemBuilderExtensionId[_], Any]()
+  private[core] val extensions = mutable.Map[SystemBuilderExtensionId[_], SystemBuilderExtension]()
 
   /** Constructs the current version of static system. */
-  def toStaticSystem = StaticSystem(
-    /** A subset of contacts */
-    inputContacts.toList.distinct,
-    outputContacts.toList.distinct,
-    privateStateHandles.toList,
-    components.toList reverse_::: links.toList,
-    name: String,
-    unhandledExceptionHandler)
+  def toStaticSystem = {
+    val s = StaticSystem(
+      /** A subset of contacts */
+      inputContacts.toList.distinct,
+      outputContacts.toList.distinct,
+      privateStateHandles.toList,
+      components.toList reverse_::: links.toList,
+      name: String,
+      unhandledExceptionHandler)
+    extensions.values.foldLeft(s)( (s,e) => e.postProcess(s))
+  }
 
   /**
    * Sets this builder to the read only mode. Subsequent modifications will lead to
@@ -148,22 +151,30 @@ trait BasicSystemBuilder {
     link.to
   }
 
-  def addComponent(component: Component) {
+  /** Adds a self contained component.
+    * NB: The state of the component is not managed!*/
+  def addComponent[T<:Component](component: T):T = {
     components += component
+    component
   }
 
   /**
    * Subsystem.
    * It can have a few input contacts (any number), however,
    * it will process signals by one.
+   *
    * If the subsystem has output contacts (it usually has), then the result of subsystem
    * processing will appear on the same contacts of the parent system.
+   *
+   * @param sharedStateHandles a collection of state handles that is shared between the parent
+   *                           and the child system. Whenever the system gets a signal, shared
+   *                           state values are copied into it's internal state.
    */
   def addSubsystem[T](system: T, sharedStateHandles: StateHandle[_]*)(implicit ev: T => StaticSystem): T = {
     val s = system: StaticSystem
     sharedStateHandles.foreach(addStateHandle(_))
     val s0withoutShared = s.s0 -- sharedStateHandles
-    components += new InnerSystem(s, state(s.name + "State", s0withoutShared), sharedStateHandles.toList)
+    components += new InnerSystemComponent(s, state(s.name + "State", s0withoutShared), sharedStateHandles.toList)
     system
   }
 
@@ -214,4 +225,6 @@ trait BasicSystemBuilder {
     unhandledExceptionHandler = handler
   }
 
+  def findInput(name:String):Option[Contact[_]] = inputContacts.find(_.name == name)
+  def findOutput(name:String):Option[Contact[_]] = outputContacts.find(_.name == name)
 }

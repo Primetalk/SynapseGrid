@@ -3,12 +3,12 @@ ext {
 //    slick = "com.typesafe.slick:slick_${scalaMajorVersion}:2.1.0"
 //    slickPg = "com.github.tminglei:slick-pg_${scalaMajorVersion}:0.8.2"//6.5.3"
     slick = "com.typesafe.slick:slick_${scalaMajorVersion}:3.0.0-RC1"
-//    slickPg = "com.github.tminglei:slick-pg_${scalaMajorVersion}:0.8.2"//6.5.3"
+    slickPg = "com.github.tminglei:slick-pg_${scalaMajorVersion}:0.8.4"//6.5.3"
 }
 
 dependencies {
     compile slick
-//    compile slickPg
+    compile slickPg
     compile slf4j
     compile project(':synapse-frames')
     testCompile logback

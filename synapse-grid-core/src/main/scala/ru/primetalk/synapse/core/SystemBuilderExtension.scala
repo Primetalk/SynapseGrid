@@ -3,6 +3,9 @@ package ru.primetalk.synapse.core
 trait SystemBuilderExtension {
   // the extended SystemBuilder
   val sb: BasicSystemBuilder
+  /** Opportunity for extension to hook into method
+    * SystemBuilder#toStaticSystem"*/
+  def postProcess(s:StaticSystem):StaticSystem = s
 }
 
 /** ExtensionId for a system builder. Every extension can be

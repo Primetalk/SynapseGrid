@@ -6,6 +6,7 @@ import ru.primetalk.synapse.core._
 
 import scala.language.implicitConversions
 /**
+ * Extension that allows special akka-contacts to be used.
  * @author zhizhelev, 25.03.15.
  */
 trait AkkaExt {
