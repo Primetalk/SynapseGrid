@@ -15,14 +15,15 @@ package ru.primetalk.synapse.concurrent
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
+import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.concurrent.ComputationState._
-import ru.primetalk.synapse.core.BaseTypedSystem
 
 @RunWith(classOf[JUnitRunner])
 class SubsystemTest extends FunSuite{
 
   class TwoStatesInnerSubsystem(name:String) extends BaseTypedSystem{
     import sb._
+    implicit val sb1 = sb
     setSystemName("TwoStatesInnerSubsystem")
     val i1 = input[Int]("i1")
     val integral1 = state[Int]("integral1", 0)
@@ -50,6 +51,7 @@ class SubsystemTest extends FunSuite{
 
   class OuterSystem extends BaseTypedSystem {
     import sb._
+    implicit val sb1 = sb
     setSystemName("OuterSystem")
     val outerInput1 = input[Int]("outerInput1")
     val outerOutput1 = output[Int]("outerOutput1")

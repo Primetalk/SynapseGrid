@@ -27,7 +27,7 @@ import scala.collection.mutable
  *
  * The builder is used in BaseTypedSystem as a DSL for system's construction.
  */
-trait BasicSystemBuilder {
+trait BasicSystemBuilder extends OuterInterfaceBuilder {
   private var name =
     if (getClass.isAnonymousClass)
       ""
@@ -119,6 +119,23 @@ trait BasicSystemBuilder {
     }
   }
 
+  /**
+   * Create contact and add it to the builder as an input
+   */
+  def input[T](name: String) = {
+    val c = contact[T](name)
+    inputs(c)
+    c
+  }
+
+  /**
+   * Create contact and add it to the builder as an output
+   */
+  def output[T](name: String) = {
+    val c = contact[T](name)
+    outputs(c)
+    c
+  }
 
   /**
    * Add StateHandle to the system

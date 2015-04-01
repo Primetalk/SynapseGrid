@@ -1,7 +1,7 @@
 package ru.primetalk.synapse.akka.impl
 
 import akka.actor.{AllForOneStrategy, Actor, ActorRef, SupervisorStrategy}
-import ru.primetalk.synapse.core.{Contact, StaticSystem, BasicSystemBuilder}
+import ru.primetalk.synapse.core.{SystemBuilderC, Contact, StaticSystem, BasicSystemBuilder}
 import scala.language.implicitConversions
 
 /**
@@ -31,7 +31,9 @@ trait AkkaSystemBuilderApi {
     def childActorAdapterSnippet[TInput, TOutput](name: String,
                                                   input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor): StaticSystem = {
       sb.inputs(ru.primetalk.synapse.akka.SpecialActorContacts.NonSignalWithSenderInput)
-      new ru.primetalk.synapse.akka.ChildActorAdapterSnippet(name, input, outputContact)(factory).toStaticSystem
+      val innerSb = new SystemBuilderC(name)
+      new ru.primetalk.synapse.akka.ChildActorAdapterSnippet(name, input, outputContact)(factory)(innerSb)
+      innerSb.toStaticSystem
     }
 
   }

@@ -12,10 +12,11 @@
  */
 package ru.primetalk.synapse.examples
 
-import ru.primetalk.synapse.core.SystemBuilder
+import ru.primetalk.synapse.core._
 
 object Examples2 {
   object StringSplitterBuilder extends SystemBuilder {
+    implicit val sb1 = this
     val a = contact[String]("a")
     val b = contact[String]("b")
     val c = contact[Char]("c")

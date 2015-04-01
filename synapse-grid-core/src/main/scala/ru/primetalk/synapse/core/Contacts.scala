@@ -54,7 +54,7 @@ class Contact[T](name1: String = null, val contactStyle: ContactStyle = NormalCo
 }
 
 /** Contact with runtime type information.
-  * Can be used for static analysis of the system.*/
+  * Can be used for static analysis of the system. At least checking Nop links to connect compatible contacts.*/
 class RttiContact[T](name1: String = null, contactStyle: ContactStyle = NormalContact)(implicit val classTag:scala.reflect.ClassTag[T]) extends Contact[T](name1, contactStyle)
 
 object Contact {

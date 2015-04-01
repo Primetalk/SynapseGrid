@@ -20,14 +20,14 @@ package object shapeless {
   //  implicit class ShapelessSystemBuilder(sb:SystemBuilder){
   implicit class HNilContact[T](c: Contact[T]) {
     def hNil(implicit sb: SystemBuilder): Contact[T :: HNil] = {
-      import sb._
+//      import sb._
       c.map(value => value :: HNil)
     }
   }
 
   implicit class ShapelessContact[L <: HList](c: Contact[L]) {
     def using[S](stateHandle: StateHandle[S])(implicit sb: SystemBuilder): Contact[S :: L] = {
-      import sb._
+//      import sb._
       c.withState(stateHandle).stateMap[S :: L](
         (stateValue, message: L) =>
           (stateValue, new ::(stateValue, message))

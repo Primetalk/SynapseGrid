@@ -14,6 +14,7 @@ package ru.primetalk.synapse.core
 
 import scala.language.implicitConversions
 
+@deprecated("use uniform api - import core._", "31.03.2015")
 object implicits {
   implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb:BasicSystemBuilder): DirectLinkBuilderOps[T1, T2] = new DirectLinkBuilderOps(p)(sb)
   implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb:BasicSystemBuilder): LinkBuilderOps[T1, T2] = new LinkBuilderOps(c)(sb)

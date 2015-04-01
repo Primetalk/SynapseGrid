@@ -25,4 +25,5 @@ trait AuxNumberingExt {
   implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId(new AuxContactNumberingExt(_))
   implicit def sbToAux(sb: BasicSystemBuilder): AuxContactNumberingExt = sb.extend[AuxContactNumberingExt]
 
+  def auxContact[T](implicit sb:BasicSystemBuilder) = sb.auxContact[T]
 }

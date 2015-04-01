@@ -13,7 +13,7 @@ trait Slf4jApi {
     var loggerNamePrefix = sb.systemName.replaceAllLiterally("$", "_") //"ru.primetalk.system2.contacts."
   }
   implicit def contactToLoggingContact[T](c:Contact[T])(implicit sb:BasicSystemBuilder): LoggingContact[T] =
-    new LoggingContact(c, sb.extend(SystemBuilderLoggingExtensionId).loggerNamePrefix)(basicSystemBuilderToAdvanced(sb))
+    new LoggingContact(c, sb.extend(SystemBuilderLoggingExtensionId).loggerNamePrefix)(sb)
 
   implicit val SystemBuilderLoggingExtensionId = new SystemBuilderExtensionId(new SystemBuilderLoggingExtension(_))
 

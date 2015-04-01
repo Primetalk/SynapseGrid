@@ -20,7 +20,6 @@ import org.scalatest.junit.JUnitRunner
 class IncTest extends FunSuite {
 
   class SimpleSystemWithStateBuilder extends BaseTypedSystem{
-    import sb._
     setSystemName("SimpleSystemWithState")
     val i1 = input[Int]("i1")
     val s1 = state[Int]("s1", 0)

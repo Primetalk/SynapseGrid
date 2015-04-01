@@ -25,7 +25,7 @@ trait WithStaticSystem {
   * better decomposition. It is described in comment to TypedSystemConstructor
   */
 abstract class BaseTypedSystem(val name:String = "") extends WithStaticSystem{
-  protected val sb = new SystemBuilderC(if(name == "") getClass.getSimpleName else name)
+  protected implicit val sb:SystemBuilder = new SystemBuilderC(if(name == "") getClass.getSimpleName else name)
 
   protected def defineSystem(implicit sb:SystemBuilder) {}
 

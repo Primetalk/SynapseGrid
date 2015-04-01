@@ -33,6 +33,7 @@ object Example4App extends App {
 
   class WordStat extends BaseTypedSystem {
     import sb._
+    implicit val sb1 = sb
     val wordInput = input [String]("wordInput")
     val lenOutput = output[Int]   ("lenOutput")
     wordInput.
@@ -42,6 +43,7 @@ object Example4App extends App {
 
   class Summator extends BaseTypedSystem {
     import sb._
+    implicit val sb1 = sb
     val numInput  = input [Int]("numInput")
     val getInput  = input [Any]("getInput")
     val sumOutput = output[Int]("sumOutput")
@@ -56,6 +58,7 @@ object Example4App extends App {
   }
   class SuperSystem extends BaseTypedSystem {
     import sb._
+    implicit val sb1 = sb
 
     val nameInput = input[String]("nameInput")
     val total = output[Int]("total")

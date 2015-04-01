@@ -10,17 +10,20 @@
  *
  * Created: 24.07.13, zhizhelev
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.impl
+
+import ru.primetalk.synapse.core.{Contact, BasicSystemBuilder}
+import scala.language.implicitConversions
 
 /** Managed states are not accessible directly. Instead the state can be overwritten by sending some data
   * on a special contact.
   * On every state change a signal appears on a contact onUpdated
   * */
-trait SystemBuilderWithManagedStates extends SystemBuilder {
+trait ManagedStatesApi extends BasicSystemBuilderApi with ContactsApi {
 
-  class ManagedStateSnippet[S](val name: String, initialValue: Option[S] = None) {
+  class ManagedStateSnippet[S](val name: String, initialValue: Option[S] = None)(implicit sb:BasicSystemBuilder) {
 
-    val state = SystemBuilderWithManagedStates.this.state[Option[S]](name + ".state", initialValue)
+    val state = sb.state[Option[S]](name + ".state", initialValue)
     val onUpdated = contact[S](name + ".onUpdated")
     val update = contact[S](name + ".update")
     update.labelNext("Option(_)").map(Option(_)).saveTo(state)
@@ -28,27 +31,30 @@ trait SystemBuilderWithManagedStates extends SystemBuilder {
 
   }
 
-  def managedState[S](name: String, initialValue: Option[S] = None) =
+  def managedState[S](name: String, initialValue: Option[S] = None)(implicit sb:BasicSystemBuilder):ManagedStateSnippet[S] =
     new ManagedStateSnippet[S](name, initialValue)
 
 
-  implicit class ManagedRichContact[T](c: Contact[T]) {
+  implicit class ManagedRichContact[T](c: Contact[T])(implicit sb:BasicSystemBuilder) {
     /** Filters out empty states. */
     def zipWithManagedState[S](ms: ManagedStateSnippet[S], name: String = ""): Contact[(S, T)] =
       c.zipWithState(ms.state, name).labelNext("Some(state)? (state, _)").
-        collect { case (Some(s), v) ⇒ (s, v)}
+        collect { case (Some(s), v) ⇒
+        (s:S, v)
+      }
 
     def getManagedState[S](ms: ManagedStateSnippet[S], name: String = ""): Contact[S] =
       c.zipWithState(ms.state, name).labelNext("Some(state)? => state").
-        collect { case (Some(s), v) ⇒ s}
+        collect { case (Some(s), v) ⇒ s:S}
 
     def saveToManagedState[S >: T](ms: ManagedStateSnippet[S], name: String = "") = {
       c >> ms.update
       c
     }
   }
+  implicit def managedRichState[S](ms: ManagedStateSnippet[S])(implicit sb:BasicSystemBuilder):ManagedRichState[S]  = new ManagedRichState[S](ms)(sb)
 
-  implicit class ManagedRichState[S](ms: ManagedStateSnippet[S]) {
+  class ManagedRichState[S](ms: ManagedStateSnippet[S])(implicit sb:BasicSystemBuilder) {
 
     def >>(c: Contact[S]) = ms.onUpdated >> c
 
@@ -58,7 +64,7 @@ trait SystemBuilderWithManagedStates extends SystemBuilder {
     }
 
     def fillFrom(c: Contact[S]) = {
-      c.saveToManagedState(ms, s"fill ${ms.name} from ${c.name}")
+      new ManagedRichContact(c).saveToManagedState(ms, s"fill ${ms.name} from ${c.name}")
       ms
     }
 

@@ -13,7 +13,7 @@
 package ru.primetalk.synapse.examples
 
 import ru.primetalk.synapse.core._
-import ru.primetalk.synapse.akka.{ActorContainerBuilder, ActorSystemBuilder}
+import ru.primetalk.synapse.akka._
 import scala.language.implicitConversions
 import akka.actor.ActorSystem
 
@@ -24,26 +24,28 @@ object Examples3 {
   object Input extends Contact[Any]
   object Output extends Contact[Any]
 
-  class PingPongBuilder(name:String) extends ActorSystemBuilder {
+  class PingPongBuilder(name:String) extends BaseTypedSystem {
     setSystemName(name)
-    inputs(Input)
-    outputs(Output)
+    sb.inputs(Input)
+    sb.outputs(Output)
 //    Input.foreach(a=>println(name+":"+a))
     Input.ifConst("ping").const("pong")>>Output
     Input.ifConst("pong").const("ping")>>Output
   }
-  class WiringBuilder(name:String, input:Contact[Any],output:Contact[Any]) extends ActorContainerBuilder {
+  class WiringBuilder(name:String, input:Contact[Any],output:Contact[Any])  extends BaseTypedSystem {
     setSystemName(name)
-    inputs(input)
-    outputs(output)
+    sb.inputs(input)
+    sb.outputs(output)
     input >> Input
     Output >> output
+
     addActorSubsystem(new PingPongBuilder(name+"InnerActor"))
   }
   object A extends Contact[Any]
   object B extends Contact[Any]
 
   class SuperSystemBuilder(actorSystem:ActorSystem = null) extends SystemBuilder {
+    implicit val sb1 = this
     addSubsystem(new WiringBuilder("AB", A,B))
     addSubsystem(new WiringBuilder("BA", B,A))
 

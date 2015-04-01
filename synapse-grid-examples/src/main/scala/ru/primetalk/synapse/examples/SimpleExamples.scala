@@ -24,6 +24,7 @@ object SimpleExamples {
 
   /** Example fixture */
   abstract class Example[TInput, TOutput](name: String) extends SystemBuilderC(name) {
+
     val input = contact[TInput]("input")
     val output = contact[TOutput]("output")
 
@@ -39,6 +40,7 @@ object SimpleExamples {
   }
   /** Example fixture */
   abstract class ExampleMap[TInput, TOutput](name: String) extends Example[TInput, TOutput](name) {
+    implicit val sb1 = this
     lazy val exampleMapTransducer: TInput => TOutput  = {
       val s = toStaticSystem
       Try{s.toDot.saveTo(s"target/${s.name}.dot")}
@@ -50,6 +52,7 @@ object SimpleExamples {
   }
   /** Example fixture */
   abstract class ExampleFlatMap[TInput, TOutput](name: String) extends Example[TInput, TOutput](name) {
+    implicit val sb1 = this
 
     lazy val exampleFlatMapTransducer: TInput => List[TOutput] = {
       val s = toStaticSystem

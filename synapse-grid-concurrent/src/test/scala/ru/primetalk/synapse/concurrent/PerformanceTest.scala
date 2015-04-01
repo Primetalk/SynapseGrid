@@ -13,7 +13,7 @@
 package ru.primetalk.synapse.concurrent
 
 import org.scalatest.FunSuite
-import ru.primetalk.synapse.core.BaseTypedSystem
+import ru.primetalk.synapse.core._
 
 import ComputationState._
 
@@ -21,6 +21,7 @@ class PerformanceTest extends FunSuite{
 
   class HardWorker(innerLoop:Int) extends BaseTypedSystem{
     import sb._
+    implicit val sb1 = sb
     setSystemName("HardWorker")
     val i1 = input[Int]("i1")
     val m1 = contact[Int]("m1")

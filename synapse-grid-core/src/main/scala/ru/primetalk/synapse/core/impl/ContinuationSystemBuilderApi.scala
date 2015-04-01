@@ -11,7 +11,9 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.impl
+
+import ru.primetalk.synapse.core._
 
 /**
  * A builder that creates a kind of state machine. The state contains a continuation. On every
@@ -19,8 +21,9 @@ package ru.primetalk.synapse.core
  * a call to some constructor method that creates a continuation for the next signal.
  *
  * @author А.Жижелев (arseniy zhizhelev)
+ *
  */
-trait ContinuationSystemBuilder extends SystemBuilder {
+trait ContinuationSystemBuilderApi {
   type FCont[T1, T2] = T1 ⇒ Continuation[T1, T2]
 
   /**
@@ -58,9 +61,9 @@ trait ContinuationSystemBuilder extends SystemBuilder {
   def doneFinal[T1, T2]: Continuation[T1, T2] =
     Done(Seq[T2]())
 
-  implicit class ImplContLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])) {
+  implicit class ImplContLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb:SystemBuilder) {
     def expectingFlatMap(function: Continuation[T1, T2], name: String = "") = {
-      val stateHolder = state[Continuation[T1, T2]](name, function)
+      val stateHolder = sb.state[Continuation[T1, T2]](name, function)
       new LinkBuilderOps(c)(sb).stateFlatMap[Continuation[T1, T2]](stateHolder, nextLabel(name, "expect")) {
         (s0: Continuation[T1, T2], d: T1) ⇒
           s0 match {

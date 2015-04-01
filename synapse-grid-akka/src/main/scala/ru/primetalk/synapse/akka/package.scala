@@ -23,7 +23,10 @@ import scala.language.implicitConversions
 package object akka
   extends AkkaExt
   with StaticSystemAkkaApi
-  with AkkaSystemBuilderApi{
+  with AkkaSystemBuilderApi
+  with ActorContainerBuilderApi
+  with ActorSystemBuilderExt
+  {
 
   //  implicit def signalToSignalDist[T](s:Signal[T])(implicit context:ActorContext):SignalDist ={
   //    val id = ContactsMapExtension(context.system).getContactId(s.contact)

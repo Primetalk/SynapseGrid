@@ -16,7 +16,7 @@ package ru.primetalk.synapse.akka
 import ru.primetalk.synapse.core._
 import akka.actor._
 import ru.primetalk.synapse.akka.SpecialActorContacts.{NonSignalWithSenderInput, ContextInput, SenderInput}
-import ru.primetalk.synapse.slf4j.SystemBuilderWithLogging
+import ru.primetalk.synapse.slf4j._
 
 /**
  * StaticSystemActorAdapter is a component that can be added to any system. When
@@ -37,14 +37,15 @@ case class ActorComponent(subsystem: StaticSystem,
   def toStaticSystem: StaticSystem = subsystem
 }
 
-trait ActorContainerBuilder extends SystemBuilder {
+/** API for a system that can contain actor subsystems.*/
+trait ActorContainerBuilderApi {
   /** Prefer to use StaticSystemActorAdapter directly.
     * 
     * @return the subsystem itself
     */
   def addActorSubsystem[T](subsystem: T,
-                           supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy)(implicit ev: T => StaticSystem): T = {
-    addComponent(new ActorComponent(subsystem, supervisorStrategy))
+                           supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy)(implicit sb:SystemBuilder, ev: T => StaticSystem): T = {
+    sb.addComponent(new ActorComponent(subsystem, supervisorStrategy))
     subsystem
   }
 
@@ -54,76 +55,84 @@ trait ActorContainerBuilder extends SystemBuilder {
    * @param factory create actor using the supplied parent reference.
    */
   def childActorAdapterSnippet[TInput, TOutput](name: String,
-                                                input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor): StaticSystem = {
-    inputs(NonSignalWithSenderInput)
-    new ChildActorAdapterSnippet(name, input, outputContact)(factory).toStaticSystem
+                                                input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor)(implicit sb:SystemBuilder): StaticSystem = {
+    sb.inputs(NonSignalWithSenderInput)
+    val innerSb = new SystemBuilderC(name)
+    new ChildActorAdapterSnippet(name, input, outputContact)(factory)(innerSb)
+    innerSb.toStaticSystem
   }
 }
 
-/** Basic builder that defines a few helpers for constructing actor-held systems. */
-trait ActorSystemBuilder extends ActorContainerBuilder {
-  lazy val sender = {
-    val sender1 = state[ActorRef]("sender", akka.actor.Actor.noSender)
-
-    inputs(SenderInput)
-    SenderInput.saveTo(sender1)
-    sender1
-  }
-
-  lazy val context = {
-    val context1 = state[ActorContext]("context", null)
-    inputs(ContextInput)
-    ContextInput.saveTo(context1)
-    context1
-  }
-
-  lazy val self = {
-    val self1 = state[ActorRef]("self", akka.actor.Actor.noSender)
-
-    inputs(ContextInput)
-    ContextInput map(_.self, "_.self") saveTo self1
-    self1
-  }
-  lazy val SelfInput = {
-    val SelfInput1 = contact[ActorRef]("SelfInput")
-
-    inputs(ContextInput)
-    ContextInput -> SelfInput1 map(_.self, "_.self")
-    SelfInput1
-  }
+trait ActorSystemBuilderExt {
+  implicit val ActorSystemBuilderExtensionId = new SystemBuilderExtensionId(new ActorSystemBuilderExtension(_))
 
 
-  implicit class ImplRichContactUnzipperToActor[T](c: Contact[(ActorRef, T)]) {
-    //extends ImplRichContact[(ActorRef, T)](c) {
-    def tellToActor(actor: ActorRef, name: String = "") = {
-      c foreach(p => actor.tell(p._2, p._1), nextLabel(name, "tellToActor(" + actor.path + ")"))
+  /** Basic builder that defines a few helpers for constructing actor-held systems. */
+  class ActorSystemBuilderExtension(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
+    implicit val sb1 = sb
+    lazy val sender = {
+      val sender1 = state[ActorRef]("sender", akka.actor.Actor.noSender)
+
+      sb.inputs(SenderInput)
+      SenderInput.saveTo(sender1)
+      sender1
     }
 
-    def tellToActorFromSelf(actor: ActorRef, name: String = "") = {
-      c from self tellToActor(actor, name)
+    lazy val context = {
+      val context1 = state[ActorContext]("context", null)
+      sb.inputs(ContextInput)
+      ContextInput.saveTo(context1)
+      context1
     }
-  }
 
-  class ImplRichContactActor[T](c: Contact[T]) {
-    def toActorIndirect(actorRefState: StateHandle[ActorRef], name: String = "") = {
-      c.from(self).
-        labelNext("to @" + actorRefState).
-        zipWithState(actorRefState).
-        labelNext("tell") foreach {
-        case (null, (_, _)) ⇒
-          throw new IllegalStateException("toActorIndirect(" + actorRefState + "): actorRef is not initialized.")
-        case (actor, (null, msg)) ⇒
-          throw new IllegalStateException("toActorIndirect(" + actorRefState + "): self is not initialized.")
-        case (actor, (selfRef: ActorRef, msg)) ⇒
-          actor.tell(msg, selfRef)
-        //          case msg ⇒
-        //            throw new IllegalStateException("toActorIndirect(" + actorRefState + "): Impossible case:" + msg)
+    lazy val self = {
+      val self1 = state[ActorRef]("self", akka.actor.Actor.noSender)
+
+      sb.inputs(ContextInput)
+      ContextInput map(_.self, "_.self") saveTo self1
+      self1
+    }
+    lazy val SelfInput = {
+      val SelfInput1 = contact[ActorRef]("SelfInput")
+
+      sb.inputs(ContextInput)
+      ContextInput -> SelfInput1 map(_.self, "_.self")
+      SelfInput1
+    }
+
+
+    implicit class ImplRichContactUnzipperToActor[T](c: Contact[(ActorRef, T)]) {
+      //extends ImplRichContact[(ActorRef, T)](c) {
+      def tellToActor(actor: ActorRef, name: String = "") = {
+        c foreach(p => actor.tell(p._2, p._1), nextLabel(name, "tellToActor(" + actor.path + ")"))
+      }
+
+      def tellToActorFromSelf(actor: ActorRef, name: String = "") = {
+        c from self tellToActor(actor, name)
       }
     }
+
+    class ImplRichContactActor[T](c: Contact[T]) {
+      def toActorIndirect(actorRefState: StateHandle[ActorRef], name: String = "") = {
+        c.from(self).
+          labelNext("to @" + actorRefState).
+          zipWithState(actorRefState).
+          labelNext("tell") foreach {
+          case (null, (_, _)) ⇒
+            throw new IllegalStateException("toActorIndirect(" + actorRefState + "): actorRef is not initialized.")
+          case (actor, (null, msg)) ⇒
+            throw new IllegalStateException("toActorIndirect(" + actorRefState + "): self is not initialized.")
+          case (actor, (selfRef: ActorRef, msg)) ⇒
+            actor.tell(msg, selfRef)
+          //          case msg ⇒
+          //            throw new IllegalStateException("toActorIndirect(" + actorRefState + "): Impossible case:" + msg)
+        }
+      }
+    }
+
   }
 
 }
-
 /** Creates subsystem that is built around some actor.
   * The subsystem should be used inside ActorComponent.
   * The data that appears on input contact is sent to
@@ -137,11 +146,12 @@ trait ActorSystemBuilder extends ActorContainerBuilder {
 class ChildActorAdapterSnippet[TInput, TOutput](
                                                  name: String,
                                                  input: Contact[TInput],
-                                                 outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor)
-  extends ActorSystemBuilder with SystemBuilderWithLogging {
+                                                 outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor)(implicit sb:SystemBuilder){
 
-  inputs(ContextInput, NonSignalWithSenderInput, input)
-  outputs(outputContact)
+//  val sbSlf4j = sb.extend(SystemBuilderLoggingExtensionId)
+val akkaExt = sb.extend(ActorSystemBuilderExtensionId)
+  sb.inputs(ContextInput, NonSignalWithSenderInput, input)
+  sb.outputs(outputContact)
 
   setSystemName(name + "System")
 
@@ -152,8 +162,7 @@ class ChildActorAdapterSnippet[TInput, TOutput](
       contextRef.actorOf(Props(factory(contextRef.self)), name)
   } saveTo actorRef
 
-  new ImplRichContactActor(input).toActorIndirect(actorRef)
-
+  new akkaExt.ImplRichContactActor(input).toActorIndirect(actorRef)
 
   NonSignalWithSenderInput delay 2 zipWithState
     actorRef labelNext "sender == actor?" flatMap {

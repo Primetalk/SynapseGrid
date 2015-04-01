@@ -1,3 +1,5 @@
+package ru.primetalk.synapse.akka
+
 /**
  * Distributed system of actors.
  *
@@ -11,4 +13,4 @@
  * routers.
  * @author zhizhelev, 26.03.15.
  */
-package ru.primetalk.synapse.akka.distributed;
+package object distributed

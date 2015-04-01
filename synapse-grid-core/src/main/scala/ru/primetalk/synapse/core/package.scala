@@ -29,5 +29,9 @@ package object core
   with DotUtilsApi
   with ContactsApi
   with EncapsulationApi
+  with SystemBuilderAdvApi
+  with ContinuationSystemBuilderApi
+  with CollectionSystemBuilderApi
+  with ManagedStatesApi
   with AuxNumberingExt
   with NextLabelExt

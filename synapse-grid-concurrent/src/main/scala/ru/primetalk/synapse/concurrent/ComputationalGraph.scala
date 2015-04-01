@@ -334,7 +334,7 @@ object ComputationState {
         (newContext, signals)
       }
 
-  implicit class RichStaticSystem(system: StaticSystem)(implicit ec: ExecutionContext) {
+  implicit class ParRichStaticSystem(system: StaticSystem)(implicit ec: ExecutionContext) {
     /** Converts a system to a parallel RuntimeSystem.
       * Actually, converts inner subsystems to ParallelRuntimeSystem.
       */

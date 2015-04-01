@@ -11,15 +11,16 @@
  */
 package ru.primetalk.synapse.examples
 
-import ru.primetalk.synapse.core.SystemBuilder
+import ru.primetalk.synapse.core._
 
 import scala.language.implicitConversions
 
 object Examples4 {
   object SentenceSplitterBuilder extends SystemBuilder  {
+    implicit val sb1 = this
     val sentence = input[String]("sentence")
     val words = input[String]("words")
-    val wordsInner = auxContact[String]
+    val wordsInner = auxContact[String](this)
 
     (sentence -> wordsInner).flatMap (_.split("\\s+"), "split")
     words >> wordsInner

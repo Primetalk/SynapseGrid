@@ -1,11 +1,14 @@
 /**
  *
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.managed
 
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
+import ru.primetalk.synapse.core._
+
+import scala.language.implicitConversions
 
 /**
  * @author nehaev
@@ -23,65 +26,70 @@ class ManagedStateTest extends FunSuite {
 	/**
 	 * Calculation of (a+b)*c expression using managed states.
 	 */
-	class ABCBuilder extends SystemBuilderWithManagedStates {
-		
-		inputs(AInput, BInput, CInput)
-		outputs(ABOutput, ABCOutput)
-		
-		val a = managedState[Int]("a")
-		val b = managedState[Int]("b")
-		val c = managedState[Int]("c")
-		val `a+b` = managedState[Int]("a+b")
-		val `(a+b)*c` = managedState[Int]("(a+b)*c")
-		
-		AInput >>: a
-		BInput >>: b
-		CInput >>: c
+	class ABCBuilder extends BaseTypedSystem {
+		sb.inputs(AInput, BInput, CInput)
+		sb.outputs(ABOutput, ABCOutput)
 
-		val recalcAB = contact[Int]("recalcAB")
-		a >> recalcAB
-		b >> recalcAB
-		recalcAB.zipWithManagedState(a).zipWithManagedState(b).map { abp ⇒
-			val (bv, (av, _)) = abp
-			av + bv
-		} saveToManagedState `a+b`
-		
-		val recalcABC = contact[Int]("recalcABC")
-		c >> recalcABC
-		`a+b` >> recalcABC
-		recalcABC.zipWithManagedState(`a+b`).zipWithManagedState(c).map { scp ⇒
-			val (cv, (sv, _)) = scp
-			sv * cv
-		} saveToManagedState `(a+b)*c`
-		
-		`a+b` >> ABOutput
-		`(a+b)*c` >> ABCOutput
+
+		override protected def defineSystem(implicit sb: SystemBuilder): Unit = {
+
+			val a = managedState[Int]("a")
+			val b = managedState[Int]("b")
+			val c = managedState[Int]("c")
+			val `a+b` = managedState[Int]("a+b")
+			val `(a+b)*c` = managedState[Int]("(a+b)*c")
+
+			AInput >>: a
+			BInput >>: b
+			CInput >>: c
+
+			val recalcAB: Contact[Int] = contact[Int]("recalcAB")
+			a >> recalcAB
+			b >> recalcAB
+			recalcAB.zipWithManagedState(a).zipWithManagedState(b).map { abp ⇒
+				val (bv, (av, _)) = abp
+				av + bv
+			} saveToManagedState `a+b`
+
+			val recalcABC = contact[Int]("recalcABC")
+			c >> recalcABC
+			`a+b` >> recalcABC
+			recalcABC.zipWithManagedState(`a+b`).zipWithManagedState(c).map { scp ⇒
+				val (cv, (sv, _)) = scp
+				sv * cv
+			} saveToManagedState `(a+b)*c`
+
+			`a+b` >> ABOutput
+			`(a+b)*c` >> ABCOutput
+		}
 	}
 	
 	/**
 	 * Calculation of (a+b)*c expression using managed states.
 	 */
-	class ABCShortBuilder extends SystemBuilderWithManagedStates {
-		
-		inputs(AInput, BInput, CInput)
-		outputs(ABOutput, ABCOutput)
-		
-		val a = managedState[Int]("a")
-    AInput >>: a
-		val b = managedState[Int]("b")
-    BInput >>: b
-		val c = managedState[Int]("c")
-    CInput >>: c
+	class ABCShortBuilder extends BaseTypedSystem {
 
-		val `a+b` = managedState[Int]("a+b")
-    `a+b` >> ABOutput
-		val `(a+b)*c` = managedState[Int]("(a+b)*c")
-    `(a+b)*c` >> ABCOutput
+//		implicit val sb1 = sb
+		sb.inputs(AInput, BInput, CInput)
+		sb.outputs(ABOutput, ABCOutput)
+		override protected def defineSystem(implicit sb: SystemBuilder): Unit = {
+			val a = managedState[Int]("a")
+			AInput >>: a
+			val b = managedState[Int]("b")
+			BInput >>: b
+			val c = managedState[Int]("c")
+			CInput >>: c
 
-		`a+b`.dependsOn(a, b) (_ + _)
+			val `a+b` = managedState[Int]("a+b")
+			`a+b` >> ABOutput
+			val `(a+b)*c` = managedState[Int]("(a+b)*c")
+			`(a+b)*c` >> ABCOutput
 
-		`(a+b)*c`.dependsOn(`a+b`, c) { (sv, cv) ⇒
-			sv * cv
+			`a+b`.dependsOn(a, b)(_ + _)
+
+			`(a+b)*c`.dependsOn(`a+b`, c) { (sv, cv) ⇒
+				sv * cv
+			}
 		}
 	}
 	

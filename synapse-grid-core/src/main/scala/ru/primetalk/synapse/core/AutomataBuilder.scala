@@ -14,21 +14,24 @@
 package ru.primetalk.synapse.core
 
 /** The builder creates a state machine with `State` type of state.*/
-trait AutomataBuilder[State] extends SystemBuilder {
-	
-	def initialState: State
-	
+//trait AutomataBuilder[State] {//extends SystemBuilder {
+class AutomataBuilder[State](initialState: State)(implicit sb:SystemBuilder) {
+
 	protected def stateName = "automatonState"
-	/** All operations with automatonState should be done via DSL*/
-	private val automatonState = state[State](stateName, initialState)
+
+	/** All operations with automatonState should be done via DSL */
+	private val automatonState = sb.state[State](stateName, initialState)
 
 	private val zippedCache = scala.collection.mutable.Map[Contact[_], Contact[_]]()
+
 	private def zipped[T](c: Contact[T]): Contact[(State, T)] = {
-		zippedCache.getOrElseUpdate(c, c zipWithState (automatonState, "(State,_)")).asInstanceOf[Contact[(State, T)]]
+		zippedCache.getOrElseUpdate(c, c zipWithState(automatonState, "(State,_)")).asInstanceOf[Contact[(State, T)]]
 	}
+
 	private val zippedFilteredCache = scala.collection.mutable.Map[(Contact[_], State), Contact[_]]()
+
 	private def zippedFiltered[T](c: Contact[T], s: State): Contact[T] = {
-		zippedFilteredCache.getOrElseUpdate((c, s), zipped(c) flatMap (p ⇒ {
+		zippedFilteredCache.getOrElseUpdate((c, s), zipped(c) flatMap(p ⇒ {
 			if (p._1 == s)
 				Seq(p._2)
 			else
@@ -36,9 +39,10 @@ trait AutomataBuilder[State] extends SystemBuilder {
 		},
 			"" + s + "?")).asInstanceOf[Contact[T]]
 	}
-	/** The only way to change automaton state is to save new state value into saveToState.*/
+
+	/** The only way to change automaton state is to save new state value into saveToState. */
 	val saveToState = contact[State]("saveToState")
-	
+
 	val onTransition = {
 		val c1 = contact[(State, State)]("onTransition")
 		(saveToState -> c1).stateMap(automatonState) { (oldState, newState) ⇒ (newState, (oldState, newState)) }
@@ -52,10 +56,11 @@ trait AutomataBuilder[State] extends SystemBuilder {
 	}
 
 	private val switchToStateCache = scala.collection.mutable.Map[State, Contact[Any]]()
+
 	def switchToState(s: State): Contact[Any] =
 		switchToStateCache.getOrElseUpdate(s, {
-			val c = auxContact[Any]
-			c -> saveToState map (t ⇒ s, nextLabel("", "" + s + "!"))
+			val c = auxContact[Any](sb)
+			c -> saveToState map(t ⇒ s, nextLabel("", "" + s + "!"))
 			c
 		})
 
@@ -63,6 +68,7 @@ trait AutomataBuilder[State] extends SystemBuilder {
 
 		def zipWithAutomatonState: Contact[(State, T)] =
 			zipped(c)
+
 		/** Constructs another contact that will get data when the automata is in the desired state. */
 		def when(s: State): Contact[T] =
 			zippedFiltered(c, s)
@@ -70,25 +76,31 @@ trait AutomataBuilder[State] extends SystemBuilder {
 		// STATE TRANSITIONS
 		/**
 		 * When signal appears on the contact the Automaton
-		 *  moves to the desired state.
+		 * moves to the desired state.
 		 */
 		def toState(s: State, name: String = ""): Contact[T] = {
 			//			c.updateState(automatonState, nextLabel(name, ""+s+"!"))((s1,t) => s) //.updateState(automatonState, ""+s+"!")((old, t)=>s)
-			c -> saveToState map (t ⇒ s, nextLabel(name, "" + s + "!"))
+			c -> saveToState map(t ⇒ s, nextLabel(name, "" + s + "!"))
 			c
 		}
+
 		def goto(s: State, name: String = ""): Contact[T] =
 			toState(s, name)
+
 		/** Switches to state and do some work along the way */
 		def moveToState(s: State, name: String = "")(fun: T ⇒ Any) = {
-			c -> saveToState map (t ⇒ { fun(t); s }, nextLabel(name, "" + s + "!"))
+			c -> saveToState map(t ⇒ {
+				fun(t); s
+			}, nextLabel(name, "" + s + "!"))
 			c
 		}
+
 		def update(fun: (State, T) ⇒ State, name: String = "") = {
 			c.updateState(automatonState, nextLabel(name, "update automaton"))(fun)
 			c
 		}
-		/** Updates state unconditionally (ignores input data).*/
+
+		/** Updates state unconditionally (ignores input data). */
 		def updateUnconditionally(fun: State ⇒ State, name: String = "") {
 			c.updateState(automatonState, nextLabel(name, "update uncoditionally"))((s, t) ⇒ fun(s))
 		}
@@ -97,10 +109,12 @@ trait AutomataBuilder[State] extends SystemBuilder {
 
 	//Methods that deal with VAR currentConstructingState
 	private var currentConstructingState: State = initialState
+
 	def startBuildingState(s: State) = {
 		currentConstructingState = s
 		s
 	}
+
 	def inState(s: State)(body: ⇒ Unit) {
 		currentConstructingState = s
 		try {
@@ -110,15 +124,21 @@ trait AutomataBuilder[State] extends SystemBuilder {
 		}
 	}
 
-	def on[T](c: Contact[T]): Contact[T] = { new StateContact(c).when(currentConstructingState) }
+	def on[T](c: Contact[T]): Contact[T] = {
+		new StateContact(c).when(currentConstructingState)
+	}
 
 	implicit class WhenState(val s: State) {
 		def on[T](c: Contact[T]): Contact[T] = new StateContact(c).when(s)
+
 		def onEntered =
 			onTransition.filter { case (oldState, newState) ⇒ newState == s && oldState != s }
+
 		/** a contact will */
 		def ofExited =
 			onTransition.filter { case (oldState, newState) ⇒ oldState == s && newState != s }
 	}
+
 	def when(s: State) = new WhenState(s)
 }
+//}

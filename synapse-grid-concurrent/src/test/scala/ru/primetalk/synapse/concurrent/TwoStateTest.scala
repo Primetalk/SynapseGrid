@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.concurrent.ComputationState._
-import ru.primetalk.synapse.core.BaseTypedSystem
+import ru.primetalk.synapse.core._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
@@ -24,6 +24,7 @@ class TwoStateTest extends FunSuite{
 
   class TwoStates extends BaseTypedSystem{
     import sb._
+    implicit val sb1 = sb
     setSystemName("Two states ordered")
     val i1 = input[Int]("i1")
     val integral1 = state[Int]("integral1", 0)

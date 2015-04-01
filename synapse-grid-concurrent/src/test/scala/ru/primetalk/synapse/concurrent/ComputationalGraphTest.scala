@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @RunWith(classOf[JUnitRunner])
 class ComputationalGraphTest extends FunSuite{
   class SimpleFunctional extends BaseTypedSystem{
-    import sb._
+    implicit val sb1 = sb
     val i1 = input[Int]("i1")
     val o1 = output[Int]("o1")
     i1.flatMap(t=>0 until t).map((i:Int) => i*i) >> o1
@@ -40,6 +40,7 @@ class ComputationalGraphTest extends FunSuite{
     assert(list === g(n))
   }
   class SimpleStateful extends BaseTypedSystem{
+    implicit val sb1 = sb
     import sb._
     setSystemName("Ordered integration")
     val i1 = input[Int]("i1")
