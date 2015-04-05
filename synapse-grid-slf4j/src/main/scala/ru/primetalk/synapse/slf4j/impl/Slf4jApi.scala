@@ -9,15 +9,15 @@ import scala.language.implicitConversions
  * @author zhizhelev, 25.03.15.
  */
 trait Slf4jApi {
-  class SystemBuilderLoggingExtension(val sb:BasicSystemBuilder) extends SystemBuilderExtension {
+  class SystemBuilderLoggingExtension(val sb:SystemBuilder) extends SystemBuilderExtension {
     var loggerNamePrefix = sb.systemName.replaceAllLiterally("$", "_") //"ru.primetalk.system2.contacts."
   }
-  implicit def contactToLoggingContact[T](c:Contact[T])(implicit sb:BasicSystemBuilder): LoggingContact[T] =
+  implicit def contactToLoggingContact[T](c:Contact[T])(implicit sb:SystemBuilder): LoggingContact[T] =
     new LoggingContact(c, sb.extend(SystemBuilderLoggingExtensionId).loggerNamePrefix)(sb)
 
   implicit val SystemBuilderLoggingExtensionId = new SystemBuilderExtensionId(new SystemBuilderLoggingExtension(_))
 
-  implicit class LoggingContactThrowable[T<:Throwable](c:Contact[T])(implicit sb:BasicSystemBuilder){
+  implicit class LoggingContactThrowable[T<:Throwable](c:Contact[T])(implicit sb:SystemBuilder){
 
     def loggerName = sb.extend(SystemBuilderLoggingExtensionId).loggerNamePrefix + "." + c.name
     def logger = LoggerFactory.getLogger(loggerName)

@@ -1,7 +1,7 @@
 package ru.primetalk.synapse.akka.impl
 
 import akka.actor.{AllForOneStrategy, Actor, ActorRef, SupervisorStrategy}
-import ru.primetalk.synapse.core.{SystemBuilderC, Contact, StaticSystem, BasicSystemBuilder}
+import ru.primetalk.synapse.core.{SystemBuilderC, Contact, StaticSystem, SystemBuilder}
 import scala.language.implicitConversions
 
 /**
@@ -12,7 +12,7 @@ trait AkkaSystemBuilderApi {
     case _: Throwable => SupervisorStrategy.Escalate
   }
 
-  class ActorSystemBuilderOps(implicit sb: BasicSystemBuilder) {
+  class ActorSystemBuilderOps(implicit sb: SystemBuilder) {
     @deprecated("use system.toActorComponent", "26.03.2015")
     def addActorSubsystem[T](subsystem: T,
                              supervisorStrategy: SupervisorStrategy =
@@ -37,7 +37,7 @@ trait AkkaSystemBuilderApi {
     }
 
   }
-  implicit def toActorSystemBuilder[T <: BasicSystemBuilder](sb: T):ActorSystemBuilderOps = new ActorSystemBuilderOps()(sb)
+  implicit def toActorSystemBuilder[T <: SystemBuilder](sb: T):ActorSystemBuilderOps = new ActorSystemBuilderOps()(sb)
 
 
 }

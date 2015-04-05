@@ -20,7 +20,7 @@ trait ContactStyleExt {
   implicit val ContactStyleExtId = new SystemBuilderExtensionId(new ContactStyleExtension(_))
   implicit object ContactStyleStaticExtId extends StaticSystemExtensionId[ContactStyleStaticExtension]
 
-  class ContactStyleExtension(val sb: BasicSystemBuilder) extends SystemBuilderExtension{
+  class ContactStyleExtension(val sb: SystemBuilder) extends SystemBuilderExtension{
     private[ContactStyleExt]
     var styles = List[(Contact[_], ContactStyle)]()
 
@@ -42,7 +42,7 @@ trait ContactStyleExt {
   }
 
   implicit class StyleableContact[T](c:Contact[T]){
-    def styled(s:ContactStyle)(implicit sb:BasicSystemBuilder) = {
+    def styled(s:ContactStyle)(implicit sb:SystemBuilder) = {
       val ext = sb.extend(ContactStyleExtId)
       ext.styles = (c,s) :: ext.styles
       c

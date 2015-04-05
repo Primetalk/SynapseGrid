@@ -32,8 +32,6 @@ object Example4App extends App {
   }
 
   class WordStat extends BaseTypedSystem {
-    import sb._
-    implicit val sb1 = sb
     val wordInput = input [String]("wordInput")
     val lenOutput = output[Int]   ("lenOutput")
     wordInput.

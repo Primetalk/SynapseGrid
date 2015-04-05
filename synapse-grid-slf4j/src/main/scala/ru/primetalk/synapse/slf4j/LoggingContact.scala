@@ -20,7 +20,7 @@ import scala.language.implicitConversions
 /**
  * @author zhizhelev, 28.06.13.
  */
-class LoggingContact[T](val c: Contact[T], loggerNamePrefix:String)(implicit sb:BasicSystemBuilder) {
+class LoggingContact[T](val c: Contact[T], loggerNamePrefix:String)(implicit sb:SystemBuilder) {
     require(c.name != null, "Contact name == null")
     require(c.name != "", "Contact name == \"\"")
     lazy val loggerName = loggerNamePrefix + "." + c.name

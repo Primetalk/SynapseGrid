@@ -3,7 +3,7 @@ package ru.primetalk.synapse.core
 /** */
 trait SystemBuilderExtension {
   // the extended SystemBuilder
-  val sb: BasicSystemBuilder
+  val sb: SystemBuilder
   /** Opportunity for extension to hook into method
     * SystemBuilder#toStaticSystem".
     * It can also add some information to extensions map. */
@@ -15,7 +15,7 @@ trait SystemBuilderExtension {
   * is created by the extend method.
   * @param extend 	This method is called once for a system builder. No need to check.
   */
-final class SystemBuilderExtensionId[T <: SystemBuilderExtension](val extend: BasicSystemBuilder => T)
+final class SystemBuilderExtensionId[T <: SystemBuilderExtension](val extend: SystemBuilder => T)
 
 /** An extension that can be obtained from an instance of StaticSystem.
   * It will be automatically added when asked for.

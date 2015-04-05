@@ -62,13 +62,18 @@ trait SystemRendererApi extends ContactStyleExt {
 				s"$id [label=${"\"" + name + "\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
 		}
 
-		def linkToString(idfrom: Int, idto: Int, from: Any, to: Any): String =
+		protected
+		def linkToDot(idfrom: Int, idto: Int, from: Any, to: Any): String =
 			s"$idfrom -> $idto "
-
-		def slinkToString(idfrom: Int, idto: Int, from: Any, to: Any): String =
+		
+		/** Customizable link from state.*/
+		protected
+		def slinkToDot(idfrom: Int, idto: Int, from: Any, to: Any): String =
 			s"$idfrom -> $idto [style=dashed, dir=none]"
 
-		def suLinkToString(idfrom: Int, idto: Int, from: Any, to: Any): String =
+		
+		protected
+		def suLinkToDot(idfrom: Int, idto: Int, from: Any, to: Any): String =
 			s"$idfrom -> $idto [style=bold, dir=none]"
 
 		sealed trait NodeKind
@@ -115,22 +120,41 @@ trait SystemRendererApi extends ContactStyleExt {
 
 
 			val ids = mutable.Map[Any, Int]()
-			def getId(c: Any, kind: NodeKind) = c match {
-				case contact@Contact(_) if stylesExtOpt.isDefined && stylesExtOpt.get.style(contact) == DevNullContact ⇒
-					elements += nodeToString(stylesExtOpt, counter.next, c, kind)
-					counter.lastId
-				case _ ⇒
-					ids.getOrElseUpdate(c, {
-						elements += nodeToString(stylesExtOpt, counter.next, c, kind)
-						counter.lastId
+			def getContactId(contact:Contact[_], kind: NodeKind):Int = {
+				if (stylesExtOpt.isDefined && stylesExtOpt.get.style(contact) == DevNullContact) {
+					val id = counter.next
+					elements += nodeToString(stylesExtOpt, id, contact, kind)
+					id
+				}else
+					ids.getOrElseUpdate(contact, {
+						val id = counter.next
+						elements += nodeToString(stylesExtOpt, id, contact, kind)
+						id
+					})
+			}
+			def getStateId(stateHandle: StateHandle[_]) =
+				ids.getOrElseUpdate(stateHandle, {
+					val id = counter.next
+					elements += nodeToString(stylesExtOpt, id, stateHandle, StateNode)
+					id
+				})
+			def getComponentId(component: Component):Int = {
+//				case contact@Contact(_) if stylesExtOpt.isDefined && stylesExtOpt.get.style(contact) == DevNullContact ⇒
+//					elements += nodeToString(stylesExtOpt, counter.next, c, kind)
+//					counter.lastId
+//				case _ ⇒
+					ids.getOrElseUpdate(component, {
+						val id = counter.next
+						elements += nodeToString(stylesExtOpt, id, component, ComponentNode)
+						id
 					})
 			}
 			val outputIds = for (oc <- system.outputContacts)
-				yield getId(oc, OutputNode)
+				yield getContactId(oc, OutputNode)
 			val inputIds = for (ic ← system.inputContacts)
-				yield getId(ic, InputNode)
+				yield getContactId(ic, InputNode)
 			for (s <- system.privateStateHandles)
-				getId(s, StateNode)
+				getStateId(s)
 
 			elements += s"{rank=same; ${inputIds.mkString(" ")} }"
 			elements += s"{rank=same; ${outputIds.mkString(" ")} }"
@@ -143,22 +167,22 @@ trait SystemRendererApi extends ContactStyleExt {
 							elements += staticSystem2ToDot(comp.toStaticSystem, "subgraph", level - 1, counter)
 						case _ =>
 					}
-				val id = getId(c, ComponentNode)
+				val id = getComponentId(c)
 				for (i ← c.inputContacts)
-					elements += linkToString(getId(i, InnerContact), id, i, c)
+					elements += linkToDot(getContactId(i, InnerContact), id, i, c)
 				for (o ← c.outputContacts)
-					elements += linkToString(id, getId(o, InnerContact), c, o)
+					elements += linkToDot(id, getContactId(o, InnerContact), c, o)
 
 				/** state link */
 				c match {
 					case Link(_, _, _, StateZipLink(st)) ⇒
-						elements += slinkToString(getId(st, StateNode), id, st, c)
+						elements += slinkToDot(getStateId(st), id, st, c)
 					case Link(_, _, _, StatefulFlatMapLink(_, st)) ⇒
-						elements += slinkToString(getId(st, StateNode), id, st, c)
+						elements += slinkToDot(getStateId(st), id, st, c)
 					case InnerSystemComponent(_, st, _) ⇒
-						elements += slinkToString(getId(st, StateNode), id, st, c)
+						elements += slinkToDot(getStateId(st), id, st, c)
 					case StateUpdate(_, st, _, _) ⇒
-						elements += suLinkToString(id, getId(st, StateNode), c, st)
+						elements += suLinkToDot(id, getStateId(st), c, st)
 
 					case _ ⇒
 				}

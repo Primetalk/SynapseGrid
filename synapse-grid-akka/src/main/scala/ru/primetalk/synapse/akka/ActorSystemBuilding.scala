@@ -68,7 +68,7 @@ trait ActorSystemBuilderExt {
 
 
   /** Basic builder that defines a few helpers for constructing actor-held systems. */
-  class ActorSystemBuilderExtension(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
+  class ActorSystemBuilderExtension(val sb: SystemBuilder) extends SystemBuilderExtension {
     implicit val sb1 = sb
     lazy val sender = {
       val sender1 = state[ActorRef]("sender", akka.actor.Actor.noSender)

@@ -44,7 +44,7 @@ class ApplicationGrid extends ProcessGrid {
   class MyEtlGrid extends ProcessGrid {
     def prefix = "my"
     override
-    protected def defineSystem(implicit sb:SystemBuilder): Unit = {      
+    protected def defineSystem(implicit sb:SystemBuilder): Unit = {
       start.foreach(u => println( "MyEtlGrid started" ))
       start >> initialized
     }

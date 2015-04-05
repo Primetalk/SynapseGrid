@@ -11,10 +11,10 @@ import scala.language.implicitConversions
  */
 trait AkkaExt {
 
-  class AkkaSystemBuilderExtension(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
+  class AkkaSystemBuilderExtension(val sb: SystemBuilder) extends SystemBuilderExtension {
 
     lazy val sender = {
-      @inline implicit def sb1: BasicSystemBuilder = sb
+      @inline implicit def sb1: SystemBuilder = sb
       val sender1 = sb.state[ActorRef]("sender", _root_.akka.actor.Actor.noSender)
 
       sb.inputs(SenderInput)
@@ -23,7 +23,7 @@ trait AkkaExt {
     }
 
     lazy val context = {
-      implicit def sb1: BasicSystemBuilder = sb
+      implicit def sb1: SystemBuilder = sb
       val context1 = sb.state[ActorContext]("context", null)
       sb.inputs(ContextInput)
       ContextInput.saveTo(context1)
@@ -31,7 +31,7 @@ trait AkkaExt {
     }
 
     lazy val self = {
-      @inline implicit def sb1: BasicSystemBuilder = sb
+      @inline implicit def sb1: SystemBuilder = sb
       val self1 = sb.state[ActorRef]("self", _root_.akka.actor.Actor.noSender)
 
       sb.inputs(ContextInput)
@@ -39,7 +39,7 @@ trait AkkaExt {
       self1
     }
     lazy val SelfInput = {
-      @inline implicit def sb1: BasicSystemBuilder = sb
+      @inline implicit def sb1: SystemBuilder = sb
       val SelfInput1 = contact[ActorRef]("SelfInput")
 
       sb.inputs(ContextInput)
@@ -51,18 +51,18 @@ trait AkkaExt {
     implicit class ImplRichContactUnzipperToActor[T](c: Contact[(ActorRef, T)]) {
       //extends ImplRichContact[(ActorRef, T)](c) {
       def tellToActor(actor: ActorRef, name: String = "") = {
-        @inline implicit def sb1: BasicSystemBuilder = sb
+        @inline implicit def sb1: SystemBuilder = sb
         c foreach(p => actor.tell(p._2, p._1), sb.nextLabel(name, "tellToActor(" + actor.path + ")"))
       }
 
       def tellToActorFromSelf(actor: ActorRef, name: String = "") = {
-        @inline implicit def sb1: BasicSystemBuilder = sb
+        @inline implicit def sb1: SystemBuilder = sb
         c from self tellToActor(actor, name)
       }
     }
 
     class ImplRichContactActor[T](c: Contact[T]) {
-      @inline implicit def sb1: BasicSystemBuilder = sb
+      @inline implicit def sb1: SystemBuilder = sb
       def toActorIndirect(actorRefState: StateHandle[ActorRef], name: String = "") = {
         c.from(self).
           labelNext("to @" + actorRefState).

@@ -17,7 +17,7 @@ trait BasicSystemBuilderApi {
   }
 
   /** Automatic usage of extensions when an implicit extension id is present in the scope.*/
-  implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: BasicSystemBuilder)(
+  implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: SystemBuilder)(
     implicit extensionInstanceId: SystemBuilderExtensionId[T]): T =
     sb.extend(extensionInstanceId)
 

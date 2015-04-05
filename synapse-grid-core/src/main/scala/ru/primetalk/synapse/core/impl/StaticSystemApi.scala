@@ -69,7 +69,7 @@ trait StaticSystemApi extends DevNullExt {
 
   }
 
-  implicit class RichSystemBuilder(systemBuilder: BasicSystemBuilder)
+  implicit class RichSystemBuilder(systemBuilder: SystemBuilder)
     extends RichStaticSystem(systemBuilder.toStaticSystem) {
     def system = systemBuilder.toStaticSystem
   }

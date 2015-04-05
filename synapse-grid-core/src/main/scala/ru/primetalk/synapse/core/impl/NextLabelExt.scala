@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{SystemBuilderExtensionId, SystemBuilderExtension, BasicSystemBuilder}
+import ru.primetalk.synapse.core.{SystemBuilderExtensionId, SystemBuilderExtension, SystemBuilder}
 import scala.language.implicitConversions
 
 /**
@@ -9,7 +9,7 @@ import scala.language.implicitConversions
  */
 trait NextLabelExt {
   /** An extension that adds easy labelling to System builder. */
-  class LabellingExt(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
+  class LabellingExt(val sb: SystemBuilder) extends SystemBuilderExtension {
     private[synapse] var proposedLabels = List[String]()
 
     /** Adds a few labels for subsequent links. */
@@ -39,7 +39,7 @@ trait NextLabelExt {
   implicit val LabellingExtId = new SystemBuilderExtensionId(new LabellingExt(_))
 
   //(AuxContactNumberingExtId)
-  implicit def sbToLabelling(sb: BasicSystemBuilder): LabellingExt = sb.extend[LabellingExt]
+  implicit def sbToLabelling(sb: SystemBuilder): LabellingExt = sb.extend[LabellingExt]
 
 
 }

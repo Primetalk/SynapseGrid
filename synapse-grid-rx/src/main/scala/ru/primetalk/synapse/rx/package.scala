@@ -18,7 +18,7 @@ import core._
 
 package object rx {
 
-  implicit class RichContact[T](c: Contact[T])(implicit sb: BasicSystemBuilder) {
+  implicit class RichContact[T](c: Contact[T])(implicit sb: SystemBuilder) {
 
     def toObservable: Observable[T] = {
       val rxOutput = Subject[T]()

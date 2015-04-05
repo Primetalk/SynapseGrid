@@ -11,7 +11,7 @@ trait AuxNumberingExt extends ContactStyleExt {
 
   case object AuxiliaryContact extends ContactStyle
 
-  class AuxContactNumberingExt(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
+  class AuxContactNumberingExt(val sb: SystemBuilder) extends SystemBuilderExtension {
     private var auxContactNumber = 0
 
     def nextContactName = {
@@ -26,7 +26,7 @@ trait AuxNumberingExt extends ContactStyleExt {
   }
 
   implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId(new AuxContactNumberingExt(_))
-  implicit def sbToAux(sb: BasicSystemBuilder): AuxContactNumberingExt = sb.extend[AuxContactNumberingExt]
+  implicit def sbToAux(sb: SystemBuilder): AuxContactNumberingExt = sb.extend[AuxContactNumberingExt]
 
-  def auxContact[T](implicit sb:BasicSystemBuilder) = sb.auxContact[T]
+  def auxContact[T](implicit sb:SystemBuilder) = sb.auxContact[T]
 }
