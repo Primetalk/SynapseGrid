@@ -26,43 +26,31 @@ trait Named {
     getClass.getSimpleName + "(\"" + name + "\")"
 }
 
-sealed trait ContactStyle
-
-case object NormalContact extends ContactStyle
-
-case object AuxiliaryContact extends ContactStyle
-
-case object DevNullContact extends ContactStyle
-
-case object StateContact extends ContactStyle
-
 /**
  * Basis point of connection of other elements.
- * If auxiliary then it is drawn on the graph as a simple little circle
+ * If auxiliary then it is drawn on the graph as a simple little circle.
+ *
+ * It order to improve performance the contact is compared by referential equality (#eq()).
+ * That's why it is not a case class. However, this creates some inconvenience in serialization.
  *
  * NB: the contact is not very well serializable. After deserialization
  * we obtain a different instance of the contact. But in most cases the comparison is done by
- * referential equality (.eq) and it won't do well.
+ * referential equality (.eq) and thus it won't do well.
  *
  * In synapse-grid-akka there is a solution for Contact serializations.
+ *
  * @see ru.primetalk.synapse.akka.ContactSerializer.
+ *
  */
-class Contact[T](name1: String = null, val contactStyle: ContactStyle = NormalContact) extends Named with Serializable {
+class Contact[T](name1: String = null) extends Named with Serializable {
   val name = if (name1 == null) getClass.getSimpleName.replaceAllLiterally("$", "") else name1
 
   override def toString = "C(" + name + ")"
 }
 
-/** Contact with runtime type information.
-  * Can be used for static analysis of the system. At least checking Nop links to connect compatible contacts.*/
-class RttiContact[T](name1: String = null, contactStyle: ContactStyle = NormalContact)(implicit val classTag:scala.reflect.ClassTag[T]) extends Contact[T](name1, contactStyle)
 
 object Contact {
-  def unapply(c: Any): Option[(String, ContactStyle)] =
-    c match {
-      case contact: Contact[_] => Some(contact.name, contact.contactStyle)
-      case _ => None
-    }
+  def unapply(contact: Contact[_]): Option[String] = Some(contact.name)
 }
 
 /**
@@ -76,25 +64,20 @@ case class Signal[T](contact: Contact[T], data: T) {
 }
 
 
-/**
- * Contact reference with respect to path of the system where the contact resides.
- * @param path path to a system with the contact
- * @param contact the original contact of the system
- */
-case class ContactP[T](path: SystemPath, contact: Contact[T])
+///**
+// * Contact reference with respect to path of the system where the contact resides.
+// * @param path path to a system with the contact
+// * @param contact the original contact of the system
+// */
+//case class ContactP[T](path: SystemPath, contact: Contact[T])
 
-/**
- * Signal with path to the contact.
- * @param contact contactP
- * @param data the  value at the contact
- * @tparam T value type
- */
-case class SignalP[T](contact: ContactP[T], data: T)
-
-/** Signal for remote transfer. The real contacts are not quite well serializable (see Contact for details).
-  * Thus we use the number of the contact in system's index.
-  */
-case class SignalDist(contactId: Int, data: AnyRef)
+///**
+// * Signal with path to the contact.
+// * @param contact contactP
+// * @param data the  value at the contact
+// * @tparam T value type
+// */
+//case class SignalP[T](contact: ContactP[T], data: T)
 
 /** Sometimes signals are processed as a batch of data on the same contact.
   * The Batch can be used interchangeably with List[Signal[T]] */
@@ -124,7 +107,7 @@ trait Stateful[State] extends Named {
  * Permanent contacts store shared state that can be updated with stateful
  * links.
  */
-class StateHandle[S](name: String, val s0: S) extends Contact[S](name, StateContact) with Stateful[S] {
+class StateHandle[S](name: String, val s0: S) extends Contact[S](name) with Stateful[S] {
   override def toString = "S(" + name + ")"
 }
 

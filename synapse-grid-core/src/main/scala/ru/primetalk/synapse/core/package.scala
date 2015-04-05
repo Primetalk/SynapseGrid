@@ -35,3 +35,5 @@ package object core
   with ManagedStatesApi
   with AuxNumberingExt
   with NextLabelExt
+  with ContactStyleExt
+  with DevNullExt

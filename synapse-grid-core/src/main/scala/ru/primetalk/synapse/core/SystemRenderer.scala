@@ -25,7 +25,7 @@ trait SystemRenderer {
 	
 	val stateLegacyModification = "shape=invhouse, fillcolor=lightpink, color=red, style=filled"
 	val stateModification = "shape=octagon, color=red, style=rounded"//parallelogram
-	def nodeToString(id : Int, c : Any, nodeKind:NodeKind) : String = (c, nodeKind) match {
+	def nodeToString(system:StaticSystem, id : Int, c : Any, nodeKind:NodeKind) : String = (c, nodeKind) match {
 		case (StateHandle(name, _), StateNode) ⇒
 			s"$id [label=${"\""+name+"\""}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
     case (Link(_, _, _, NopLink()), _) ⇒
@@ -34,7 +34,7 @@ trait SystemRenderer {
       s"$id [label=${"\"" + name + "\""}, $stateLegacyModification]"
     case (Link(_, _, name, StateZipLink(_)), _) ⇒
       s"$id [label=${"\"" + name + "\""}, shape=none]"
-    case (Link(_, Contact(_, DevNullContact), name, linkInfo), _) ⇒
+    case (Link(_, c@Contact(_), name, linkInfo), _) if system.style(c)==DevNullContact ⇒
       s"$id [label=${"\"" + name + "\""}, shape=none, fontcolor=red]"
     case (Link(_, _, name, linkInfo), _) ⇒
     s"$id [label=${"\"" + name + "\""}, shape=none]"
@@ -42,15 +42,15 @@ trait SystemRenderer {
     s"$id [label=${"\""+name+"\""}, $stateModification]"
 		case (os : Component, _) ⇒
 			s"$id [label=${"\""+os.name+"\""}, shape=component]"
-		case (Contact(_, DevNullContact), InnerContact) ⇒
+		case (c@Contact(_), InnerContact) if system.style(c)==DevNullContact  ⇒
 			s"$id [label=${"\"\""}, shape=point, color=red]"
-		case (Contact(_, AuxiliaryContact), InnerContact) ⇒
+		case (c@Contact(_), InnerContact) if system.style(c)==AuxiliaryContact  ⇒
 			s"$id [label=${"\"\""}, shape=point]"
-		case (Contact(name, _), InputNode) ⇒
+		case (Contact(name), InputNode) ⇒
 			s"$id [label=${"\""+name+"\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=aquamarine]"
-		case (Contact(name, _), InnerContact) ⇒
+		case (Contact(name), InnerContact) ⇒
 			s"$id [label=${"\""+name+"\""}, shape=ellipse]"
-		case (Contact(name, _), OutputNode) ⇒
+		case (Contact(name), OutputNode) ⇒
 			s"$id [label=${"\""+name+"\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
 	}
 	def linkToString(idfrom : Int, idto : Int, from : Any, to : Any) : String =
@@ -92,12 +92,12 @@ trait SystemRenderer {
 			
 		val ids = mutable.Map[Any, Int]()
 		def getId(c : Any, kind : NodeKind) = c match {
-			case Contact(_, DevNullContact) ⇒
-				elements += nodeToString(counter.next, c, kind)
+			case contact@Contact(_) if system.style(contact)==DevNullContact ⇒
+				elements += nodeToString(system, counter.next, c, kind)
 				counter.lastId
 			case _ ⇒
 				ids.getOrElseUpdate(c, {
-					elements += nodeToString(counter.next, c, kind)
+					elements += nodeToString(system, counter.next, c, kind)
 					counter.lastId
 				})
 		}

@@ -20,8 +20,6 @@ package object rx {
 
   implicit class RichContact[T](c: Contact[T])(implicit sb: BasicSystemBuilder) {
 
-    import implicits._
-
     def toObservable: Observable[T] = {
       val rxOutput = Subject[T]()
       c.foreach(t => rxOutput.onNext(t))

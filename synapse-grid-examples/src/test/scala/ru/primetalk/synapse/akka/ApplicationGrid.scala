@@ -37,7 +37,7 @@ class ApplicationGrid extends ProcessGrid {
     myEtlGrid.initialized.foreach(u=>println("AppGrid.myEtlGrid.initialized"))
     myEtlGrid.initialized.getState(startSender).foreach{
       case senderVal =>
-        senderVal ! ()
+        senderVal.!(())
     }
   }
   

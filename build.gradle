@@ -14,20 +14,20 @@ ext {
 // The artifacts should appear in Maven Central.
 //
 
-    aVersion = '1.3.9-SNAPSHOT'
-    enableSigning = false
-//    aVersion = '1.3.8'//'1.2.0-SNAPSHOT'
-//    enableSigning = true
+//    aVersion = '1.3.9-SNAPSHOT'
+//    enableSigning = false
+    aVersion = '1.4.0'//'1.2.0-SNAPSHOT'
+    enableSigning = true
 
 
-//    scalaMajorVersion = '2.11'
-//    scalaFullVersion = "${scalaMajorVersion}.6"
-//    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.4"
-//    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.1.0"
-    scalaMajorVersion = '2.10'
-    scalaFullVersion = "${scalaMajorVersion}.5"
+    scalaMajorVersion = '2.11'
+    scalaFullVersion = "${scalaMajorVersion}.6"
     scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.4"
-    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}.4:2.1.0"
+    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.1.0"
+//    scalaMajorVersion = '2.10'
+//    scalaFullVersion = "${scalaMajorVersion}.5"
+//    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.4"
+//    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}.4:2.1.0"
 
     scalaLib = "org.scala-lang:scala-library:${scalaFullVersion}"
     scalaReflect = "org.scala-lang:scala-reflect:${scalaFullVersion}"

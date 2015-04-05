@@ -7,7 +7,10 @@ import scala.language.implicitConversions
  * An extension that adds counter for aux contacts.
  * @author zhizhelev, 25.03.15.
  */
-trait AuxNumberingExt {
+trait AuxNumberingExt extends ContactStyleExt {
+
+  case object AuxiliaryContact extends ContactStyle
+
   class AuxContactNumberingExt(val sb: BasicSystemBuilder) extends SystemBuilderExtension {
     private var auxContactNumber = 0
 
@@ -18,7 +21,7 @@ trait AuxNumberingExt {
     }
 
     def auxContact[T] =
-      new Contact[T](nextContactName, AuxiliaryContact)
+      new Contact[T](nextContactName).styled(AuxiliaryContact)(sb)
 
   }
 

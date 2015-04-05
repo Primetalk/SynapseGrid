@@ -9,7 +9,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * @author zhizhelev, 24.03.15.
  */
-trait StaticSystemApi {
+trait StaticSystemApi extends DevNullExt {
   /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
   implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem
@@ -88,7 +88,8 @@ trait StaticSystemApi {
         flatMap(_.outputContacts).toSet ++
         system.inputContacts
 
-    val nullContacts = allOutputContacts.filter(_.contactStyle == DevNullContact)
+    /** Special "/dev/null" contacts that are intentionally ignore incoming data*/
+    val nullContacts = system.styledWith(DevNullContact)// allOutputContacts.filter(_.contactStyle == DevNullContact)
 
     /** Component inputs that do not get data from anywhere. */
     val orphanComponentInputs = allInputContacts -- allOutputContacts

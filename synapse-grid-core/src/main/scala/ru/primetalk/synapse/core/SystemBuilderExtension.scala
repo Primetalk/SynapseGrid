@@ -4,7 +4,8 @@ trait SystemBuilderExtension {
   // the extended SystemBuilder
   val sb: BasicSystemBuilder
   /** Opportunity for extension to hook into method
-    * SystemBuilder#toStaticSystem"*/
+    * SystemBuilder#toStaticSystem".
+    * It can also add some information to extensions map. */
   def postProcess(s:StaticSystem):StaticSystem = s
 }
 
