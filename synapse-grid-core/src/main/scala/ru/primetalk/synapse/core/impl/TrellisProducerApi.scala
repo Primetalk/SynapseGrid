@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
 import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.components.DynamicSystem
 
 /**
  * @author zhizhelev, 25.03.15.

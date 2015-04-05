@@ -11,7 +11,9 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.components
+
+import ru.primetalk.synapse.core.{Contact, Named, StateHandle}
 
 import scala.collection.GenTraversableOnce
 

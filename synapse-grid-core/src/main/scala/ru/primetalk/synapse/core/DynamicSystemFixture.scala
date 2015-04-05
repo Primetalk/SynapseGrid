@@ -12,6 +12,8 @@
  */
 package ru.primetalk.synapse.core
 
+import ru.primetalk.synapse.core.components.DynamicSystem
+
 /** A class that allows to use Dynamic system in a more comfortable way.
   * One can send any data on any input of the dynamic system and
   * the results are kept in output buffer.

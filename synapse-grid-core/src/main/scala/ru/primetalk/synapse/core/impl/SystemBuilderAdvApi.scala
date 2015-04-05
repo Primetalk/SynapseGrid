@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{NopLink, Contact}
+import ru.primetalk.synapse.core.Contact
+import ru.primetalk.synapse.core.components.NopLink
 
 /**
  * Some useful commands with implicit BasicSystemBuilder argument

@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{Named, ComponentWithInternalStructure, Component}
+import ru.primetalk.synapse.core.components.{ComponentWithInternalStructure, Component}
+import ru.primetalk.synapse.core.Named
 
 /**
  * @author zhizhelev, 25.03.15.
@@ -15,7 +16,7 @@ trait ComponentNavigationApi {
     * if the component is Named then it's name is added to the path. Otherwise an empty
     * string is added.
     * */
-  def components(component: Component):
+  def subcomponents(component: Component):
   List[(SystemPathReversed, Component)] = {
     def components0(component: Component, path: SystemPathReversed):
     List[(SystemPathReversed, Component)] =

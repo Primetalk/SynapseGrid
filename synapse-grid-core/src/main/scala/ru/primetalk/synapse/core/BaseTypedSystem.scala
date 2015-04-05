@@ -12,6 +12,8 @@
  */
 package ru.primetalk.synapse.core
 
+import ru.primetalk.synapse.core.components.StaticSystem
+
 trait WithStaticSystem {
   def toStaticSystem:StaticSystem
 }

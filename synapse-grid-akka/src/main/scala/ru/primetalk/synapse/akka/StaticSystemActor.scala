@@ -22,6 +22,7 @@ import ru.primetalk.synapse.core.Signal
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import SystemConvertingSupport._
 import ru.primetalk.synapse.core
+import ru.primetalk.synapse.core.components.StaticSystem
 
 /** Escalates all exceptions to upper level. This actor is an appropriate default for
   * in-channel actors. */

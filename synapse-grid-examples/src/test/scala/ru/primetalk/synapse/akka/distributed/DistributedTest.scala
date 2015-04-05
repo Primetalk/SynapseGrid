@@ -21,6 +21,7 @@ import org.scalatest.junit.JUnitRunner
 import org.slf4j.LoggerFactory
 import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.components.ComponentWithInternalStructure
 
 @RunWith(classOf[JUnitRunner])
 class DistributedTest extends FunSuite {

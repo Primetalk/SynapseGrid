@@ -14,6 +14,8 @@
  */
 package ru.primetalk.synapse.core
 
+import ru.primetalk.synapse.core.components._
+
 import scala.language.existentials
 
 sealed trait RuntimeComponent extends Named {

@@ -2,7 +2,7 @@ package ru.primetalk.synapse.akka.impl
 
 import akka.actor.{SupervisorStrategy, ActorRef, ActorRefFactory}
 import ru.primetalk.synapse.akka._
-import ru.primetalk.synapse.core.StaticSystem
+import ru.primetalk.synapse.core.components.StaticSystem
 
 /**
  * @author zhizhelev, 25.03.15.

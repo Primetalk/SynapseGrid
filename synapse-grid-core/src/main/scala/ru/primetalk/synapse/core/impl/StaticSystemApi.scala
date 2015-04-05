@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{SystemConverting, StaticSystem, Contact, SystemRenderer}
+import ru.primetalk.synapse.core.components.StaticSystem
+import ru.primetalk.synapse.core.{SystemConverting, Contact, SystemRenderer}
 import scala.language.{implicitConversions, reflectiveCalls}
 
 /**

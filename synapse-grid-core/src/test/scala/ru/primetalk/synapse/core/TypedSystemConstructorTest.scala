@@ -15,6 +15,7 @@ package ru.primetalk.synapse.core
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
+import ru.primetalk.synapse.core.components.StaticSystem
 
 @RunWith(classOf[JUnitRunner])
 class TypedSystemConstructorTest extends FunSuite {

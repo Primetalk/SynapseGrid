@@ -16,6 +16,7 @@ package ru.primetalk.synapse.core.impl
 import java.io.{File, PrintWriter}
 
 import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.components._
 
 import scala.collection.mutable
 

@@ -14,6 +14,7 @@
 package ru.primetalk.synapse.core.impl
 
 import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.components._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -33,7 +34,7 @@ trait SystemBuilderApi extends ContactsApi {
   /** DSL for constructing systems.
     *
     * This builder supports step-by-step creation of contact system. At the end
-    * one must convert it to [[ru.primetalk.synapse.core.StaticSystem]].
+    * one must convert it to [[StaticSystem]].
     *
     * The builder supports the notion of extensions (much like akka actor system extensions).
     * When we need to store additional information during system construction,

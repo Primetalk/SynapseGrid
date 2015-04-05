@@ -1,7 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{StateHandle, FlatMapLink, Contact, StatefulFlatMapLink, NopLink, StateUpdate,
-RedMapLink, StateZipLink}
+import ru.primetalk.synapse.core.components._
+import ru.primetalk.synapse.core.{StateHandle, Contact}
 
 import scala.collection.GenTraversableOnce
 import scala.reflect.ClassTag

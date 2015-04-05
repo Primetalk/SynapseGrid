@@ -12,11 +12,11 @@
  */
 package ru.primetalk.synapse.akka.distributed
 
-import ru.primetalk.synapse.core.ComponentWithInternalStructure
 import ru.primetalk.synapse.core
 import akka.actor.{SupervisorStrategy, Props, ActorRefFactory, ActorPath}
 import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.akka.ActorComponent
+import ru.primetalk.synapse.core.components.{Component, ComponentWithInternalStructure}
 
 /**
 Deployment of a system over a cluster of nodes
@@ -31,8 +31,7 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
     val hosts = deployment.filter(_._1.contains(systemPath)).map(_._2)
     if (hosts.size != 1)
       throw new IllegalStateException(s"For path=$systemPath found != 1 hosts.")
-    val host = hosts(0)
-    host / systemPathToActorName(systemPath)
+    hosts.head / systemPathToActorName(systemPath)
   }
 
   /** Looks up for the systemPath in the deployment descriptor
@@ -41,8 +40,7 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
     val hosts = deployment.filter(_._1.contains(systemPath)).map(_._2)
     if (hosts.size != 1)
       throw new IllegalStateException(s"For path=$systemPath found != 1 hosts.")
-    val host = hosts(0)
-    host / ("subsystem_" + systemPathToActorName(systemPath))
+    hosts.head / ("subsystem_" + systemPathToActorName(systemPath))
   }
 
   /** List paths of systems that should be created at this host. */
@@ -58,7 +56,7 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
    * @param s the system to create routers
    * @return collection of SystemPath -> ActorRef - routers for every InnerActorSubsystem.
    */
-  def createRouters(s: core.Component)(context: ActorRefFactory) =
+  def createRouters(s: Component)(context: ActorRefFactory) =
     actorInnerSubsystems2(s).map(_._1).map {
       path =>
         val actorName = systemPathToActorName(path)
@@ -67,10 +65,10 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
     }
 
   /** Recursively finds all subsystems of the system. */
-  def actorInnerSubsystems(component: core.Component): List[(core.SystemPathReversed, ActorComponent)] =
-    core.components(component).collect { case (pathRev, actorInnerSubsystem: ActorComponent) => (pathRev, actorInnerSubsystem)}
+  def actorInnerSubsystems(component: Component): List[(core.SystemPathReversed, ActorComponent)] =
+    core.subcomponents(component).collect { case (pathRev, actorInnerSubsystem: ActorComponent) => (pathRev, actorInnerSubsystem)}
 
-  def actorInnerSubsystems2(component: core.Component): List[(core.SystemPath, ActorComponent)] =
+  def actorInnerSubsystems2(component: Component): List[(core.SystemPath, ActorComponent)] =
     actorInnerSubsystems(component).map(p => (p._1.reverse, p._2))
 
 
@@ -79,7 +77,7 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
     *
     * The subsystems send signals to other actors via router actors that should have been
     * created. */
-  def createSubsystems(s: core.Component,
+  def createSubsystems(s: Component,
                        pathsForThisHost: Set[core.SystemPath])(context: ActorRefFactory,
                                                                supervisorStrategy: SupervisorStrategy =
                                                                defaultSupervisorStrategy,

@@ -11,11 +11,16 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.components
+
+import ru.primetalk.synapse.core.{Contact, Named,
+StateHandle, Stateful, Indexed,
+ContactsIndex, ContactsIndexImpl,
+SimpleSignalProcessor, UnhandledProcessingExceptionHandler, defaultUnhandledExceptionHandler}
 
 /** An outer description of a system.
   * Actual description is deferred to descendants.
-  * See also [[ru.primetalk.synapse.core.Link]]s
+  * See also [[Link]]s
   */
 trait Component extends Named {
   val inputContacts: Set[Contact[_]]
