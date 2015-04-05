@@ -16,9 +16,10 @@ import akka.actor._
 import akka.util.Timeout
 import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.core
-import ru.primetalk.synapse.core.SystemConvertingSupport._
+import ru.primetalk.synapse.core.runtime._
+import SystemConvertingSupport._
 import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core.{RuntimeComponentMultiState, _}
+import ru.primetalk.synapse.core.{_}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

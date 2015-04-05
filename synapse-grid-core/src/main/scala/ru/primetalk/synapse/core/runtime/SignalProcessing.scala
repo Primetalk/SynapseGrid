@@ -12,7 +12,12 @@
  *
  * Created: 18.03.2013
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.runtime
+
+import ru.primetalk.synapse.core.{Contact, Signal, SignalDist,
+ContactToSubscribersMap,
+UnhandledProcessingExceptionHandler, defaultUnhandledExceptionHandler,
+Context, TrellisProducer, TrellisElement, TotalTrellisProducer}
 
 import scala.Predef._
 import scala.annotation.tailrec

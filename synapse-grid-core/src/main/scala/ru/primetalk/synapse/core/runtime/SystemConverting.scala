@@ -10,8 +10,10 @@
  *
  * Created: 07.08.13, zhizhelev
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.runtime
 
+import ru.primetalk.synapse.core.{Contact, Signal, ContactsIndex,
+Context, TotalTrellisProducer, RuntimeSystemToTotalTrellisProducerConverter, SimpleSignalProcessor, RichRuntimeSystem}
 import ru.primetalk.synapse.core.components._
 
 import scala.language.{existentials, implicitConversions}
@@ -146,7 +148,7 @@ object SystemConvertingSupport {
 
 object SystemConverting {
 
-  import ru.primetalk.synapse.core.SystemConvertingSupport._
+  import SystemConvertingSupport._
 
   /** Constructs a trellis producer for a subsystem.
     * Inner states of the system are stored in a single state that is

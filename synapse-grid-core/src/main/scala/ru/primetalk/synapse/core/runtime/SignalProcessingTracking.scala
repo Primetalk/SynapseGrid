@@ -1,4 +1,6 @@
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.runtime
+
+import ru.primetalk.synapse.core._
 
 import scala.annotation.tailrec
 import scala.collection.mutable

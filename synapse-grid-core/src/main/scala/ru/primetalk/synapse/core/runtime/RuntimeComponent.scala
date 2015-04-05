@@ -12,9 +12,10 @@
  *
  * Created: 21.09.2013
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.runtime
 
 import ru.primetalk.synapse.core.components._
+import ru.primetalk.synapse.core.{Named, Signal, Contact, TotalTrellisProducer}
 
 import scala.language.existentials
 

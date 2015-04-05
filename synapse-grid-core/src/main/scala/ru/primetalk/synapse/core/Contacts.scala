@@ -14,6 +14,8 @@
  */
 package ru.primetalk.synapse.core
 
+import ru.primetalk.synapse.core.runtime.RuntimeComponent
+
 import scala.language.implicitConversions
 
 /**

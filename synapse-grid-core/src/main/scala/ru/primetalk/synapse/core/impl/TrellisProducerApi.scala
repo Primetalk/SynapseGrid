@@ -2,6 +2,7 @@ package ru.primetalk.synapse.core.impl
 
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.core.components.DynamicSystem
+import ru.primetalk.synapse.core.runtime._
 
 /**
  * @author zhizhelev, 25.03.15.
@@ -39,7 +40,7 @@ trait TrellisProducerApi {
     }
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
     def toTotalTrellisProducer: TotalTrellisProducer = {
-      import ru.primetalk.synapse.core.SignalProcessingSimple._
+      import SignalProcessingSimple._
       val rsftp = new RuntimeSystemForTrellisProcessingTracking(runtimeSystem)
       val step = TrellisProducerSpeedyTracking(rsftp)
       val loopy = TrellisProducerLoopyTracking(step, runtimeSystem.stopContacts)

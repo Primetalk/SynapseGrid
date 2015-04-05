@@ -17,6 +17,7 @@ import akka.serialization._
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts._
 import ru.primetalk.synapse.core.components.StaticSystem
+import ru.primetalk.synapse.core.runtime.SubsystemSpecialContact
 
 
 /** Contacts are serialized as long identifiers.
