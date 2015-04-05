@@ -35,15 +35,15 @@ trait Generators extends Numerals4 {
     implicit def uncheckedGenerics[T[_], O](t: T[_]): T[O] = t.asInstanceOf[T[O]]
     implicit def uncheckedGenerics2[T[_, _], O, P](t: T[_, _]): T[O, P] = t.asInstanceOf[T[O, P]]
     def constructGenerator0(e: Expression[_, _]): Generator[Any] = e match {
-      case ConstExpression(l: LemmaStream, u) => (t) => l
+      case ConstExpression(l, u) => (t) => l.asInstanceOf[LemmaStream]
       case Labelled(_, e1) => constructGenerator0(e1)
       case Epsilon(_) => (t) => Iterable()
       case Pair(e1, e2) =>
         val g1 = constructGenerator0(e1)
         val g2 = constructGenerator0(e2)
         (u: (_, _)) => g1(u._1) ++ g2(u._2)
-      case BooleanAlternative(sel: SemanticSelector[U], e1, e2) =>
-        val selector = selGen(sel).asInstanceOf[Any => Boolean]
+      case BooleanAlternative(sel: SemanticSelector[_], e1, e2) =>
+        val selector = selGen(sel.asInstanceOf[SemanticSelector[U]]).asInstanceOf[Any => Boolean]
         val g1 = constructGenerator0(e1)
         val g2 = constructGenerator0(e2)
         (u) =>

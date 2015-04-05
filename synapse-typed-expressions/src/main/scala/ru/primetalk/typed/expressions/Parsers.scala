@@ -122,7 +122,7 @@ trait Parsers extends Numerals4 {
 
     def backTrackingParser0(e: Expression[_, _]): Parser[_] = e match {
       case Epsilon(u) => (s:LemmaStream) => Success(u, s)
-      case ConstExpression(l: LemmaStream, u) => (s: LemmaStream) => startsWithAndTail(l, s).map(t => u)
+      case ConstExpression(l, u) => (s: LemmaStream) => startsWithAndTail(l.asInstanceOf[LemmaStream], s).map(t => u)
       case Labelled(_, expr) => backTrackingParser0(expr)
       case Alternatives(expressions) =>
         val parsers = expressions.map(backTrackingParser0)
