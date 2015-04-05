@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{SystemBuilderExtensionId, SystemBuilderExtension, SystemBuilder, Contact}
+import ru.primetalk.synapse.core.Contact
 /**
  * @author zhizhelev, 05.04.15.
  */
@@ -16,7 +16,7 @@ trait DevNullExt extends ContactStyleExt {
     lazy val devNull = new Contact[Any]("devNull").styled(DevNullContact)(sb)
 
   }
-  implicit val DevNullExtId = new SystemBuilderExtensionId(new DevNullExtension(_))
+  implicit val DevNullExtId:SystemBuilderExtensionId[DevNullExtension] = new SystemBuilderExtensionId[DevNullExtension](new DevNullExtension(_))
 
   /**
    * Special contact for consuming unnecessary data values.

@@ -1,13 +1,12 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{SystemBuilderExtensionId, SystemBuilderExtension, SystemBuilder}
 import scala.language.implicitConversions
 
 /**
  * An extension that adds the collection of labels that can be used next.
  * @author zhizhelev, 25.03.15.
  */
-trait NextLabelExt {
+trait NextLabelExt extends SystemBuilderApi {
   /** An extension that adds easy labelling to System builder. */
   class LabellingExt(val sb: SystemBuilder) extends SystemBuilderExtension {
     private[synapse] var proposedLabels = List[String]()
@@ -36,10 +35,10 @@ trait NextLabelExt {
     }
   }
 
-  implicit val LabellingExtId = new SystemBuilderExtensionId(new LabellingExt(_))
+  implicit val LabellingExtId = new SystemBuilderExtensionId[LabellingExt](new LabellingExt(_))
 
   //(AuxContactNumberingExtId)
-  implicit def sbToLabelling(sb: SystemBuilder): LabellingExt = sb.extend[LabellingExt]
+  implicit def sbToLabelling(sb: SystemBuilder): LabellingExt = sb.extend[LabellingExt](LabellingExtId)
 
 
 }

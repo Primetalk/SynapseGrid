@@ -15,7 +15,7 @@ trait Slf4jApi {
   implicit def contactToLoggingContact[T](c:Contact[T])(implicit sb:SystemBuilder): LoggingContact[T] =
     new LoggingContact(c, sb.extend(SystemBuilderLoggingExtensionId).loggerNamePrefix)(sb)
 
-  implicit val SystemBuilderLoggingExtensionId = new SystemBuilderExtensionId(new SystemBuilderLoggingExtension(_))
+  implicit val SystemBuilderLoggingExtensionId = new SystemBuilderExtensionId[SystemBuilderLoggingExtension](new SystemBuilderLoggingExtension(_))
 
   implicit class LoggingContactThrowable[T<:Throwable](c:Contact[T])(implicit sb:SystemBuilder){
 

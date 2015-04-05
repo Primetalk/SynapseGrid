@@ -103,6 +103,14 @@ with Indexed {
   def extensionOpt[T](implicit extId:StaticSystemExtensionId[T]):Option[T] =
     extensions.get(extId).asInstanceOf[Option[T]]
 }
+/** ExtensionId for a StaticSystem extension. Every extension can be
+  * installed only once on the same StaticSystem.
+  *
+  * The extension can contain some additional state for system processing.
+  *
+  * However, it is not recommended to add mutable state to otherwise immutable StaticSystem.
+  */
+trait StaticSystemExtensionId[+T]
 
 /** Dynamic system. The state is kept inside the system. All complex logic
   * is implemented within receive function.

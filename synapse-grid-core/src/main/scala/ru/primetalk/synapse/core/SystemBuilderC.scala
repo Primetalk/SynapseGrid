@@ -106,9 +106,4 @@ import scala.util.Try
 //}
 
 
-class SystemBuilderC(name: String) extends SystemBuilder {
-  implicit def sb: SystemBuilder = this
-  this.setSystemName(name)
-}
-
 //class SystemBuilderAdvC(val sb: BasicSystemBuilder) extends SystemBuilderAdv

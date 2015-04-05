@@ -58,5 +58,9 @@ trait SwitcherBuilderApi extends SystemBuilderDslApi{
       new ContactOps(preSelector)(sb).fireUntilSet(selector, endPoints.toSet)
     }
   }
+  implicit class SwitcherContactOps[T](val c: Contact[T])(implicit sb: SystemBuilder) {
+    def switcher(name: String = "") =
+      new SwitcherBuilder[T](c, name)(sb)
+  }
 
 }

@@ -1,12 +1,12 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.{Contact, SystemBuilderC}
 import scala.language.implicitConversions
 
 /**
  * @author zhizhelev, 25.03.15.
  */
-trait BasicSystemBuilderApi {
+trait BasicSystemBuilderApi extends SystemBuilderApi {
   /** A system builder with inputs and outputs given in advance.
     * */
   def systemBuilderTyped(name:String)(_inputs:Contact[_]*)(_outputs:Contact[_]*):SystemBuilder = {

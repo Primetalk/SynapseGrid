@@ -19,6 +19,7 @@ import scala.language.implicitConversions
 
 package object core
   extends SystemBuilderImplicitsApi
+  with SystemBuilderApi
   with StaticSystemApi
   with SignalProcessorApi
   with TrellisProducerApi

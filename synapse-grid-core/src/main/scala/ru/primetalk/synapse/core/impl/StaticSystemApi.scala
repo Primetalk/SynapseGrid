@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.{SystemConverting, StaticSystem, Contact, SystemRenderer}
 import scala.language.{implicitConversions, reflectiveCalls}
 
 /**
@@ -9,7 +9,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * @author zhizhelev, 24.03.15.
  */
-trait StaticSystemApi extends DevNullExt {
+trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi {
   /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
   implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem

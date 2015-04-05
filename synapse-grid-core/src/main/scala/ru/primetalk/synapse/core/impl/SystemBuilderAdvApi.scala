@@ -1,14 +1,14 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{NopLink, Contact, SystemBuilder}
+import ru.primetalk.synapse.core.{NopLink, Contact}
 
 /**
  * Some useful commands with implicit BasicSystemBuilder argument
  * @author zhizhelev, 29.03.15.
  */
-trait SystemBuilderAdvApi {
+trait SystemBuilderAdvApi extends SystemBuilderApi with NextLabelExt{
   private[synapse] def nextLabel(userProvidedLabel: String, defaultLabel: => String)(implicit sb:SystemBuilder): String = {
-    val lsb = sb.extend(ru.primetalk.synapse.core.LabellingExtId)
+    val lsb = sbToLabelling(sb)
     (userProvidedLabel, lsb.proposedLabels) match {
       case ("", List()) ⇒ defaultLabel
       case ("", head :: tail) ⇒

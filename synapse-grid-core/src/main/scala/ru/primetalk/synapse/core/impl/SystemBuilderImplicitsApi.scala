@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 /**
  * @author zhizhelev, 25.03.15.
  */
-trait SystemBuilderImplicitsApi extends SystemBuilderDslApi with SwitcherBuilderApi{
+trait SystemBuilderImplicitsApi extends SystemBuilderApi with SystemBuilderDslApi with SwitcherBuilderApi {
 
   def extendBasicSystemBuilder[T <: SystemBuilderExtension]( implicit sb: SystemBuilder,
         extensionInstance: SystemBuilderExtensionId[T]): T =

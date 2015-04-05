@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.Contact
+
 import scala.language.implicitConversions
 
 /**
@@ -25,7 +26,7 @@ trait AuxNumberingExt extends ContactStyleExt {
 
   }
 
-  implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId(new AuxContactNumberingExt(_))
+  implicit val AuxContactNumberingExtId = new SystemBuilderExtensionId[AuxContactNumberingExt](new AuxContactNumberingExt(_))
   implicit def sbToAux(sb: SystemBuilder): AuxContactNumberingExt = sb.extend[AuxContactNumberingExt]
 
   def auxContact[T](implicit sb:SystemBuilder) = sb.auxContact[T]

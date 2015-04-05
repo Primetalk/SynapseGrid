@@ -1,7 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.{StateHandle, FlatMapLink, Contact, StatefulFlatMapLink, NopLink, StateUpdate,
+RedMapLink, StateZipLink}
 
 import scala.collection.GenTraversableOnce
 import scala.reflect.ClassTag
@@ -31,13 +31,11 @@ import scala.util.Try
 //        }, sb.nextLabel(name, if (name.endsWith("?")) name else name + "?"))) //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
 //  }
 //
-trait SystemBuilderDslApi {
+trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNumberingExt with DevNullExt  {
 
   /**
    * DSL methods for implicit conversion*/
-  class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
-
-    import ru.primetalk.synapse.core._
+  implicit class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
 
     def labelNext(label: String*) = {
       sb.labels(label: _*)
@@ -117,9 +115,7 @@ trait SystemBuilderDslApi {
   //TODO:[ ] поддержка timeout exception - и особая обработка. Возможность создания future и ожидания результата с таймаутом. mapFuture
   //TODO:[ ] создание вокруг подсистемы механизма Try и обработка исключений на уровне родительской системы
 
-  class TryLinkBuilderOps[T1, T2](c: (Contact[T1], Contact[Try[T2]]))(implicit sb: SystemBuilder) {
-
-    import ru.primetalk.synapse.core._
+  implicit class TryLinkBuilderOps[T1, T2](c: (Contact[T1], Contact[Try[T2]]))(implicit sb: SystemBuilder) {
 
     /** If map is used with a try-contact, then it will automatically encapsulate
       * function into Try. */
@@ -130,7 +126,7 @@ trait SystemBuilderDslApi {
         })))
   }
 
-  class StateLinkBuilder2Ops[T1, T2, S](p: (ContactWithState[T1, S], Contact[T2]))(sb: SystemBuilder) {
+  implicit class StateLinkBuilder2Ops[T1, T2, S](p: (ContactWithState[T1, S], Contact[T2]))(implicit sb: SystemBuilder) {
 
     def stateMap(f: (S, T1) ⇒ (S, T2), name: String = "") =
       sb.addLink(p._1.c1, p._2,
@@ -146,7 +142,7 @@ trait SystemBuilderDslApi {
         new StatefulFlatMapLink[S, T1, T2](f, p._1.stateHandle))
   }
 
-  class DirectLinkBuilderOps[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
+  implicit class DirectLinkBuilderOps[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
     def directly(name: String = "Δt") =
       sb.addLink(p._1, p._2, name, new NopLink[T1, T2]())
 
@@ -196,7 +192,7 @@ trait SystemBuilderDslApi {
 
   }
 
-  class ContactPairOps[S, T](c: Contact[(S, T)])(implicit sb: SystemBuilder) {
+  implicit class ContactPairOps[S, T](c: Contact[(S, T)])(implicit sb: SystemBuilder) {
     require(c != null, "Contact is null")
 //
 //    implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new DirectLinkBuilderOps(p)(sb)
@@ -216,7 +212,7 @@ trait SystemBuilderDslApi {
     }
   }
 
-  class ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(implicit sb: SystemBuilder) {
+  implicit class ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(implicit sb: SystemBuilder) {
 
     def zipWithState(stateHolder: StateHandle[S], name: String = ""): Contact[(S, T)] =
       sb.addLink(c._1, c._2,
@@ -226,7 +222,7 @@ trait SystemBuilderDslApi {
 
   /** New methods available on contacts that construct links.
     */
-  class ContactOps[T](val c: Contact[T])(implicit sb: SystemBuilder) {
+  implicit class ContactOps[T](val c: Contact[T])(implicit sb: SystemBuilder) {
     require(c != null, "Contact is null. " +
       "This can usually happen when the contact is declared using val, " +
       "but it is placed further down the source code and thus has not been initialized yet.")
@@ -270,7 +266,7 @@ trait SystemBuilderDslApi {
     // The difference is only in the signature of the user function.
 
     def stock(f: T ⇒ Any, name: String = "") = {
-      (c -> core.devNull).flatMap((x: T) => Seq(f(x)), sb.nextLabel(name, ">>null"))
+      (c -> devNull).flatMap((x: T) => Seq(f(x)), sb.nextLabel(name, ">>null"))
       c
     }
 
@@ -509,9 +505,6 @@ trait SystemBuilderDslApi {
     def ifConst(const: T, name: String = "") =
       filter(_ == const, sb.nextLabel(name, "_ == " + const + "?"))
 
-    def switcher(name: String = "") =
-      new core.SwitcherBuilder[T](c, name)(sb)
-
     /** Analogous to foldLeft. Every input is mixed with state by function f.
       * The result is saved to the state and returned on the next contact.
       * */
@@ -519,7 +512,7 @@ trait SystemBuilderDslApi {
     //  }
   }
 
-  class TryContactOps[T](val c: Contact[Try[T]])(implicit sb: SystemBuilder) {
+  implicit class TryContactOps[T](val c: Contact[Try[T]])(implicit sb: SystemBuilder) {
     /** Extracts an exception from Try. It only produces a signal when there was an exception. */
     def recover: Contact[Throwable] =
       new ContactOps[Try[T]](c)(sb).flatMap(t => if (t.isSuccess) Seq() else Seq(t.failed.get), "recover")
@@ -529,13 +522,13 @@ trait SystemBuilderDslApi {
       new ContactOps[Try[T]](c)(sb).flatMap(t => if (t.isSuccess) Seq(t.get) else Seq(), "success")
   }
 
-  class TryFlatMapContactOps[T](val c: Contact[Try[TraversableOnce[T]]])(implicit sb: SystemBuilder) {
+  implicit class TryFlatMapContactOps[T](val c: Contact[Try[TraversableOnce[T]]])(implicit sb: SystemBuilder) {
     /** Flatterns the output of a tryMap. If there was an exception, an empty list is returned */
     def flatten: Contact[T] =
       new ContactOps[Try[TraversableOnce[T]]](c)(sb).flatMap(t => if (t.isSuccess) t.get else Seq(), "flatten")
   }
 
-  class StateOps[S](s: StateHandle[S])(implicit sb: SystemBuilder) {
+  implicit class StateOps[S](s: StateHandle[S])(implicit sb: SystemBuilder) {
     def >>:(c: Contact[S]) = {
       new ContactOps(c)(sb).saveTo(s)
       c

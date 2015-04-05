@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.{StaticSystem, Contact, StaticSystemExtensionId}
 
 import scala.collection.immutable.Iterable
 
@@ -9,7 +9,7 @@ import scala.collection.immutable.Iterable
  * the SystemRenderer to convert StaticSystem to .dot-file
  * @author zhizhelev, 05.04.15.
  */
-trait ContactStyleExt {
+trait ContactStyleExt extends SystemBuilderApi {
   trait ContactStyle
 
   /** Default style for contact.*/
@@ -17,7 +17,8 @@ trait ContactStyleExt {
 //
 //  case object StateContact extends ContactStyle
 
-  implicit val ContactStyleExtId = new SystemBuilderExtensionId(new ContactStyleExtension(_))
+  implicit val ContactStyleExtId = new SystemBuilderExtensionId[ContactStyleExtension](new ContactStyleExtension(_))
+
   implicit object ContactStyleStaticExtId extends StaticSystemExtensionId[ContactStyleStaticExtension]
 
   class ContactStyleExtension(val sb: SystemBuilder) extends SystemBuilderExtension{

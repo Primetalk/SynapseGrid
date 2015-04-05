@@ -5,17 +5,7 @@ import ru.primetalk.synapse.core._
 /**
  * @author zhizhelev, 29.03.15.
  */
-trait EncapsulationApi {
-
-  /** An interface of some object that can collect information about outer interface of a system.
-    * Not only it create contact instances, but it usually transforms and collect them. */
-  trait OuterInterfaceBuilder {
-    /** creates a contact that will be used as input contact. */
-    def input[T](internalName: String): Contact[T]
-
-    /** creates a contact that will be used as output contact. */
-    def output[T](internalName: String): Contact[T]
-  }
+trait EncapsulationApi extends SystemBuilderApi {
 
   object SimpleOuterInterfaceBuilder extends OuterInterfaceBuilder {
     override def input[T](internalName: String): Contact[T] = new Contact[T](internalName)

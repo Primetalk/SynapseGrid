@@ -64,7 +64,7 @@ trait ActorContainerBuilderApi {
 }
 
 trait ActorSystemBuilderExt {
-  implicit val ActorSystemBuilderExtensionId = new SystemBuilderExtensionId(new ActorSystemBuilderExtension(_))
+  implicit val ActorSystemBuilderExtensionId = new SystemBuilderExtensionId[ActorSystemBuilderExtension](new ActorSystemBuilderExtension(_))
 
 
   /** Basic builder that defines a few helpers for constructing actor-held systems. */

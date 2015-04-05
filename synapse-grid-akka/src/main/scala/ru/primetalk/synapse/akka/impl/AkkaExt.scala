@@ -83,7 +83,7 @@ trait AkkaExt {
 
   }
 
-  implicit val akkaExtensionId = new SystemBuilderExtensionId(new AkkaSystemBuilderExtension(_))
+  implicit val akkaExtensionId = new SystemBuilderExtensionId[AkkaSystemBuilderExtension](new AkkaSystemBuilderExtension(_))
 
 //  implicit def akkaExtension(implicit sb:BasicSystemBuilder):AkkaSystemBuilderExtension = sb.extend(akkaExtensionId)
 }
