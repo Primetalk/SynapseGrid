@@ -34,6 +34,7 @@ package object core
   with ContinuationSystemBuilderApi
   with CollectionSystemBuilderApi
   with ManagedStatesApi
+  with AutomataBuilderApi
   with SystemRendererApi
   with AuxNumberingExt
   with NextLabelExt
