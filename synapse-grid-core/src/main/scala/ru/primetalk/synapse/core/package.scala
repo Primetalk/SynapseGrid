@@ -33,6 +33,7 @@ package object core
   with ContinuationSystemBuilderApi
   with CollectionSystemBuilderApi
   with ManagedStatesApi
+  with SystemRendererApi
   with AuxNumberingExt
   with NextLabelExt
   with ContactStyleExt

@@ -89,7 +89,10 @@ trait StaticSystemApi extends DevNullExt {
         system.inputContacts
 
     /** Special "/dev/null" contacts that are intentionally ignore incoming data*/
-    val nullContacts = system.styledWith(DevNullContact)// allOutputContacts.filter(_.contactStyle == DevNullContact)
+    val nullContacts = {
+      val extOpt = system.extensionOpt[ContactStyleStaticExtension]
+        extOpt.map(_.styledWith(DevNullContact)).getOrElse(Iterable.empty)
+    }// allOutputContacts.filter(_.contactStyle == DevNullContact)
 
     /** Component inputs that do not get data from anywhere. */
     val orphanComponentInputs = allInputContacts -- allOutputContacts

@@ -60,7 +60,7 @@ case class StaticSystem( /** A subset of contacts */
                          name: String,
                          unhandledExceptionHandler:UnhandledProcessingExceptionHandler
                          = defaultUnhandledExceptionHandler,
-                       extensions:Map[SystemBuilderExtensionId[_], Any] = Map()
+                          extensions:Map[StaticSystemExtensionId[_], Any] = Map()
                          ) extends Named
 with Component
 with Stateful[Map[Contact[_], Any]]
@@ -96,6 +96,12 @@ with Indexed {
       components.flatMap(_.outputContacts).toSeq ++
       outputContacts.toSeq).toArray.toSeq.distinct
   )
+
+  def extend[T](ext:T)(implicit extId:StaticSystemExtensionId[T]) =
+    copy(extensions = extensions.updated(extId, ext))
+
+  def extensionOpt[T](implicit extId:StaticSystemExtensionId[T]):Option[T] =
+    extensions.get(extId).asInstanceOf[Option[T]]
 }
 
 /** Dynamic system. The state is kept inside the system. All complex logic
