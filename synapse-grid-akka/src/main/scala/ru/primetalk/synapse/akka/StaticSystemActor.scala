@@ -20,6 +20,7 @@ import ru.primetalk.synapse.akka.SpecialActorContacts._
 import akka.actor._
 import ru.primetalk.synapse.core.Signal
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
+import ru.primetalk.synapse.core.impl.SignalDist
 import ru.primetalk.synapse.core.runtime._
 import SystemConvertingSupport._
 import ru.primetalk.synapse.core

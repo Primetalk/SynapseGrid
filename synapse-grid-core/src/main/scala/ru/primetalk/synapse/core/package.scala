@@ -40,3 +40,4 @@ package object core
   with NextLabelExt
   with ContactStyleExt
   with DevNullExt
+  with ContactsIndexExt

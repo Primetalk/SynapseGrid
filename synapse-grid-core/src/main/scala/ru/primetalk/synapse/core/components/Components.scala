@@ -14,8 +14,7 @@
 package ru.primetalk.synapse.core.components
 
 import ru.primetalk.synapse.core.{Contact, Named,
-StateHandle, Stateful, Indexed,
-ContactsIndex, ContactsIndexImpl,
+StateHandle, Stateful, ContactsIndex, ContactsIndexImpl,
 SimpleSignalProcessor, UnhandledProcessingExceptionHandler, defaultUnhandledExceptionHandler}
 
 /** An outer description of a system.
@@ -69,8 +68,7 @@ case class StaticSystem( /** A subset of contacts */
                          ) extends Named
 with Component
 with Stateful[Map[Contact[_], Any]]
-with ComponentWithInternalStructure
-with Indexed {
+with ComponentWithInternalStructure {
   lazy val inputContacts = inputs.toSet
   lazy val outputContacts = outputs.toSet
   /** Contacts that should be processed by SignalsProcessor. */
@@ -91,16 +89,15 @@ with Indexed {
   def toStaticSystem =
     this
 
+  def allContacts: Seq[Contact[_]] = (inputs.toSeq ++
+    components.flatMap(_.inputContacts).toSeq ++
+    components.flatMap(_.outputContacts).toSeq ++
+    outputContacts.toSeq).toArray.toSeq.distinct
   /** All contacts, available at this system's level.
     * This is a stable sequence of contacts. TODO: move to a separate DistributedSubsystem.
     * This is a stable sequence of contacts. TODO: move to a separate DistributedSubsystem.
     * */
-  lazy val index: ContactsIndex = ContactsIndexImpl(
-    (inputs.toSeq ++
-      components.flatMap(_.inputContacts).toSeq ++
-      components.flatMap(_.outputContacts).toSeq ++
-      outputContacts.toSeq).toArray.toSeq.distinct
-  )
+  lazy val index: ContactsIndex = ContactsIndexImpl(allContacts)
 
   def extend[T](ext:T)(implicit extId:StaticSystemExtensionId[T]) =
     copy(extensions = extensions.updated(extId, ext))
@@ -128,13 +125,13 @@ case class DynamicSystem(
                           outputContacts: Set[Contact[_]],
                           name: String,
                           receive: SimpleSignalProcessor,
-                          index: ContactsIndex) extends Named with Component with Indexed {}
+                          index: ContactsIndex) extends Named with Component
 
 
 /** The system that can be embedded into some other static system.
   * It has specially processed state:
   * @param s structure of the system
-  * @param stateHandle the handle within parent system that holds internal system's state.
+  * @param stateHandle the handle within parent system that holds internal system's state. The handle points to the map (stateHandle -> value)
   * @param sharedStateHandles a few state handles that are shared between the parent system and child.
   *                           During runtime processing current values from parent are copied to child state
   *                           before processing any signals and copied back afterwards.
