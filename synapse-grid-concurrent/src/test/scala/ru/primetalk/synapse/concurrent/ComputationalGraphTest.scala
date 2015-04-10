@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.concurrent.ComputationState._
-import ru.primetalk.synapse.core.BaseTypedSystem
+import ru.primetalk.synapse.core._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])

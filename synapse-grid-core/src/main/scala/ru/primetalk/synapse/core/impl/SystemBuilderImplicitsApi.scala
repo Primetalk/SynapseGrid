@@ -1,7 +1,6 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.{StateHandle, Contact}
 
 import scala.util.Try
 import scala.language.implicitConversions
@@ -36,13 +35,13 @@ trait SystemBuilderImplicitsApi extends SystemBuilderApi with SystemBuilderDslAp
   implicit def richState[S](s: StateHandle[S])(implicit sb: SystemBuilder): StateOps[S] =
     new StateOps(s)(sb)
 
-  implicit def contactOps[T](c: core.Contact[T])(implicit sb: SystemBuilder): ContactOps[T] =
+  implicit def contactOps[T](c: Contact[T])(implicit sb: SystemBuilder): ContactOps[T] =
     new ContactOps(c)(sb)
 
-  implicit def tryContactOps[T](c: core.Contact[Try[T]])(implicit sb: SystemBuilder): TryContactOps[T] =
+  implicit def tryContactOps[T](c: Contact[Try[T]])(implicit sb: SystemBuilder): TryContactOps[T] =
     new TryContactOps(c)(sb)
 
-  implicit def tryFlatMapContactOps[T](c: core.Contact[Try[TraversableOnce[T]]])(implicit sb: SystemBuilder): TryFlatMapContactOps[T] =
+  implicit def tryFlatMapContactOps[T](c: Contact[Try[TraversableOnce[T]]])(implicit sb: SystemBuilder): TryFlatMapContactOps[T] =
     new TryFlatMapContactOps(c)(sb)
 
 

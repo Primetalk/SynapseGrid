@@ -17,7 +17,7 @@ import ru.primetalk.synapse.core._
 
 import ComputationState._
 
-class PerformanceTest extends FunSuite{
+class PerformanceTest extends FunSuite {
 
   class HardWorker(innerLoop:Int) extends BaseTypedSystem{
     import sb._

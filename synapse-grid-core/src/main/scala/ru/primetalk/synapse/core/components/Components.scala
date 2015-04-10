@@ -13,9 +13,7 @@
  */
 package ru.primetalk.synapse.core.components
 
-import ru.primetalk.synapse.core.{Contact, Named,
-StateHandle, Stateful, ContactsIndex, ContactsIndexImpl,
-SimpleSignalProcessor, UnhandledProcessingExceptionHandler, defaultUnhandledExceptionHandler}
+import ru.primetalk.synapse.core.{Contact, Named, StateHandle, Stateful}
 
 /** An outer description of a system.
   * Actual description is deferred to descendants.
@@ -53,8 +51,11 @@ object StaticSystem {
  *
  * @param components inner parts of the system - links, subsystems and other blocks. They have inputs and outputs.
  * @param name the system's name
- * @param unhandledExceptionHandler user-defined exception handler. It can recover from exception by
+ * extension methods:
+ * unhandledExceptionHandler - user-defined exception handler. It can recover from exception by
  *                                  returning repaired Context, log it or rethrow.
+ * index - ContactsIndex
+ * styles - ContactsStyles
  */
 case class StaticSystem( /** A subset of contacts */
                          inputs: List[Contact[_]],
@@ -62,8 +63,8 @@ case class StaticSystem( /** A subset of contacts */
                          privateStateHandles: List[StateHandle[_]],
                          components: List[Component],
                          name: String,
-                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
-                         = defaultUnhandledExceptionHandler,
+//                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
+//                         = defaultUnhandledExceptionHandler,
                           extensions:Map[StaticSystemExtensionId[_], Any] = Map()
                          ) extends Named
 with Component
@@ -89,15 +90,14 @@ with ComponentWithInternalStructure {
   def toStaticSystem =
     this
 
+  /** All contacts, available at this system's level.
+    * This is a stable sequence of contacts.
+    * */
   def allContacts: Seq[Contact[_]] = (inputs.toSeq ++
     components.flatMap(_.inputContacts).toSeq ++
     components.flatMap(_.outputContacts).toSeq ++
     outputContacts.toSeq).toArray.toSeq.distinct
-  /** All contacts, available at this system's level.
-    * This is a stable sequence of contacts. TODO: move to a separate DistributedSubsystem.
-    * This is a stable sequence of contacts. TODO: move to a separate DistributedSubsystem.
-    * */
-  lazy val index: ContactsIndex = ContactsIndexImpl(allContacts)
+//  lazy val index: ContactsIndex = ContactsIndexImpl(allContacts)
 
   def extend[T](ext:T)(implicit extId:StaticSystemExtensionId[T]) =
     copy(extensions = extensions.updated(extId, ext))
@@ -105,6 +105,7 @@ with ComponentWithInternalStructure {
   def extensionOpt[T](implicit extId:StaticSystemExtensionId[T]):Option[T] =
     extensions.get(extId).asInstanceOf[Option[T]]
 }
+
 /** ExtensionId for a StaticSystem extension. Every extension can be
   * installed only once on the same StaticSystem.
   *
@@ -113,19 +114,6 @@ with ComponentWithInternalStructure {
   * However, it is not recommended to add mutable state to otherwise immutable StaticSystem.
   */
 trait StaticSystemExtensionId[+T]
-
-/** Dynamic system. The state is kept inside the system. All complex logic
-  * is implemented within receive function.
-  * Dynamic system can be added to StaticSystem as a simple component ("black box").
-  * The processing of the dynamic system is done within a single step of
-  * the outer system processor.
-  */
-case class DynamicSystem(
-                          inputContacts: Set[Contact[_]],
-                          outputContacts: Set[Contact[_]],
-                          name: String,
-                          receive: SimpleSignalProcessor,
-                          index: ContactsIndex) extends Named with Component
 
 
 /** The system that can be embedded into some other static system.

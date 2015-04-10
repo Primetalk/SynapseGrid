@@ -10,9 +10,9 @@
  *
  * Created: 21.08.13, zhizhelev
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components.DynamicSystem
+import ru.primetalk.synapse.core._
 
 /** A class that allows to use Dynamic system in a more comfortable way.
   * One can send any data on any input of the dynamic system and

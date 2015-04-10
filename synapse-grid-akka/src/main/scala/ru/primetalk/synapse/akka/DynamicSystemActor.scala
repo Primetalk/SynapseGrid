@@ -14,10 +14,9 @@ package ru.primetalk.synapse.akka
 
 import akka.event.{LoggingReceive, Logging}
 import ru.primetalk.synapse.akka.SpecialActorContacts._
-import ru.primetalk.synapse.core.Signal
+import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import org.slf4j.MDC
-import ru.primetalk.synapse.core.components.DynamicSystem
 import scala.concurrent.duration._
 import scala.language.postfixOps
 

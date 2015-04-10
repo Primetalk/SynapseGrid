@@ -13,7 +13,7 @@
 package ru.primetalk.synapse.akka.distributed
 
 import akka.actor.{Actor, SupervisorStrategy}
-import ru.primetalk.synapse.core.Signal
+import ru.primetalk.synapse.core._
 import akka.event.Logging
 import ru.primetalk.synapse.akka.InternalSignalsDist
 
@@ -40,7 +40,9 @@ class HostActor(hostId: HostId,
 
   def receive = {
     case InternalSignalsDist(_, list) =>
-      outputFun.foreach(_(list.map(sd => realm.topLevelSystem.index(sd))))
+      val idx: ContactsIndex = realm.topLevelSystem.toStaticSystem.index
+      val sss: List[Signal[_]] = list.map(idx(_))
+      outputFun.foreach(_(sss))
     case msg =>
       log.info("HostActor: " + msg)
   }

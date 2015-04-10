@@ -15,6 +15,7 @@ package ru.primetalk.synapse.core
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import ru.primetalk.synapse.core._
 
 @RunWith(classOf[JUnitRunner])
 class IncTest extends FunSuite {
@@ -41,14 +42,14 @@ class IncTest extends FunSuite {
   val s = new SimpleSystemWithStateBuilder
 
   test("inc"){
-    val tr = s.toStaticSystem.toDynamicSystem.toTransducer(s.i1, s.o1)
+    val tr = new RichDynamicSystem(s.toStaticSystem.toDynamicSystem).toTransducer(s.i1, s.o1)
     for(i<-0 until 10)
       assert(tr(i) === List())
     assert(tr(0) === List(11))
   }
 
   test("addTo"){
-    val tr = s.toStaticSystem.toDynamicSystem.toTransducer(s.i1, s.o2)
+    val tr = new RichDynamicSystem(s.toStaticSystem.toDynamicSystem).toTransducer(s.i1, s.o2)
     assert((0 until 10).flatMap(tr) === List(45))
   }
 }

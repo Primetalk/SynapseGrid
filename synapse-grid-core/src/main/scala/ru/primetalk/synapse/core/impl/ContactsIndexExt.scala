@@ -1,14 +1,15 @@
 package ru.primetalk.synapse.core.impl
 
+import ru.primetalk.synapse.core.Contact
 import ru.primetalk.synapse.core.components.{StaticSystem, StaticSystemExtensionId}
-import ru.primetalk.synapse.core.{Contact, Signal}
+import ru.primetalk.synapse.core.runtime.SignalsApi
 
 /** Signal for remote transfer. The real contacts are not quite well serializable (see Contact for details).
   * Thus we use the number of the contact in system's index.
   */
 case class SignalDist(contactId: Int, data: AnyRef)
 
-trait ContactsIndexExt extends SystemBuilderApi {
+trait ContactsIndexExt extends SystemBuilderApi with SignalsApi {
 
   /**
    * ContactsIndex is used mainly in Distributed systems for obtaining serializable versions of signals (SignalDist).

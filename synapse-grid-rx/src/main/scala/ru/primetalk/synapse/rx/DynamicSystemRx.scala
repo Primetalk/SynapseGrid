@@ -12,8 +12,7 @@
  */
 package ru.primetalk.synapse.rx
 
-import ru.primetalk.synapse.core.components.DynamicSystem
-import ru.primetalk.synapse.core.{Signal, Contact}
+import ru.primetalk.synapse.core._
 import rx.lang.scala.{Observable, Observer, Subject}
 
 class DynamicSystemRx(ds: DynamicSystem) {

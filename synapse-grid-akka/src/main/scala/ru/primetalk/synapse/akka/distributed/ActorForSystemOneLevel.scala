@@ -15,11 +15,8 @@ package ru.primetalk.synapse.akka.distributed
 import akka.actor._
 import akka.util.Timeout
 import ru.primetalk.synapse.akka._
-import ru.primetalk.synapse.core
-import ru.primetalk.synapse.core.runtime._
-import SystemConvertingSupport._
 import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core.{_}
+import ru.primetalk.synapse.core._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -28,7 +25,7 @@ import scala.concurrent.duration._
   * to be sent to an inner actor or to the parent actor, it is
   * sent to the router instead. This allows to redirect the
   * message to another host for instance. */
-class ActorForSystemOneLevel(override val systemPath: core.SystemPath,
+class ActorForSystemOneLevel(override val systemPath: SystemPath,
                              override val system: StaticSystem,
                              override val supervisorStrategy: SupervisorStrategy,
                              val realm: RealmDescriptor) extends AbstractStaticSystemActor {

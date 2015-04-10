@@ -1,11 +1,11 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.Contact
 
 /**
  *
  */
-trait CollectionSystemBuilderApi {
+trait CollectionSystemBuilderApi extends BasicSystemBuilderApi with SystemBuilderDslApi {
 
   /**
    * Collects all inputs until some other contact not issue control

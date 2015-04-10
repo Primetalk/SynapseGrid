@@ -13,7 +13,6 @@
 package ru.primetalk.synapse.rx
 
 import ru.primetalk.synapse.core._
-import ru.primetalk.synapse.core.Signal
 import rx.lang.scala.{Observable, Observer, Subject}
 import scala.util.Try
 

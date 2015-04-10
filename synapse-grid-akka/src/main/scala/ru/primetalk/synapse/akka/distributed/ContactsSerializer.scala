@@ -17,7 +17,6 @@ import akka.serialization._
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts._
 import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core.runtime.SubsystemSpecialContact
 
 
 /** Contacts are serialized as long identifiers.
@@ -35,11 +34,11 @@ class ContactsSerializer(system: ExtendedActorSystem) extends Serializer {
 
   def identifier = 43751
 
-  private object Codes {
-    val internalSignals = 1
-    val signal = 2
-    val contact = 3
-  }
+//  private object Codes {
+//    val internalSignals = 1
+//    val signal = 2
+//    val contact = 3
+//  }
 
   def toBinary(obj: AnyRef): Array[Byte] = {
     //    val out = new ObjectOutputStream
@@ -74,8 +73,8 @@ class ContactsSerializer(system: ExtendedActorSystem) extends Serializer {
   }
 }
 
-case class ContactsIndex(system: StaticSystem) {
-  private var n = 0L
+case class ContactsIndexSer(system: StaticSystem) {
+//  private var n = 0L
   val (nToContact, contactToN) = {
     val arr = (Set(NonSignalWithSenderInput, SubsystemSpecialContact, CurrentTimeMsInput) ++
       system.allInputContacts).toArray
@@ -86,10 +85,10 @@ case class ContactsIndex(system: StaticSystem) {
 
 class ContactsMapExtensionImpl extends Extension {
   private
-  var index: Option[ContactsIndex] = None
+  var index: Option[ContactsIndexSer] = None
 
   def setSystem(system: StaticSystem) {
-    index = Some(ContactsIndex(system))
+    index = Some(ContactsIndexSer(system))
   }
 
   def getContactId(c: Contact[_]): Int =

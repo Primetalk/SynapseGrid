@@ -13,19 +13,14 @@
  */
 package ru.primetalk.synapse.akka
 
-import ru.primetalk.synapse.core._
 import akka.event.{LoggingReceive, Logging}
 import org.slf4j.MDC
 import ru.primetalk.synapse.akka.SpecialActorContacts._
 import akka.actor._
-import ru.primetalk.synapse.core.Signal
+import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import ru.primetalk.synapse.core.impl.SignalDist
-import ru.primetalk.synapse.core.runtime._
-import SystemConvertingSupport._
-import ru.primetalk.synapse.core
 import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core.runtime._
 
 /** Escalates all exceptions to upper level. This actor is an appropriate default for
   * in-channel actors. */
@@ -71,7 +66,7 @@ trait AbstractStaticSystemActor extends Actor {
       (ls: List[Signal[_]]) ⇒
         innerProcessSignals(Signal(SenderInput, sender()) :: ls)
     else
-      innerProcessSignals _
+      ls => innerProcessSignals(ls)
   }
 
   protected def innerProcessSignals(ls: List[Signal[_]]) {
@@ -126,12 +121,12 @@ trait AbstractStaticSystemActor extends Actor {
       val InternalSignalsDist(path, signalsDist) = msg
       log.info(getClass.getSimpleName + " received " + msg)
       val relPath = if (path.startsWith(systemPath)) path.drop(systemPath.size) else throw new IllegalArgumentException("Cannot process path " + path + " at systemPath=" + systemPath)
-      if(relPath.isEmpty) {
-        throw new IllegalArgumentException("Obtained signals without system name: "+msg+". sender = "+sender)
-//        log.info(getClass.getSimpleName + " received " + msg)
-//        val innerSignals = signalsDist.map(sd => system.index(sd))
-//        processSignals(innerSignals)
-      }else {
+      if (relPath.isEmpty) {
+        throw new IllegalArgumentException("Obtained signals without system name: " + msg + ". sender = " + sender)
+        //        log.info(getClass.getSimpleName + " received " + msg)
+        //        val innerSignals = signalsDist.map(sd => system.index(sd))
+        //        processSignals(innerSignals)
+      } else {
         val signalsDist1 = convertInternalSignalsDist(relPath, signalsDist)
         processSignals(signalsDist1)
       }
@@ -168,7 +163,7 @@ trait AbstractStaticSystemActor extends Actor {
  *
  * @param systemPath the list of intermediate systems from parent actor to the system of this actor
  */
-class StaticSystemActor(override val systemPath: core.SystemPath,
+class StaticSystemActor(override val systemPath: SystemPath,
                         override val system: StaticSystem,
                         override val outputFun: Option[InternalSignalsDist => Any] = None,
                         override val supervisorStrategy: SupervisorStrategy) extends AbstractStaticSystemActor {
@@ -187,10 +182,10 @@ class StaticSystemActor(override val systemPath: core.SystemPath,
 }
 
 
-object StaticSystemActor {
+object StaticSystemActor extends SystemConvertingSupport {
 
   type ActorRefGetter = (
-    /*path: */ core.SystemPath,
+    /*path: */ SystemPath,
     /*subsystem: */ StaticSystem,
     /*supervisorStrategy: */ SupervisorStrategy,
     /*systemName: */ String) => ActorRef
@@ -204,7 +199,7 @@ object StaticSystemActor {
   def toSingleSignalProcessor(actorRefFactory: ActorRefFactory,
                               self: ActorRef = Actor.noSender
                                )(
-                               path: core.SystemPath,
+                               path: SystemPath,
                                system: StaticSystem): TotalTrellisProducer = {
     val actorInnerSubsystemConverter: ComponentDescriptorConverter = {
       case ComponentDescriptor(ActorComponent(subsystem, supervisorStrategy), path1, _) =>

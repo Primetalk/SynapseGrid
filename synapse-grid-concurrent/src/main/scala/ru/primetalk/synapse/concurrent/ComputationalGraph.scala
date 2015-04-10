@@ -12,9 +12,8 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import ru.primetalk.synapse.core.components.{DynamicSystem, StaticSystem}
-import ru.primetalk.synapse.core.runtime._
-import ru.primetalk.synapse.core.{Signal,Contact, Context, SimpleSignalProcessor}
+import ru.primetalk.synapse.core.components.StaticSystem
+import ru.primetalk.synapse.core._
 
 import scala.annotation.tailrec
 import scala.collection.mutable

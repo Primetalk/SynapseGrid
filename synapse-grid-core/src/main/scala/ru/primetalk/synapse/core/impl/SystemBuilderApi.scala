@@ -13,13 +13,13 @@
  */
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.{StateHandle, Contact}
 import ru.primetalk.synapse.core.components._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-trait SystemBuilderApi extends ContactsApi {
+trait SystemBuilderApi extends ContactsApi with ExceptionHandlingApi {
 
   /** An interface of some object that can collect information about outer interface of a system.
     * Not only it create contact instances, but it usually transforms and collect them. */
@@ -76,15 +76,19 @@ trait SystemBuilderApi extends ContactsApi {
 
     /** Constructs the current version of static system. */
     def toStaticSystem = {
-      val s = StaticSystem(
+      val s0 = StaticSystem(
         /** A subset of contacts */
         inputContacts.toList.distinct,
         outputContacts.toList.distinct,
         privateStateHandles.toList,
         components.toList reverse_::: links.toList,
-        name: String,
-        unhandledExceptionHandler)
-      extensions.values.foldLeft(s)((s, e) => e.postProcess(s))
+        name: String)
+      val s1 = extensions.values.foldLeft(s0)((s, e) => e.postProcess(s))
+      val s2 = if(unhandledExceptionHandler != defaultUnhandledExceptionHandler)
+        s1.extend(unhandledExceptionHandler)
+      else
+        s1
+      s2
     }
 
     /**

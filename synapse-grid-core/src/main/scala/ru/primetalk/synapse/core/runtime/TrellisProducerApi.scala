@@ -1,34 +1,19 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core._
-import ru.primetalk.synapse.core.components.DynamicSystem
-import ru.primetalk.synapse.core.runtime._
+import ru.primetalk.synapse.core.Contact
+
+
+
 
 /**
+ * end-user API for trellis producers
  * @author zhizhelev, 25.03.15.
  */
-trait TrellisProducerApi {
+trait TrellisProducerApi extends TrellisProducerImpl
+with TrellisApi
+with RichSimpleSignalProcessorApi
+with SignalProcessingApi0 {
 
-  /** The context for system is a map from state handles to values. */
-  type Context = Map[Contact[_], _]
-
-  type TrellisElement = (Context, List[Signal[_]])
-
-  type ContextUpdater = List[(Contact[_], _)]
-
-
-  type TrellisElementUpdater = (ContextUpdater, List[Signal[_]])
-
-  def updateTrellisElement(te: TrellisElement, upd: TrellisElementUpdater): TrellisElement =
-    ((te._1 /: upd._1.reverse)((ctx, u) => ctx + u), upd._2)
-
-  /** A function that makes single(?) step over time. */
-  type TrellisProducer = TrellisElement => TrellisElement
-  /** A function that takes a single signal on input and returns the last trellis element. */
-  type TotalTrellisProducer = ((Context, Signal[_]) => TrellisElement)
-  type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
-
-  type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem => TotalTrellisProducer
 
   implicit class RichRuntimeSystem(runtimeSystem: RuntimeSystem) {
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
@@ -70,10 +55,10 @@ trait TrellisProducerApi {
   implicit class RichDynamicSystem(system: DynamicSystem) {
 
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
-      system.receive.toTransducer(input, output)
+      new RichSimpleSignalProcessor(system.receive).toTransducer(input, output)
 
     def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
-      system.receive.toMapTransducer(input, output)
+      new RichSimpleSignalProcessor(system.receive).toMapTransducer(input, output)
 
   }
 

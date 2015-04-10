@@ -19,8 +19,8 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.slf4j.LoggerFactory
-import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.core.components.ComponentWithInternalStructure
 
 @RunWith(classOf[JUnitRunner])
@@ -114,7 +114,7 @@ class DistributedTest extends FunSuite {
         |        }
         |        serialization-bindings {
         |            "java.lang.Object" = contacts
-        |            "ru.primetalk.synapse.core.Signal" = contacts
+        |            #"ru.primetalk.synapse.core.Signal" = contacts
         |        }
         |    }
         |    remote {
@@ -147,8 +147,10 @@ class DistributedTest extends FunSuite {
       //      val testing1 = akka1.actorOf(Props(new ClientTestingActor()), "client")
       // h1 contains root app system.
 
-      val parent1 = akka1.actorOf(Props(new HostActor(h1, realm, escalate, None)), h1.hostActorName)
-      val parent2 = akka2.actorOf(Props(new HostActor(h2, realm, escalate, None)), h2.hostActorName)
+//      val parent1 =
+        akka1.actorOf(Props(new HostActor(h1, realm, escalate, None)), h1.hostActorName)
+//      val parent2 =
+        akka2.actorOf(Props(new HostActor(h2, realm, escalate, None)), h2.hostActorName)
 
       log.info("start")
       Thread.sleep(1000)

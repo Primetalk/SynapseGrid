@@ -13,7 +13,7 @@
  */
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.Contact
 
 /**
  * A builder that creates a kind of state machine. The state contains a continuation. On every
@@ -23,7 +23,7 @@ import ru.primetalk.synapse.core._
  * @author А.Жижелев (arseniy zhizhelev)
  *
  */
-trait ContinuationSystemBuilderApi {
+trait ContinuationSystemBuilderApi extends SystemBuilderDslApi with SystemBuilderAdvApi {
   type FCont[T1, T2] = T1 ⇒ Continuation[T1, T2]
 
   /**

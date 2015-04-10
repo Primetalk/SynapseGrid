@@ -40,7 +40,7 @@ class TypedSystemConstructorTest extends FunSuite {
   val s = new MySystemInterface
 
   test("copy"){
-    val tr = s.toStaticSystem.toDynamicSystem.toMapTransducer(s.i1, s.o1)
+    val tr = new RichDynamicSystem(s.toStaticSystem.toDynamicSystem).toMapTransducer(s.i1, s.o1)
     for(i<-0 until 10)
       assert(tr(""+i) === ""+i)
   }

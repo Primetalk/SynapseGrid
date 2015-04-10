@@ -14,8 +14,6 @@
  */
 package ru.primetalk.synapse.core
 
-import ru.primetalk.synapse.core.runtime.RuntimeComponent
-
 import scala.language.implicitConversions
 
 /**
@@ -55,16 +53,6 @@ object Contact {
   def unapply(contact: Contact[_]): Option[String] = Some(contact.name)
 }
 
-/**
- * Signal is a pair of contact and data on it.
- * Two methods are provided to match those of pairs - _1 and _2.
- */
-case class Signal[T](contact: Contact[T], data: T) {
-  def _1 = contact
-
-  def _2 = data
-}
-
 
 ///**
 // * Contact reference with respect to path of the system where the contact resides.
@@ -80,18 +68,18 @@ case class Signal[T](contact: Contact[T], data: T) {
 // * @tparam T value type
 // */
 //case class SignalP[T](contact: ContactP[T], data: T)
-
-/** Sometimes signals are processed as a batch of data on the same contact.
-  * The Batch can be used interchangeably with List[Signal[T]] */
-case class Batch[T](contact: Contact[T], data: List[T]) {
-  def _1 = contact
-
-  lazy val signals = data.map(Signal(contact, _))
-}
-
-object Batch {
-  implicit def batchToSignals[T](b: Batch[T]): List[Signal[T]] = b.signals
-}
+//
+///** Sometimes signals are processed as a batch of data on the same contact.
+//  * The Batch can be used interchangeably with List[Signal[T]] */
+//case class Batch[T](contact: Contact[T], data: List[T]) {
+//  def _1 = contact
+//
+//  lazy val signals = data.map(Signal(contact, _))
+//}
+//
+//object Batch {
+//  implicit def batchToSignals[T](b: Batch[T]): List[Signal[T]] = b.signals
+//}
 
 
 /**
@@ -124,19 +112,7 @@ object StateHandle {
 }
 
 
-/** The trace of a signal towards the original one.
-  *
-  * @param signalsReversed a list of signals starting from the last produced one and
-  *                        collecting the signals that have lead to the production of the last signal.
-  * @param processorsReversed a list of processors that have worked for the production of the current signal.
-  *                   The length of the processors list is usually by one shorter than the length of the signals.
-  *                   However if it is a "lost trace" (the one that didn't produce output), then the last processor
-  *                   is added but the signal is not added. Thus the lengths are the same.
-  */
-case class Trace(signalsReversed:List[Signal[_]], processorsReversed:List[RuntimeComponent] = Nil){
-  def this(signal:Signal[_]) = this(List(signal))
-  def signal = signalsReversed.head
-}
+
 
 
 

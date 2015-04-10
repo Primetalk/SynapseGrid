@@ -1,8 +1,8 @@
 package ru.primetalk.synapse.core.impl
 
+import ru.primetalk.synapse.core.Contact
 import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core.runtime.SystemConverting
-import ru.primetalk.synapse.core.{Contact, SystemRenderer}
+
 import scala.language.{implicitConversions, reflectiveCalls}
 
 /**
@@ -11,7 +11,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * @author zhizhelev, 24.03.15.
  */
-trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi {
+trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRendererApi{
   /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
   implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem
@@ -21,14 +21,6 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi {
     def toDot = SystemRenderer.staticSystem2ToDot(t:StaticSystem)
 
     def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(t:StaticSystem, level = level)
-
-    def toDynamicSystem = SystemConverting.toDynamicSystem(List(), t:StaticSystem, _.toTotalTrellisProducer)
-
-    def toSimpleSignalProcessor = SystemConverting.toSimpleSignalProcessor(List(), t:StaticSystem, _.toTotalTrellisProducer)
-
-    def toRuntimeSystem = SystemConverting.toRuntimeSystem(t:StaticSystem, (t:StaticSystem).outputContacts, _.toTotalTrellisProducer)
-
-    def allContacts = (t:StaticSystem).index.contacts
 
     /**
      * Constructs a system around another one.
@@ -58,16 +50,6 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi {
     def toDot = SystemRenderer.staticSystem2ToDot(system)
 
     def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
-
-    def toDynamicSystem = SystemConverting.toDynamicSystem(List(), system, _.toTotalTrellisProducer)
-
-    def toSimpleSignalProcessor = SystemConverting.toSimpleSignalProcessor(List(), system, _.toTotalTrellisProducer)
-
-    def toRuntimeSystem = SystemConverting.toRuntimeSystem(system, system.outputContacts, _.toTotalTrellisProducer)
-
-    def allContacts = system.index.contacts
-
-
 
   }
 

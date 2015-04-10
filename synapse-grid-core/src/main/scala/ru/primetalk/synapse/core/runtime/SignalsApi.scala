@@ -1,11 +1,22 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.{Signal, Contact}
+import ru.primetalk.synapse.core.Contact
+
 import scala.language.implicitConversions
 /**
  * @author zhizhelev, 25.03.15.
  */
 trait SignalsApi {
+  /**
+   * Signal is a pair of contact and data on it.
+   * Two methods are provided to match those of pairs - _1 and _2.
+   */
+  case class Signal[T](contact: Contact[T], data: T) {
+    def _1 = contact
+
+    def _2 = data
+  }
+
   /**
    * Extractor of contacts' data from result.
    */

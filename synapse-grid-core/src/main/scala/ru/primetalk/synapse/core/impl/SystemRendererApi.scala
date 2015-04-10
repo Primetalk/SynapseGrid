@@ -15,7 +15,7 @@ package ru.primetalk.synapse.core.impl
 
 import java.io.{File, PrintWriter}
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.{StateHandle, Contact}
 import ru.primetalk.synapse.core.components._
 
 import scala.collection.mutable
@@ -26,7 +26,7 @@ import scala.collection.mutable
  * @author А.Жижелев
  *
  */
-trait SystemRendererApi extends ContactStyleExt {
+trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberingExt{
 
 	trait SystemRenderer {
 

@@ -14,6 +14,7 @@
 package ru.primetalk.synapse
 
 import ru.primetalk.synapse.core.impl._
+import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, SignalsApi, TrellisProducerApi, RichSimpleSignalProcessorApi}
 
 import scala.language.implicitConversions
 
@@ -21,7 +22,7 @@ package object core
   extends SystemBuilderImplicitsApi
   with SystemBuilderApi
   with StaticSystemApi
-  with SignalProcessorApi
+  with RichSimpleSignalProcessorApi
   with TrellisProducerApi
   with ComponentNavigationApi
   with ExceptionHandlingApi
@@ -41,3 +42,4 @@ package object core
   with ContactStyleExt
   with DevNullExt
   with ContactsIndexExt
+  with SystemConvertingApi

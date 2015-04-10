@@ -1,11 +1,12 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.components.{StaticSystem, StaticSystemExtensionId}
+import ru.primetalk.synapse.core.runtime.{TrellisApi, SignalsApi}
 
 /**
  * @author zhizhelev, 25.03.15.
  */
-trait ExceptionHandlingApi {
+trait ExceptionHandlingApi extends SignalsApi with TrellisApi {
 
   /** The type of a handler that will handle exceptions during signal processing.
     * If the exception is recoverable, then the handler should provide a new Context
@@ -28,4 +29,12 @@ trait ExceptionHandlingApi {
       throw any
   }
 
+  implicit object UnhandledExceptionHandlerExtensionId extends StaticSystemExtensionId[UnhandledProcessingExceptionHandler]
+
+  implicit class StaticSystemWithUnhandledExceptionHandler(s:StaticSystem){
+    def unhandledExceptionHandler: UnhandledProcessingExceptionHandler =
+      s.extensionOpt(UnhandledExceptionHandlerExtensionId).getOrElse{
+        defaultUnhandledExceptionHandler
+      }
+  }
 }

@@ -1,15 +1,12 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.{Signal, Contact}
+import ru.primetalk.synapse.core.Contact
 
 /**
  * API for using Signal processors.
  * @author zhizhelev, 25.03.15.
  */
-trait SignalProcessorApi {
-  /** The simplest signal processor. Corresponds to FlatMap. */
-  type SimpleSignalProcessor = Signal[_] => List[Signal[_]]
-
+trait RichSimpleSignalProcessorApi extends TrellisApi{
   implicit class RichSimpleSignalProcessor(sp: SimpleSignalProcessor) {
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
       data: TInput =>
