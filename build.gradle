@@ -186,8 +186,6 @@ subprojects {
                             '-slf4j - enables logging, ' +
                             '-concurrent - running systems directly over ExecutorContext without the need for Akka, ' +
                             '-examples - a few test systems. Also there are ' +
-                            '-frames - a framework for type construction with meta information (see relations.scala). '+
-                            '-typed-expressions - a framework for defining parsers and generators for natural language. ' +
                             '' +
                             "The current version is $aVersion"
                     url 'https://github.com/Primetalk/SynapseGrid'
@@ -287,18 +285,3 @@ project(':synapse-grid-examples') {
     }
 }
 
-//project(':synapse-frames') {
-//    dependencies {
-//        compile scalaReflect
-//    }
-//}
-
-project(':synapse-typed-expressions') {
-    dependencies {
-        compile project(':russian-lang')
-    }
-}
-project(':russian-lang') {
-    dependencies {
-    }
-}
