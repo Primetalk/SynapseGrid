@@ -16,7 +16,6 @@ import akka.actor.{Extension, ExtensionId, ExtendedActorSystem}
 import akka.serialization._
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts._
-import ru.primetalk.synapse.core.components.StaticSystem
 
 
 /** Contacts are serialized as long identifiers.

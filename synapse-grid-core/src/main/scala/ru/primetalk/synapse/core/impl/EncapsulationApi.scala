@@ -1,7 +1,5 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.Contact
-
 /**
  * @author zhizhelev, 29.03.15.
  */

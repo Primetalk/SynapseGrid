@@ -14,7 +14,8 @@
 package ru.primetalk.synapse.akka
 
 import akka.actor.{Actor, ActorRef}
-import ru.primetalk.synapse.core.{Contact, Signal}
+import ru.primetalk.synapse.core.Signal
+import ru.primetalk.synapse.core.Contact
 
 /**
  * Helper method that sends signal to the given actor

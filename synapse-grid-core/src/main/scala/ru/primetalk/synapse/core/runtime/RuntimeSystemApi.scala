@@ -1,8 +1,6 @@
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components.Component
-import ru.primetalk.synapse.core.{Named, Contact}
-import ru.primetalk.synapse.core.impl.{ContactsIndexExt, ExceptionHandlingApi}
+import ru.primetalk.synapse.core.impl.{SignalsApi, ContactsIndexExt, ExceptionHandlingApi}
 
 /**
  * @author zhizhelev, 05.04.15.

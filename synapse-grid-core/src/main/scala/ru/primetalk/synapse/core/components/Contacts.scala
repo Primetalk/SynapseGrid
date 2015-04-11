@@ -12,7 +12,7 @@
  *
  * Created: 14.03.2013
  */
-package ru.primetalk.synapse.core
+package ru.primetalk.synapse.core.components
 
 import scala.language.implicitConversions
 
@@ -85,7 +85,7 @@ object Contact {
 /**
  * Stateful elements of the system.
  */
-trait Stateful[State] extends Named {
+trait Stateful[State] {
   type StateType = State
   /**
    * The initial state of the element.

@@ -1,7 +1,5 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{SystemBuilder, Contact}
-
 import scala.collection.mutable
 
 /**

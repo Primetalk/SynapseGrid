@@ -20,7 +20,6 @@ import akka.actor._
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import ru.primetalk.synapse.core.impl.SignalDist
-import ru.primetalk.synapse.core.components.StaticSystem
 
 /** Escalates all exceptions to upper level. This actor is an appropriate default for
   * in-channel actors. */

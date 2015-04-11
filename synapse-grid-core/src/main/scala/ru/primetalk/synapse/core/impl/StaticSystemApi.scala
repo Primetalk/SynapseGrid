@@ -1,8 +1,5 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.Contact
-import ru.primetalk.synapse.core.components.StaticSystem
-
 import scala.language.{implicitConversions, reflectiveCalls}
 
 /**

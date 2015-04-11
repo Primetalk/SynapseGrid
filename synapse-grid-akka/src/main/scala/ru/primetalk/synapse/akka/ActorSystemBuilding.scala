@@ -16,7 +16,7 @@ package ru.primetalk.synapse.akka
 import ru.primetalk.synapse.core._
 import akka.actor._
 import ru.primetalk.synapse.akka.SpecialActorContacts.{NonSignalWithSenderInput, ContextInput, SenderInput}
-import ru.primetalk.synapse.core.components.{StaticSystem, ComponentWithInternalStructure, Component}
+
 import ru.primetalk.synapse.slf4j._
 
 /**

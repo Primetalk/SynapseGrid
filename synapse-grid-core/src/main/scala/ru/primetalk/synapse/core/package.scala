@@ -14,7 +14,7 @@
 package ru.primetalk.synapse
 
 import ru.primetalk.synapse.core.impl._
-import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, SignalsApi, TrellisProducerApi, RichSimpleSignalProcessorApi}
+import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, TrellisProducerApi, RichSimpleSignalProcessorApi}
 
 import scala.language.implicitConversions
 

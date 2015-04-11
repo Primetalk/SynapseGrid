@@ -13,8 +13,6 @@
  */
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.Contact
-
 trait AutomataBuilderApi extends SystemBuilderDslApi with SystemBuilderAdvApi{
 
 	/** The builder creates a state machine with `State` type of state. */

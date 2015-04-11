@@ -14,7 +14,6 @@
  */
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.Contact
 import ru.primetalk.synapse.core.impl.SignalDist
 //, Signal,
 //ContactToSubscribersMap,

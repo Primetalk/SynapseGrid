@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.Contact
+import ru.primetalk.synapse.core.impl.SignalsApi
 
 /** Basic definitions for trellis processing*/
 trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {

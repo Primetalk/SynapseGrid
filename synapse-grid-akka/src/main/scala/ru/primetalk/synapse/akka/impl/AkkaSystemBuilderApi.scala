@@ -1,8 +1,7 @@
 package ru.primetalk.synapse.akka.impl
 
 import akka.actor.{AllForOneStrategy, Actor, ActorRef, SupervisorStrategy}
-import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core.{SystemBuilderC, Contact, SystemBuilder}
+import ru.primetalk.synapse.core.{SystemBuilderC, SystemBuilder, Contact, StaticSystem}
 import scala.language.implicitConversions
 
 /**

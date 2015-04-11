@@ -12,7 +12,6 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import ru.primetalk.synapse.core.components.StaticSystem
 import ru.primetalk.synapse.core._
 
 import scala.annotation.tailrec

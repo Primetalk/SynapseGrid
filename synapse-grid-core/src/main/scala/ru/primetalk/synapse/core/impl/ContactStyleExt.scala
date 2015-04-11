@@ -1,8 +1,5 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.components.{StaticSystemExtensionId, StaticSystem}
-import ru.primetalk.synapse.core.Contact
-
 import scala.collection.immutable.Iterable
 
 /**

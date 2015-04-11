@@ -12,8 +12,7 @@
  */
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.Contact
-import ru.primetalk.synapse.core.components._
+import ru.primetalk.synapse.core.components.{InnerSystemComponent, Link, RedMapLink}
 import ru.primetalk.synapse.core.impl.{ExceptionHandlingApi, ContactsIndexExt}
 
 import scala.language.{existentials, implicitConversions}
@@ -283,8 +282,9 @@ with ContactsIndexExt with ExceptionHandlingApi{
       RuntimeComponentMultiState("subsystemDirectProcessor", List(), {
         case (context, outerSignal) =>
           outerSignal match {
-            case Signal(SubsystemSpecialContact, sig0: SubsystemDirectSignal0) ⇒
-              val rt = procs.get(sig0.subsystemName)
+            case Signal(SubsystemSpecialContact, sig0) ⇒
+              val sig1 = sig0.asInstanceOf[SubsystemDirectSignal0]
+              val rt = procs.get(sig1.subsystemName)
               rt.map { rc =>
                 val signal = sig0 match {
                   case SubsystemDirectSignal(_, s) => s
@@ -303,9 +303,10 @@ with ContactsIndexExt with ExceptionHandlingApi{
                 }
               }.
                 getOrElse((context, List()))
-            case Signal(SubsystemSpecialAnswerContact, sig0: SubsystemDirectSignal0) ⇒
+            case Signal(SubsystemSpecialAnswerContact, sig0) ⇒
               debug("SubsystemSpecialAnswerContact: " + sig0)
-              val rt = procs.get(sig0.subsystemName)
+              val sig1 = sig0.asInstanceOf[SubsystemDirectSignal0]
+              val rt = procs.get(sig1.subsystemName)
               debug("SubsystemSpecialAnswerContact.rt: " + rt)
               val signals = rt.map { rc =>
                 sig0 match {

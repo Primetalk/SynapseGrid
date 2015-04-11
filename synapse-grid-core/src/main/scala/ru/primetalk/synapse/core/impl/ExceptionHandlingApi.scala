@@ -1,7 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
 import ru.primetalk.synapse.core.components.{StaticSystem, StaticSystemExtensionId}
-import ru.primetalk.synapse.core.runtime.{TrellisApi, SignalsApi}
+import ru.primetalk.synapse.core.runtime.TrellisApi
 
 /**
  * @author zhizhelev, 25.03.15.

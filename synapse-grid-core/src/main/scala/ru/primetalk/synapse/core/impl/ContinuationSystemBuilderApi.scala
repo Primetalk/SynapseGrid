@@ -13,8 +13,6 @@
  */
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.Contact
-
 /**
  * A builder that creates a kind of state machine. The state contains a continuation. On every
  * processed signal a new continuation is generated. Usually the code of a continuation is finished with

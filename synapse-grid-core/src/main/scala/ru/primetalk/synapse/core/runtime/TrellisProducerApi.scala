@@ -1,10 +1,5 @@
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.Contact
-
-
-
-
 /**
  * end-user API for trellis producers
  * @author zhizhelev, 25.03.15.

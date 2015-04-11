@@ -1,12 +1,9 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.components.{ComponentWithInternalStructure, Component}
-import ru.primetalk.synapse.core.Named
-
 /**
  * @author zhizhelev, 25.03.15.
  */
-trait ComponentNavigationApi {
+trait ComponentNavigationApi extends ContactsApi {
 
   type SystemPath = List[String]
   /** The system path that is reversed. One can convert to SystemPath with .reverse */

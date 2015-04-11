@@ -12,7 +12,7 @@
  */
 package ru.primetalk.synapse
 
-import ru.primetalk.synapse.core.{Contact, StateHandle, SystemBuilder}
+import ru.primetalk.synapse.core.{StateHandle, Contact, SystemBuilder}
 import _root_.shapeless._
 
 package object shapeless {

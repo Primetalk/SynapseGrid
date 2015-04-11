@@ -13,15 +13,15 @@
  */
 package ru.primetalk.synapse.core.components
 
-import ru.primetalk.synapse.core.{Contact, Named, StateHandle}
-
 import scala.collection.GenTraversableOnce
 
 /**
  * The Link is represented with a triple of two contacts and a linkInfo
  *
  */
-case class Link[T1, T2, -TL1 >: T1, +TL2 <: T2](from: Contact[T1], to: Contact[T2], override val name: String, info: LinkInfo[TL1, TL2]) extends Named with Component {
+case class Link[T1, T2, -TL1 >: T1, +TL2 <: T2](from: Contact[T1], to: Contact[T2],
+                                                name: String,
+                                                info: LinkInfo[TL1, TL2]) extends Named with Component {
   def toTriple = (from, to, info)
 	lazy val inputContacts : Set[Contact[_]] = Set(from)
 	lazy val outputContacts : Set[Contact[_]] = Set(to)

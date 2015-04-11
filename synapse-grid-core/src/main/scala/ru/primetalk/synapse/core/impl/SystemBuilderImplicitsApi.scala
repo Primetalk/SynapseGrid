@@ -1,7 +1,5 @@
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.{StateHandle, Contact}
-
 import scala.util.Try
 import scala.language.implicitConversions
 

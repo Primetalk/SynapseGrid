@@ -13,8 +13,6 @@
  */
 package ru.primetalk.synapse.core.components
 
-import ru.primetalk.synapse.core.{Contact, Named, StateHandle, Stateful}
-
 /** An outer description of a system.
   * Actual description is deferred to descendants.
   * See also [[Link]]s
@@ -66,8 +64,8 @@ case class StaticSystem( /** A subset of contacts */
 //                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
 //                         = defaultUnhandledExceptionHandler,
                           extensions:Map[StaticSystemExtensionId[_], Any] = Map()
-                         ) extends Named
-with Component
+                         ) extends Component
+with Named
 with Stateful[Map[Contact[_], Any]]
 with ComponentWithInternalStructure {
   lazy val inputContacts = inputs.toSet

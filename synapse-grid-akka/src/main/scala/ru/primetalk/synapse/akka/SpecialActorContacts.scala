@@ -13,8 +13,8 @@
  */
 package ru.primetalk.synapse.akka
 
-import ru.primetalk.synapse.core.Contact
 import akka.actor.{ActorContext, ActorRef}
+import ru.primetalk.synapse.core.Contact
 
 object SpecialActorContacts {
 

@@ -12,8 +12,6 @@
  */
 package ru.primetalk.synapse.core.impl
 
-import ru.primetalk.synapse.core.Contact
-
 import scala.language.implicitConversions
 
 /** Managed states are not accessible directly. Instead the state can be overwritten by sending some data
