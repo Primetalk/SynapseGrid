@@ -11,7 +11,7 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
 /**
  * A builder that creates a kind of state machine. The state contains a continuation. On every
@@ -21,7 +21,7 @@ package ru.primetalk.synapse.core.impl
  * @author А.Жижелев (arseniy zhizhelev)
  *
  */
-trait ContinuationSystemBuilderApi extends SystemBuilderDslApi with SystemBuilderAdvApi {
+trait ContinuationDsl extends SystemBuilderDslApi with SystemBuilderDsl2Api {
   type FCont[T1, T2] = T1 ⇒ Continuation[T1, T2]
 
   /**

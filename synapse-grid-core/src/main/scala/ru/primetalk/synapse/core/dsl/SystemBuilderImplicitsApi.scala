@@ -1,16 +1,11 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
-import scala.util.Try
 import scala.language.implicitConversions
 
 /**
  * @author zhizhelev, 25.03.15.
  */
-trait SystemBuilderImplicitsApi extends SystemBuilderApi with SystemBuilderDslApi with SwitcherBuilderApi {
-
-  def extendBasicSystemBuilder[T <: SystemBuilderExtension]( implicit sb: SystemBuilder,
-        extensionInstance: SystemBuilderExtensionId[T]): T =
-    sb.extend(extensionInstance)
+trait SystemBuilderImplicitsApi extends SystemBuilderApi with SystemBuilderDslApi with SwitcherDsl {
 
 //  implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder): LinkBuilderOps[T1, T2] =
 //    new LinkBuilderOps(c)(sb)

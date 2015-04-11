@@ -14,7 +14,7 @@
 package ru.primetalk.synapse
 package core
 
-import ru.primetalk.synapse.core.impl.SystemBuilderDslApi
+import ru.primetalk.synapse.core.dsl.SystemBuilderDslApi
 
 import scala.collection.{GenTraversableOnce, mutable}
 import scala.language.implicitConversions

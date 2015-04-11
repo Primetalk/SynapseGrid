@@ -1,5 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
+import ru.primetalk.synapse.core.dsl.SystemBuilderApi
+
 import scala.language.implicitConversions
 
 /**

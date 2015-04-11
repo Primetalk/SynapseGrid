@@ -13,6 +13,8 @@
  */
 package ru.primetalk.synapse
 
+import ru.primetalk.synapse.core.components.{SignalsApi, ContactsApi}
+import ru.primetalk.synapse.core.dsl._
 import ru.primetalk.synapse.core.impl._
 import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, TrellisProducerApi, RichSimpleSignalProcessorApi}
 
@@ -25,17 +27,17 @@ package object core
   with RichSimpleSignalProcessorApi
   with TrellisProducerApi
   with ComponentNavigationApi
-  with ExceptionHandlingApi
+  with ExceptionHandlingExt
   with SignalsApi
-  with BasicSystemBuilderApi
+  with BaseTypedSystemDsl
   with DotUtilsApi
   with ContactsApi
   with EncapsulationApi
-  with SystemBuilderAdvApi
-  with ContinuationSystemBuilderApi
-  with CollectionSystemBuilderApi
-  with ManagedStatesApi
-  with AutomataBuilderApi
+  with SystemBuilderDsl2Api
+  with ContinuationDsl
+  with AccumulationDsl
+  with ManagedStatesDsl
+  with AutomataDsl
   with SystemRendererApi
   with AuxNumberingExt
   with NextLabelExt

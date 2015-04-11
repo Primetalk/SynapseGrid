@@ -13,14 +13,14 @@
 package ru.primetalk.synapse.core.runtime
 
 import ru.primetalk.synapse.core.components.{InnerSystemComponent, Link, RedMapLink}
-import ru.primetalk.synapse.core.impl.{ExceptionHandlingApi, ContactsIndexExt}
+import ru.primetalk.synapse.core.dsl.{ContactsIndexExt, ExceptionHandlingExt}
 
 import scala.language.{existentials, implicitConversions}
 import scala.util.Try
 
 trait SystemConvertingApi extends RuntimeComponentApi
 with TrellisApi with RuntimeSystemApi with TrellisProducerApi
-with ContactsIndexExt with ExceptionHandlingApi{
+with ContactsIndexExt with ExceptionHandlingExt{
 
   protected
   def debug(msg: =>String): Unit ={

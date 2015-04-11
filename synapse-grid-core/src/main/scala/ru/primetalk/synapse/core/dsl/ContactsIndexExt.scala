@@ -1,6 +1,7 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.SignalDist
+import ru.primetalk.synapse.core.components.SignalsApi
+import ru.primetalk.synapse.core.impl.StaticSystemApi
 
 
 trait ContactsIndexExt extends SystemBuilderApi with SignalsApi with StaticSystemApi {

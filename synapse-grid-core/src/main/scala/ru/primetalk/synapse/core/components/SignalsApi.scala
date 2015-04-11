@@ -1,4 +1,4 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.components
 
 import scala.language.implicitConversions
 /**

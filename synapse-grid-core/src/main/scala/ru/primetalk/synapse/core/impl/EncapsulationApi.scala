@@ -1,5 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
+import ru.primetalk.synapse.core.dsl.SystemBuilderApi
+
 /**
  * @author zhizhelev, 29.03.15.
  */

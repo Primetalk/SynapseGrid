@@ -1,11 +1,13 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
 import scala.collection.mutable
 
 /**
+ * API for creating "switcher". A switcher is a special mini-builder for constructing
+ * a set of case branches that are "sealed" - the last branch "else" will take all the rest signals.
  * @author zhizhelev, 05.04.15.
  */
-trait SwitcherBuilderApi extends SystemBuilderDslApi{
+trait SwitcherDsl extends SystemBuilderDslApi{
 
   class SwitcherBuilder[T](c: Contact[T], name: String = "")(implicit sb: SystemBuilder) {
     val defaultId = name + "Else"
@@ -19,7 +21,7 @@ trait SwitcherBuilderApi extends SystemBuilderDslApi{
     val selector = sb.auxContact[(String, T)]
 
     def If(condition: T => Boolean, name: String = "") = {
-      require(conditions.size == 0)
+      require(conditions.size == 0, "If can only be the first clause in switcher. Use ElseIf or Else on other branches.")
       ElseIf(condition, name)
     }
 

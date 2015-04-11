@@ -14,8 +14,7 @@
  */
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components.{Link, FlatMapLink, NopLink, StatefulFlatMapLink, StateUpdate, StateZipLink}
-import ru.primetalk.synapse.core.impl.SignalsApi
+import ru.primetalk.synapse.core.components._
 
 import scala.language.existentials
 

@@ -11,15 +11,15 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
-
-import ru.primetalk.synapse.core.components.{InnerSystemComponent, Link, LinkInfo}
+import ru.primetalk.synapse.core.components.{ContactsApi, InnerSystemComponent, Link, LinkInfo}
+import ru.primetalk.synapse.core.dsl.ExceptionHandlingExt
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-trait SystemBuilderApi extends ContactsApi with ExceptionHandlingApi {
+trait SystemBuilderApi extends ContactsApi with ExceptionHandlingExt {
 
   /** An interface of some object that can collect information about outer interface of a system.
     * Not only it create contact instances, but it usually transforms and collect them. */
@@ -296,5 +296,17 @@ trait SystemBuilderApi extends ContactsApi with ExceptionHandlingApi {
   def state[T](name:String, s0:T)(implicit sb:SystemBuilder) = sb.state(name, s0)
 
   def setSystemName(name:String)(implicit sb:SystemBuilder) = sb.setSystemName(name)
+
+  /** Usage:
+    * extension[LabellingExt].methodInExtension*/
+  def extension[T <: SystemBuilderExtension]( implicit sb: SystemBuilder,
+                                                             extensionInstance: SystemBuilderExtensionId[T]): T =
+    sb.extend(extensionInstance)
+
+  /** Automatic usage of extensions when an implicit extension id is present in the scope.*/
+  implicit def implicitExtendBasicSystemBuilder[T <: SystemBuilderExtension](sb: SystemBuilder)(
+    implicit extensionInstanceId: SystemBuilderExtensionId[T]): T =
+    sb.extend(extensionInstanceId)
+
 
 }

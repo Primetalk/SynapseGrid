@@ -11,9 +11,9 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
-trait AutomataBuilderApi extends SystemBuilderDslApi with SystemBuilderAdvApi{
+trait AutomataDsl extends SystemBuilderDslApi with SystemBuilderDsl2Api{
 
 	/** The builder creates a state machine with `State` type of state. */
 	//trait AutomataBuilder[State] {//extends SystemBuilder {

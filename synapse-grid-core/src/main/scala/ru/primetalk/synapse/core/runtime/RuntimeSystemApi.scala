@@ -1,13 +1,14 @@
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.impl.{SignalsApi, ContactsIndexExt, ExceptionHandlingApi}
+import ru.primetalk.synapse.core.components.SignalsApi
+import ru.primetalk.synapse.core.dsl.{ContactsIndexExt, ExceptionHandlingExt}
 
 /**
  * @author zhizhelev, 05.04.15.
  */
 trait RuntimeSystemApi
   extends SignalsApi
-  with ExceptionHandlingApi
+  with ExceptionHandlingExt
   with RuntimeComponentApi with TrellisApi with ContactsIndexExt {
 
   type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]

@@ -1,12 +1,13 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.{StaticSystem, StaticSystemExtensionId}
+import ru.primetalk.synapse.core.components.SignalsApi
 import ru.primetalk.synapse.core.runtime.TrellisApi
 
 /**
+ * Extension for declaring unhandled exception handler via simple DSL.
  * @author zhizhelev, 25.03.15.
  */
-trait ExceptionHandlingApi extends SignalsApi with TrellisApi {
+trait ExceptionHandlingExt extends SignalsApi with TrellisApi {
 
   /** The type of a handler that will handle exceptions during signal processing.
     * If the exception is recoverable, then the handler should provide a new Context

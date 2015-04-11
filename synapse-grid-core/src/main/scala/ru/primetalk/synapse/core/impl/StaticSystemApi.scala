@@ -1,5 +1,7 @@
 package ru.primetalk.synapse.core.impl
 
+import ru.primetalk.synapse.core.dsl.{DevNullExt, SystemBuilderDslApi}
+
 import scala.language.{implicitConversions, reflectiveCalls}
 
 /**

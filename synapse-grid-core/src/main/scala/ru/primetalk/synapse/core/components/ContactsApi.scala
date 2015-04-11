@@ -1,4 +1,4 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.components
 
 /**
  * @author zhizhelev, 25.03.15.

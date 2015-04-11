@@ -1,4 +1,6 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
+
+import ru.primetalk.synapse.core.dsl.ContactStyleExt
 
 import scala.language.implicitConversions
 

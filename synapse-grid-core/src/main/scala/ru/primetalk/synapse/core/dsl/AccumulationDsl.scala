@@ -1,9 +1,9 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
 /**
- *
+ * DSL for working with accumulators
  */
-trait CollectionSystemBuilderApi extends BasicSystemBuilderApi with SystemBuilderDslApi {
+trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDslApi {
 
   /**
    * Collects all inputs until some other contact not issue control

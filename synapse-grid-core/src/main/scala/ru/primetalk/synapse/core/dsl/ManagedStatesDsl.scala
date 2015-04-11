@@ -10,7 +10,9 @@
  *
  * Created: 24.07.13, zhizhelev
  */
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
+
+import ru.primetalk.synapse.core.components.ContactsApi
 
 import scala.language.implicitConversions
 
@@ -18,7 +20,7 @@ import scala.language.implicitConversions
   * on a special contact.
   * On every state change a signal appears on a contact onUpdated
   * */
-trait ManagedStatesApi extends BasicSystemBuilderApi with ContactsApi with SystemBuilderDslApi {
+trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsApi with SystemBuilderDslApi {
 
   class ManagedStateSnippet[S](val name: String, initialValue: Option[S] = None)(implicit sb:SystemBuilder) {
 

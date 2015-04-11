@@ -1,6 +1,7 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.{FlatMapLink, StatefulFlatMapLink, NopLink, StateUpdate, RedMapLink, StateZipLink}
+import ru.primetalk.synapse.core.components.{FlatMapLink, NopLink, RedMapLink, StateUpdate, StateZipLink, StatefulFlatMapLink}
+import ru.primetalk.synapse.core.impl.NextLabelExt
 
 import scala.collection.GenTraversableOnce
 import scala.reflect.ClassTag
