@@ -15,7 +15,7 @@ package ru.primetalk.synapse.core.impl
 
 /**
  * A builder that creates a kind of state machine. The state contains a continuation. On every
- * processed signal a new continuation is generated. Usually the code of a continuation is finished with
+ * processed signal a new continuation is generated. Usually the last statement of the continuation is
  * a call to some constructor method that creates a continuation for the next signal.
  *
  * @author А.Жижелев (arseniy zhizhelev)

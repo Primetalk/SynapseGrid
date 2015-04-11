@@ -4,6 +4,7 @@ import java.io.{File, PrintWriter}
 import scala.language.implicitConversions
 
 /**
+ * Simple API for saving files
  * @author zhizhelev, 25.03.15.
  */
 trait DotUtilsApi {

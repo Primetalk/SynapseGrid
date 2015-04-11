@@ -30,13 +30,13 @@ class DynamicSystemFixture(dynamicSystem:DynamicSystem) {
   def clear() {
     outputBuffer.clear()
   }
-  def read[T](output:Contact[T]):List[T] =
-    outputBuffer.toList.get(output)
+  def read[T](output:Contact[T]):Seq[T] =
+    outputBuffer.toSeq.get(output)
 
   /** Removes signals that corresponds to the given contact
    * @return data from removed signals */
-  def remove[T](output:Contact[T]):List[T] = {
-    val (res, rest) = outputBuffer.toList.partition(output)
+  def remove[T](output:Contact[T]):Seq[T] = {
+    val (res, rest) = outputBuffer.toSeq.partition(output)
     outputBuffer.clear()
     outputBuffer ++= rest
     res.map(_.data)

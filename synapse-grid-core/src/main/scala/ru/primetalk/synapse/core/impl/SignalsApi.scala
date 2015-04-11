@@ -5,8 +5,6 @@ import scala.language.implicitConversions
  * @author zhizhelev, 25.03.15.
  */
 trait SignalsApi extends ContactsApi {
-  type Signal[T] = ru.primetalk.synapse.core.components.Signal[T]
-  val Signal = ru.primetalk.synapse.core.components.Signal
   /**
    * Extractor of contacts' data from result.
    */
@@ -33,15 +31,15 @@ trait SignalsApi extends ContactsApi {
     def filterNotFunction = (signals: List[Signal[_]]) ⇒ signals.filterNot(_._1 == c)
   }
 
-  implicit class RichSignalList(signals: List[Signal[_]]) {
+  implicit class RichSignalList(signals: Seq[Signal[_]]) {
     /** Divides the list of signals. The first part will contain signals on the given contact.
       * the second — the rest signals. */
-    def partition[T](c: Contact[T]): (List[Signal[T]], List[Signal[_]]) =
+    def partition[T](c: Contact[T]): (Seq[Signal[T]], Seq[Signal[_]]) =
       signals.
         partition(_.contact == c).
-        asInstanceOf[(List[Signal[T]], List[Signal[_]])]
+        asInstanceOf[(Seq[Signal[T]], Seq[Signal[_]])]
 
-    def get[T](`c`: Contact[T]): List[T] =
+    def get[T](`c`: Contact[T]): Seq[T] =
       signals.
         collect {
         case Signal(`c`, data) =>

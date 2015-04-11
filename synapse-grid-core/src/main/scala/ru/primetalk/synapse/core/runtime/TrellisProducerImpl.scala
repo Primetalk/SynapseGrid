@@ -14,11 +14,12 @@
  */
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.impl.SignalDist
 //, Signal,
 //ContactToSubscribersMap,
 //UnhandledProcessingExceptionHandler, defaultUnhandledExceptionHandler,
 //Context, TrellisProducer, TrellisElement, TotalTrellisProducer}
+
+import ru.primetalk.synapse.core.components.SignalDist
 
 import scala.Predef._
 import scala.annotation.tailrec
