@@ -19,8 +19,8 @@ import scala.util.Try
 
 object SimpleExamples {
 
-  val myContact = new Contact[String]("myContact")
-  val len = new Contact[Int]("len")
+  val myContact = contact[String]("myContact")
+  val len = contact[Int]("len")
 
   /** Example fixture */
   abstract class Example[TInput, TOutput](name: String) extends SystemBuilderC(name) {
@@ -66,8 +66,8 @@ object SimpleExamples {
   }
 
   val e1 = new ExampleMap[String, Int]("example1") {
-    val myContact = new Contact[String]("myContact")
-    val len = new Contact[Int]("len")
+    val myContact = contact[String]("myContact")
+    val len = contact[Int]("len")
 
     def getLength(s: String) = s.length
 
@@ -77,7 +77,7 @@ object SimpleExamples {
     exampleOutput(len)
   }
   val e2 = new ExampleFlatMap[String, String]("example2") {
-    val myContact = new Contact[String]("myContact")
+    val myContact = contact[String]("myContact")
 
     val spaces: Regex = "\\s+".r
     val wordsContact = myContact.flatMap(spaces.split(_), "spaces.split(_)")
@@ -86,7 +86,7 @@ object SimpleExamples {
     exampleOutput(wordsContact)
   }
   val e3 = new ExampleMap[String, Int]("example3") {
-    val myContact = new Contact[String]("myContact")
+    val myContact = contact[String]("myContact")
     val counterS = state[Int]("counterS", 0)
     val helloCount = contact[Int]("helloCount")
     (myContact.withState(counterS) -> helloCount).stateMap({

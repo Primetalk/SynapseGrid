@@ -21,9 +21,9 @@ class TypedSystemConstructorTest extends FunSuite {
 
   class MySystemInterface {
     val name = "MySystem"
-    val i1 = new Contact[String]("i1")
-    val i2 = new Contact[String]("i2")
-    val o1 = new Contact[String]("o1")
+    val i1 = contact[String]("i1")
+    val i2 = contact[String]("i2")
+    val o1 = contact[String]("o1")
   }
   implicit object MySystemImplementation extends TypedSystemConstructor[MySystemInterface]{
     override def apply(outer: MySystemInterface): StaticSystem = {

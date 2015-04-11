@@ -6,9 +6,9 @@ package ru.primetalk.synapse.core.impl
 trait EncapsulationApi extends SystemBuilderApi {
 
   object SimpleOuterInterfaceBuilder extends OuterInterfaceBuilder {
-    override def input[T](internalName: String): Contact[T] = new Contact[T](internalName)
+    override def input[T](internalName: String): Contact[T] = contact[T](internalName)
 
-    override def output[T](internalName: String): Contact[T] = new Contact[T](internalName)
+    override def output[T](internalName: String): Contact[T] = contact[T](internalName)
   }
 
   class EmbeddedOuterInterfaceBuilder(name:String)(implicit sb:SystemBuilder) extends OuterInterfaceBuilder{

@@ -73,7 +73,7 @@ trait TypedSystemConstructor[T] extends (T => StaticSystem){
 
 abstract class AbstractTypedSystem(val name:String) {
   protected
-  def input[T](internalName:String):Contact[T] = new Contact[T](name+"."+internalName)
+  def input[T](internalName:String):Contact[T] = contact[T](name+"."+internalName)
   protected
-  def output[T](internalName:String):Contact[T] = new Contact[T](name+"."+internalName)
+  def output[T](internalName:String):Contact[T] = contact[T](name+"."+internalName)
 }

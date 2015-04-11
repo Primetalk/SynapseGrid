@@ -12,7 +12,7 @@ trait DevNullExt extends ContactStyleExt {
      * Special contact for consuming unnecessary data values.
      */
     private[DevNullExt]
-    lazy val devNull = new Contact[Any]("devNull").styled(DevNullContact)(sb)
+    lazy val devNull = contact[Any]("devNull").styled(DevNullContact)(sb)
 
   }
   implicit val DevNullExtId:SystemBuilderExtensionId[DevNullExtension] = new SystemBuilderExtensionId[DevNullExtension](new DevNullExtension(_))
