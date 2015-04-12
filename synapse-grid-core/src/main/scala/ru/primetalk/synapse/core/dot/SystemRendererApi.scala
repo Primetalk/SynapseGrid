@@ -11,12 +11,12 @@
  *
  * Created: 20.03.2013
  */
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dot
 
 import java.io.{File, PrintWriter}
 
-import ru.primetalk.synapse.core.components.{Link, NopLink, StatefulFlatMapLink, StateZipLink, StateUpdate, InnerSystemComponent}
-import ru.primetalk.synapse.core.dsl.{DevNullExt, ContactStyleExt, AuxNumberingExt}
+import ru.primetalk.synapse.core.components.{InnerSystemComponent, Link, NopLink, StateUpdate, StateZipLink, StatefulFlatMapLink}
+import ru.primetalk.synapse.core.dsl.{AuxNumberingExt, ContactStyleExt, DevNullExt}
 
 import scala.collection.mutable
 

@@ -1,5 +1,6 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.subsystems
 
+import ru.primetalk.synapse.core.dot.SystemRendererApi
 import ru.primetalk.synapse.core.dsl.{DevNullExt, SystemBuilderDslApi}
 
 import scala.language.{implicitConversions, reflectiveCalls}
@@ -93,7 +94,7 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRen
 
   /** Recursively finds all subsystems of the system.
     * The system is the first element of the result with path = ".$systemName". */
-  def subsystems(system: StaticSystem): List[(String, StaticSystem)] = {
+  def collectSubsystems(system: StaticSystem): List[(String, StaticSystem)] = {
     def subsystems0(system: StaticSystem, path: String): List[(String, StaticSystem)] = {
       val path2 = path + "." + system.name
       (path2, system) :: system.staticSubsystems.flatMap(s => subsystems0(s, path2))
@@ -106,7 +107,7 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRen
    * within the subsystems of the system.
    */
   def orphanContactsRec(system: StaticSystem): List[(String, Set[Contact[_]])] =
-    subsystems(system).
+    collectSubsystems(system).
       map(p => (p._1, p._2.orphanContacts)).
       filterNot(_._2.isEmpty)
 

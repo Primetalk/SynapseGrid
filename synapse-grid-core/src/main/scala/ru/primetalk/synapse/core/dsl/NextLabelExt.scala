@@ -1,6 +1,4 @@
-package ru.primetalk.synapse.core.impl
-
-import ru.primetalk.synapse.core.dsl.SystemBuilderApi
+package ru.primetalk.synapse.core.dsl
 
 import scala.language.implicitConversions
 

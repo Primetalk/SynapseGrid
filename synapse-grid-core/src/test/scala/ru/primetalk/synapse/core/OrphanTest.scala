@@ -50,7 +50,7 @@ class OrphanTest extends FunSuite {
 
   test("orphan contacts in subsystem"){
     val s = new SuperSystem
-    assert(subsystems(s).size === 2)
+    assert(collectSubsystems(s).size === 2)
     assert(orphanContactsRec(s) ===
       List((".DisconnectedSuperSystem.DisconnectedSystem",
         Set(s.subsystem1.c1, s.subsystem1.c2))))

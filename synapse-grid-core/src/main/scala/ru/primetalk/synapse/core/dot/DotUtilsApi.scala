@@ -1,6 +1,7 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.dot
 
 import java.io.{File, PrintWriter}
+
 import scala.language.implicitConversions
 
 /**

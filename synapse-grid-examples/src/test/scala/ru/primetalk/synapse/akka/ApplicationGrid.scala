@@ -2,6 +2,7 @@ package ru.primetalk.synapse.akka
 
 import akka.actor.ActorRef
 import ru.primetalk.synapse.core._
+
 //import ru.primetalk.synapse.akka._ // do not import because the tests are in the same package.
 
 trait ProcessGrid extends BaseTypedSystem{

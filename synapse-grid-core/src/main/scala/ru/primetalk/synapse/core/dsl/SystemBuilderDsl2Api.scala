@@ -1,7 +1,6 @@
 package ru.primetalk.synapse.core.dsl
 
 import ru.primetalk.synapse.core.components.NopLink
-import ru.primetalk.synapse.core.impl.NextLabelExt
 
 /**
  * Some useful commands with implicit BasicSystemBuilder argument

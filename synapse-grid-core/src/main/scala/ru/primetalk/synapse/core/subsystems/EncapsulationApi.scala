@@ -1,4 +1,4 @@
-package ru.primetalk.synapse.core.impl
+package ru.primetalk.synapse.core.subsystems
 
 import ru.primetalk.synapse.core.dsl.SystemBuilderApi
 

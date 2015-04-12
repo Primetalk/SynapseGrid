@@ -14,9 +14,9 @@ ext {
 // The artifacts should appear in Maven Central.
 //
 
-    aVersion = '1.4.1-SNAPSHOT'
+    aVersion = '1.4.3-SNAPSHOT'
     enableSigning = false
-//    aVersion = '1.4.0'//'1.2.0-SNAPSHOT'
+//    aVersion = '1.4.2'//'1.2.0-SNAPSHOT'
 //    enableSigning = true
 
 

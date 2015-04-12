@@ -15,7 +15,6 @@ package ru.primetalk.synapse.core
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import ru.primetalk.synapse.core._
 
 @RunWith(classOf[JUnitRunner])
 class IncTest extends FunSuite {

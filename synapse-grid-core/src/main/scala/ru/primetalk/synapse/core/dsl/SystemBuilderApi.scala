@@ -14,10 +14,10 @@
 package ru.primetalk.synapse.core.dsl
 
 import ru.primetalk.synapse.core.components.{ContactsApi, InnerSystemComponent, Link, LinkInfo}
-import ru.primetalk.synapse.core.dsl.ExceptionHandlingExt
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 trait SystemBuilderApi extends ContactsApi with ExceptionHandlingExt {
 
