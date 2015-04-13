@@ -1,10 +1,9 @@
 package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.{FlatMapLink, NopLink, RedMapLink, StateUpdate, StateZipLink, StatefulFlatMapLink}
+import ru.primetalk.synapse.core.components.StateUpdate
 
 import scala.collection.GenTraversableOnce
 import scala.reflect.ClassTag
-import scala.util.Try
 
 /**
  * Doesn't work because T2 is unknown when it is called implicitly.
@@ -30,12 +29,14 @@ import scala.util.Try
 //        }, sb.nextLabel(name, if (name.endsWith("?")) name else name + "?"))) //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
 //  }
 //
+//TODO:[ ] поддержка timeout exception - и особая обработка. Возможность создания future и ожидания результата с таймаутом. mapFuture
+//TODO:[ ] создание вокруг подсистемы механизма Try и обработка исключений на уровне родительской системы
 
 trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNumberingExt with DevNullExt {
 
   /**
-   * DSL methods for implicit conversion*/
-  implicit class LinkBuilderOps[T1, T2](c: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
+   * DSL methods for creating links between the two given contacts.*/
+  implicit class LinkBuilderOps[T1, T2](pair: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
 
     def labelNext(label: String*) = {
       sb.labels(label: _*)
@@ -43,33 +44,46 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
     }
 
     def map(f: T1 ⇒ T2, name: String = ""): Contact[T2] =
-      sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
+      sb.addLink(pair._1, pair._2, sb.nextLabel(name, "" + f),
         new FlatMapLink[T1, T2](x => Seq(f(x))))
 
     def const(value: T2, name: String = ""): Contact[T2] =
-      sb.addLink(c._1, c._2, sb.nextLabel(name, "⇒" + value),
+      sb.addLink(pair._1, pair._2, sb.nextLabel(name, "⇒" + value),
         new FlatMapLink[T1, T2]((t: T1) => Seq(value)))
 
-    def flatMap[TSeq](f: T1 ⇒ GenTraversableOnce[T2], name: String = "") =
-      sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
+    def flatMap[TSeq](f: T1 ⇒ GenTraversableOnce[T2], name: String = ""): Contact[T2] =
+      sb.addLink(pair._1, pair._2, sb.nextLabel(name, "" + f),
         new FlatMapLink[T1, T2](f))
 
-    def splitToElements(name: String = "")(implicit ev: T1 <:< GenTraversableOnce[T2]): Contact[T2] =
-      flatMap((t: T1) => ev(t), sb.nextLabel(name, "split"))
+    def flatMapOpt(f: T1 ⇒ Option[T2], name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
+      flatMap(f(_).toSeq, name)
 
+    @deprecated("use #flatMapOpt", "13.04.2015")
+    def optionalMap(f: T1 ⇒ Option[T2], name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
+      flatMapOpt(f, name)
 
-    def optionalMap(f: T1 ⇒ Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
-      sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
-        new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
+    //      sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
+    //        new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
     //  // this variant of flatMap is conflicting with flatMap-GenTraversableOnce.
     //  // It seems converting Option to Traversable is better.
     //  def flatMap(f: T1 ⇒ Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
     //    sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
     //      new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
 
-    /** Cast data to the given class if possible. If the data cannot be cast, then it is filtered out. */
+    @deprecated("use #flatten", "13.04.2015")
+    def splitToElements(name: String = "")(implicit ev: T1 <:< GenTraversableOnce[T2]): Contact[T2] =
+      flatten(name)
+
+
+    def flatten(name: String = "")(implicit ev: T1 <:< GenTraversableOnce[T2]): Contact[T2] =
+      flatMap((t: T1) => ev(t), sb.nextLabel(name, "flatten"))
+
+
+    /** Cast data to the given class if possible. If the data cannot be cast, then it is filtered out.
+      * Prefer to use castFilter2
+      */
     def castFilter[T3 <: T2](t2Class: Class[T3], name: String = "") = {
-      sb.addLink(c._1, c._2,
+      sb.addLink(pair._1, pair._2,
         sb.nextLabel(name, "cast(" + t2Class.getSimpleName + ")"),
         new FlatMapLink[T1, T2](
           d ⇒ if (t2Class.isInstance(d))
@@ -83,10 +97,10 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       * the type parameter.
       */
     def castFilter2[T3 <: T2](implicit t3Class: ClassTag[T3]) = {
-      sb.addLink(c._1, c._2,
+      sb.addLink(pair._1, pair._2,
         sb.nextLabel("", "cast2(" + t3Class.runtimeClass.getSimpleName + ")"),
         new FlatMapLink[T1, T2]({
-          case t3Class(d) => Seq(d.asInstanceOf[T2])
+          case t3Class(d) => Seq(d)
           case _ => Seq()
         }))
     }
@@ -97,7 +111,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       }, name)
 
     def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, T2)) =
-      sb.addLink(c._1, c._2,
+      sb.addLink(pair._1, pair._2,
         sb.nextLabel(name, "sm"),
         new StatefulFlatMapLink[S, T1, T2](
           (s, t) => {
@@ -106,30 +120,11 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
           }, stateHandle))
 
     def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, GenTraversableOnce[T2])) =
-      sb.addLink(c._1, c._2, sb.nextLabel(name, "sfm"),
+      sb.addLink(pair._1, pair._2, sb.nextLabel(name, "sfm"),
         new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
   }
 
-
-  //TODO:[ ] поддержка timeout exception - и особая обработка. Возможность создания future и ожидания результата с таймаутом. mapFuture
-  //TODO:[ ] создание вокруг подсистемы механизма Try и обработка исключений на уровне родительской системы
-
-  implicit class StateLinkBuilder2Ops[T1, T2, S](p: (ContactWithState[T1, S], Contact[T2]))(implicit sb: SystemBuilder) {
-
-    def stateMap(f: (S, T1) ⇒ (S, T2), name: String = "") =
-      sb.addLink(p._1.c1, p._2,
-        sb.nextLabel(name, "sm"),
-        new StatefulFlatMapLink[S, T1, T2](
-          (s, t) => {
-            val r = f(s, t)
-            (r._1, Seq(r._2))
-          }, p._1.stateHandle))
-
-    def stateFlatMap(f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name: String = "") =
-      sb.addLink(p._1.c1, p._2, sb.nextLabel(name, "sfm"),
-        new StatefulFlatMapLink[S, T1, T2](f, p._1.stateHandle))
-  }
 
   implicit class DirectLinkBuilderOps[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
     def directly(name: String = "Δt") =
@@ -181,23 +176,48 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
 
   }
 
-  implicit class ContactPairOps[S, T](c: Contact[(S, T)])(implicit sb: SystemBuilder) {
+  /** Miscellaneous operations with prefixed data.
+    */
+  implicit class ContactPairOps[Key, T](c: Contact[(Key, T)])(implicit sb: SystemBuilder) {
     require(c != null, "Contact is null")
-//
-//    implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new DirectLinkBuilderOps(p)(sb)
-//
-//    implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new LinkBuilderOps(c)(sb)
-//
+
+    //
+    //    implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new DirectLinkBuilderOps(p)(sb)
+    //
+    //    implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new LinkBuilderOps(c)(sb)
+    //
     /** Converts data to pair with current state value. */
-    def unzipWithState(stateHandle: StateHandle[S], name: String = ""): Contact[T] = {
-      (c -> sb.auxContact[T]).stateMap(stateHandle, sb.nextLabel(name, "unzip to " + stateHandle))((s, p: (S, T)) ⇒ (p._1, p._2))
+    def unzipWithState(stateHandle: StateHandle[Key], name: String = ""): Contact[T] = {
+      (c -> sb.auxContact[T]).stateMap(stateHandle, sb.nextLabel(name, "unzip to " + stateHandle))((s, p: (Key, T)) ⇒ (p._1, p._2))
     }
 
     /** Switches based on the first element of the pair. */
-    def Case(CaseValue: S): Contact[T] = {
+    def Case(CaseValue: Key): Contact[T] = {
       c -> sb.auxContact[T] collect( {
         case (CaseValue, value) => value
       }, s"Case($CaseValue)")
+    }
+
+    /** Decrements the first argument by step = -1
+      * until zero. At zero - stops decrementing.
+      * This mechanism allows to create arbitrary delay lines. See delayN
+      * */
+    def countDown(step: Int = -1, name: String = "")(implicit num: Numeric[Key]): Contact[(Key, T)] = {
+      (c -> c).flatMap({ case (s, t) =>
+
+        if (num.zero == s)
+          Seq()
+        else
+          Seq((num.plus(s, num.fromInt(step)), t))
+      }, sb.nextLabel(name, "countDown"))
+    }
+
+    /** Checks if the key is 0.*/
+    def isZeroCase(name: String = "")(implicit num: Numeric[Key]): Contact[T] = {
+      c.flatMap({
+        case (s, t) if num.zero == s => Seq(t)
+        case _ => Seq()
+      }, sb.nextLabel(name, "isZeroCase?"))
     }
   }
 
@@ -230,11 +250,12 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       sb.inputs(c)
       c
     }
-//
-//    implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new DirectLinkBuilderOps(p)(sb)
-//
-//    implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new LinkBuilderOps(c)(sb)
-//
+
+    //
+    //    implicit def implDirectLinkBuilder[T1, T2 >: T1](p: (Contact[T1], Contact[T2])): DirectLinkBuilderOps[T1, T2] = new DirectLinkBuilderOps(p)(sb)
+    //
+    //    implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new LinkBuilderOps(c)(sb)
+    //
     /** Declares the first contact as input and creates link to the second */
     def inputMappedTo[T2 >: T](c2: Contact[T2]) = {
       sb.inputs(c)
@@ -268,6 +289,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       c
     }
 
+    /** Executes some code with side effects and passes the input data further. */
     def exec(body: ⇒ Any, name: String = "") = {
       sb.addLink(c, sb.auxContact[T], sb.nextLabel(name, "exec"),
         new FlatMapLink[T, T]((t: T) => {
@@ -297,10 +319,6 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
     def map[T2](f: T ⇒ T2, name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).map(f, sb.nextLabel(name, "map(" + f + ")"))
 
-    /** Creates another contact and links it to this one with transformation f. */
-    def tryMap[T2](f: T ⇒ T2, name: String = ""): Contact[Try[T2]] =
-      map((t: T) => Try(f(t)), sb.nextLabel(name, "tryMap(" + f + ")"))
-
     def mapTo[T2](f: T ⇒ T2, auxContact1: Contact[T2] = sb.auxContact[T2]): Contact[T2] =
       (c, auxContact1).map(f, sb.nextLabel("", "mapTo(" + f + ")"))
 
@@ -320,8 +338,12 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
     def flatMap[T2](f: T ⇒ TraversableOnce[T2], name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).flatMap(f, sb.nextLabel(name, "fM(" + f + ")"))
 
+    @deprecated("use #flatten", "13.04.2015")
     def splitToElements[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
       (c, sb.auxContact[T2]).splitToElements(name) //flatMap(t => ev(t), nextLabel(name, "split"))
+
+    def flatten[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
+      (c, sb.auxContact[T2]).flatten(name) //flatMap(t => ev(t), nextLabel(name, "split"))
 
     /** Converts data to pair with current state value. */
     def zipWithConst[T2](value: T2, name: String = ""): Contact[(T2, T)] =
@@ -414,8 +436,8 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
     def getState[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
       (zipWithState(stateHolder) -> sb.auxContact[S]).map(_._1, sb.nextLabel(name, "_._1"))
 
-//    implicit
-//    def zippingLink[S](c: (Contact[T], Contact[(S, T)]))(sb: BasicSystemBuilder): ZippingLinkOps[S, T] = new ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
+    //    implicit
+    //    def zippingLink[S](c: (Contact[T], Contact[(S, T)]))(sb: BasicSystemBuilder): ZippingLinkOps[S, T] = new ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)
 
     /** Converts data to pair with current state value. */
     def zipWithState[S](stateHolder: StateHandle[S], name: String = ""): Contact[(S, T)] =
@@ -435,7 +457,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       new ContactOps(c2)(sb).saveTo(stateHolder)
     }
 
-    /** Sets latch value it it was not set yet */
+    /** Sets latch value it it has not been set yet */
     def latchValue[S >: T](stateHolder: StateHandle[Option[S]], f: T ⇒ S = locally[T](_)) = {
       new LinkBuilderOps(c, devNull)(sb).stateFlatMap(stateHolder, sb.nextLabel("", "" + stateHolder + "<?=Some")) {
         (s: Option[S], t: T) ⇒ (if (s.isEmpty) Some(f(t)) else s, Seq())
@@ -464,6 +486,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
      * Create delay line that delays propagation of the signal by the given number of ticks.
      * For big counts there should be another implementation based on creating single special contact
      * and sending pair - (count, data) circulating until count == 0.
+     * See #delayN and #countDown and #isZeroCase
      */
     def delay(count: Int): Contact[T] = {
       def delay0(c: Contact[T], count: Int): Contact[T] = {
@@ -478,6 +501,14 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
         delay0(c, count)
     }
 
+    def delayN(count:Int):Contact[T] = {
+      require(count >=2, "#delayN can only be used for count >= 2")
+      val i = c.map(d => (count - 2, d))
+      i.countDown().isZeroCase()
+    }
+    /** Calculates trellis positions of the given contacts using available links
+      * and creates a delayed contact that will get the data from this contact `c` simultaneously
+      * with the contact `c2`.*/
     def delayCorrelated(c2: Contact[_]) = {
       val distance = sb.minDistance(c, c2)
       if (distance == -1)
@@ -499,6 +530,22 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       * */
     //  def foldLeft[S](stateHandle:StateHandle[S])(f:(S, T) => S) = {
     //  }
+  }
+
+  implicit class StateLinkBuilder2Ops[T1, T2, S](p: (ContactWithState[T1, S], Contact[T2]))(implicit sb: SystemBuilder) {
+
+    def stateMap(f: (S, T1) ⇒ (S, T2), name: String = "") =
+      sb.addLink(p._1.c1, p._2,
+        sb.nextLabel(name, "sm"),
+        new StatefulFlatMapLink[S, T1, T2](
+          (s, t) => {
+            val r = f(s, t)
+            (r._1, Seq(r._2))
+          }, p._1.stateHandle))
+
+    def stateFlatMap(f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name: String = "") =
+      sb.addLink(p._1.c1, p._2, sb.nextLabel(name, "sfm"),
+        new StatefulFlatMapLink[S, T1, T2](f, p._1.stateHandle))
   }
 
   implicit class StateOps[S](s: StateHandle[S])(implicit sb: SystemBuilder) {
