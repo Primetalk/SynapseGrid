@@ -16,42 +16,10 @@ package ru.primetalk.synapse.core.components
 
 import scala.language.implicitConversions
 
-/**
- * Named is used to store graph specific information - label or name.
- */
-trait Named {
-  def name: String
-
-  override def toString =
-    getClass.getSimpleName + "(\"" + name + "\")"
-}
-
-/**
- * Basis point of connection of other elements.
- * If auxiliary then it is drawn on the graph as a simple little circle.
- *
- * It order to improve performance the contact is compared by referential equality (#eq()).
- * That's why it is not a case class. However, this creates some inconvenience in serialization.
- *
- * NB: the contact is not very well serializable. After deserialization
- * we obtain a different instance of the contact. But in most cases the comparison is done by
- * referential equality (.eq) and thus it won't do well.
- *
- * In synapse-grid-akka there is a solution for Contact serializations.
- *
- * @see ru.primetalk.synapse.akka.ContactSerializer.
- *
- */
-class Contact[T](name1: String = null) extends Named with Serializable {
-  val name = if (name1 == null) getClass.getSimpleName.replaceAllLiterally("$", "") else name1
-
-  override def toString = "C(" + name + ")"
-}
 
 
-object Contact {
-  def unapply(contact: Contact[_]): Option[String] = Some(contact.name)
-}
+
+
 
 
 ///**
@@ -82,34 +50,9 @@ object Contact {
 //}
 
 
-/**
- * Stateful elements of the system.
- */
-trait Stateful[State] {
-  type StateType = State
-  /**
-   * The initial state of the element.
-   */
-  val s0: State
-}
 
-/**
- * Permanent contacts store shared state that can be updated with stateful
- * links.
- */
-class StateHandle[S](name: String, val s0: S) extends Contact[S](name) with Stateful[S] {
-  override def toString = "S(" + name + ")"
-}
 
-object StateHandle {
-  def apply[S](name: String, s0: S) = new StateHandle(name, s0)
 
-  def unapply(s: Any): Option[(String, _)] =
-    s match {
-      case stateHandle: StateHandle[_] => Some(stateHandle.name, stateHandle.s0)
-      case _ => None
-    }
-}
 
 
 

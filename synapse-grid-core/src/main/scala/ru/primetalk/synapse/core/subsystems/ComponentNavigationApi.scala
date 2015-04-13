@@ -1,11 +1,11 @@
 package ru.primetalk.synapse.core.subsystems
 
-import ru.primetalk.synapse.core.components.ContactsApi
+import ru.primetalk.synapse.core.dsl.ContactsDsl
 
 /**
  * @author zhizhelev, 25.03.15.
  */
-trait ComponentNavigationApi extends ContactsApi {
+trait ComponentNavigationApi extends ContactsDsl {
 
   type SystemPath = List[String]
   /** The system path that is reversed. One can convert to SystemPath with .reverse */

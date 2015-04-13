@@ -1,10 +1,12 @@
 package ru.primetalk.synapse.core.components
 
+import ru.primetalk.synapse.core.dsl.ContactsDsl
+
 import scala.language.implicitConversions
 /**
  * @author zhizhelev, 25.03.15.
  */
-trait SignalsApi extends ContactsApi {
+trait SignalsApi extends ContactsDsl {
   /**
    * Extractor of contacts' data from result.
    */

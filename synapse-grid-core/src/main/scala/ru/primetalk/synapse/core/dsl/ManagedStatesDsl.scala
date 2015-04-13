@@ -12,15 +12,13 @@
  */
 package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.ContactsApi
-
 import scala.language.implicitConversions
 
 /** Managed states are not accessible directly. Instead the state can be overwritten by sending some data
   * on a special contact.
   * On every state change a signal appears on a contact onUpdated
   * */
-trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsApi with SystemBuilderDslApi {
+trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBuilderDslApi {
 
   class ManagedStateSnippet[S](val name: String, initialValue: Option[S] = None)(implicit sb:SystemBuilder) {
 

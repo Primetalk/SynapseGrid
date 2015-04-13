@@ -13,6 +13,27 @@
  */
 package ru.primetalk.synapse.core.components
 
+/**
+ * Named is used to store graph specific information - label or name.
+ */
+trait Named {
+  def name: String
+
+  override def toString =
+    getClass.getSimpleName + "(\"" + name + "\")"
+}
+
+/**
+ * Stateful elements of the system.
+ */
+trait Stateful[State] {
+  type StateType = State
+  /**
+   * The initial state of the element.
+   */
+  val s0: State
+}
+
 /** An outer description of a system.
   * Actual description is deferred to descendants.
   * See also [[Link]]s
@@ -22,6 +43,14 @@ trait Component extends Named {
   val outputContacts: Set[Contact[_]]
 }
 
+/** A component that has single input and single output.
+  */
+trait TwoPoleComponent[T1, T2] extends Component {
+  def from: Contact[T1]
+  def to: Contact[T2]
+  lazy val inputContacts : Set[Contact[_]] = Set(from)
+  lazy val outputContacts : Set[Contact[_]] = Set(to)
+}
 /** Transparent component whose internal structure can be represented as a StaticSystem.*/
 trait ComponentWithInternalStructure extends Component {
   /** The key method of synapse grid library. Returns a transparent representation
@@ -29,89 +58,10 @@ trait ComponentWithInternalStructure extends Component {
   def toStaticSystem: StaticSystem
 }
 
-object StaticSystem {
-  type State = Map[Contact[_], Any]
-}
 
 
 
-/**
- * The core class for SynapseGrid. Contains an immutable description of a system.
- * @param inputs input contacts of the system. Within the system it is prohibited to send signals on them.
- * @param outputs output contacts of the system. Within the system it is prohibited to connect outgoing links
- *                to these contacts. This is due to the fact that the signals that come to output contacts
- *                are not processed within the system. They are delayed for processing by the outer system.
- * @param privateStateHandles state identifiers for variables available within the system.
- *                            The system itself is immutable and it is prohibited to save state somewhere in
- *                            closures or global vars (due to thread unsafety). Instead the system's internal
- *                            state is "provided" by runtime system in the form of map stateHandle->value.
- *                            updates of states can be done only in a purely functional way.
- *
- * @param components inner parts of the system - links, subsystems and other blocks. They have inputs and outputs.
- * @param name the system's name
- * extension methods:
- * unhandledExceptionHandler - user-defined exception handler. It can recover from exception by
- *                                  returning repaired Context, log it or rethrow.
- * index - ContactsIndex
- * styles - ContactsStyles
- */
-case class StaticSystem( /** A subset of contacts */
-                         inputs: List[Contact[_]],
-                         outputs: List[Contact[_]],
-                         privateStateHandles: List[StateHandle[_]],
-                         components: List[Component],
-                         name: String,
-//                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
-//                         = defaultUnhandledExceptionHandler,
-                          extensions:Map[StaticSystemExtensionId[_], Any] = Map()
-                         ) extends Component
-with Named
-with Stateful[Map[Contact[_], Any]]
-with ComponentWithInternalStructure {
-  lazy val inputContacts = inputs.toSet
-  lazy val outputContacts = outputs.toSet
-  /** Contacts that should be processed by SignalsProcessor. */
-//  lazy val processedContacts = inputContacts ++ components.flatMap(_.inputContacts)
 
-  def isOutputContact(c: Contact[_]) = outputContacts.contains(c)
-
-  /** Initial state of the system.*/
-  lazy val s0 = (for {
-    stateHandle ← privateStateHandles
-  } yield (stateHandle, stateHandle.s0)).toMap[Contact[_], Any]
-
-  lazy val staticSubsystems =
-    components.collect {
-      case component: ComponentWithInternalStructure => component.toStaticSystem
-    }
-
-  def toStaticSystem =
-    this
-
-  /** All contacts, available at this system's level.
-    * This is a stable sequence of contacts.
-    * */
-  def allContacts: Seq[Contact[_]] = (inputs.toSeq ++
-    components.flatMap(_.inputContacts).toSeq ++
-    components.flatMap(_.outputContacts).toSeq ++
-    outputContacts.toSeq).toArray.toSeq.distinct
-//  lazy val index: ContactsIndex = ContactsIndexImpl(allContacts)
-
-  def extend[T](ext:T)(implicit extId:StaticSystemExtensionId[T]) =
-    copy(extensions = extensions.updated(extId, ext))
-
-  def extensionOpt[T](implicit extId:StaticSystemExtensionId[T]):Option[T] =
-    extensions.get(extId).asInstanceOf[Option[T]]
-}
-
-/** ExtensionId for a StaticSystem extension. Every extension can be
-  * installed only once on the same StaticSystem.
-  *
-  * The extension can contain some additional state for system processing.
-  *
-  * However, it is not recommended to add mutable state to otherwise immutable StaticSystem.
-  */
-trait StaticSystemExtensionId[+T]
 
 
 /** The system that can be embedded into some other static system.

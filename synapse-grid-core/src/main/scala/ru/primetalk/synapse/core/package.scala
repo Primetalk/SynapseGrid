@@ -13,7 +13,7 @@
  */
 package ru.primetalk.synapse
 
-import ru.primetalk.synapse.core.components.{SignalsApi, ContactsApi}
+import ru.primetalk.synapse.core.components.SignalsApi
 import ru.primetalk.synapse.core.dot.{SystemRendererApi, DotUtilsApi}
 import ru.primetalk.synapse.core.dsl._
 import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, TrellisProducerApi, RichSimpleSignalProcessorApi}
@@ -24,6 +24,7 @@ import scala.language.implicitConversions
 package object core
   extends SystemBuilderImplicitsApi
   with SystemBuilderApi
+  with TryDsl
   with StaticSystemApi
   with RichSimpleSignalProcessorApi
   with TrellisProducerApi
@@ -32,7 +33,7 @@ package object core
   with SignalsApi
   with BaseTypedSystemDsl
   with DotUtilsApi
-  with ContactsApi
+  with ContactsDsl
   with EncapsulationApi
   with SystemBuilderDsl2Api
   with ContinuationDsl
