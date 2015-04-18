@@ -12,6 +12,7 @@
  */
 package ru.primetalk.synapse.concurrent
 
+import ru.primetalk.synapse.core.SignalCollection
 /**
  * The sequence from some initial time.
  */
@@ -59,9 +60,9 @@ object AtTime {
       HTime.timeOrderingInstance.compare( x.time, y.time)
   }
 
-  /** Lexicographical ordering */
+  /** Lexicographical ordering. */
   implicit def timeOrdering[T] = timeOrderingInstance.asInstanceOf[Ordering[AtTime[T]]]
-  def placeAfter[T](time:HTime, list:List[T]):List[AtTime[T]] =
+  def placeAfter[T](time:HTime, list:SignalCollection[T]):SignalCollection[AtTime[T]] =
     list.zipWithIndex.map{ case (s, i) =>
       AtTime(time.next(i), s)
     }

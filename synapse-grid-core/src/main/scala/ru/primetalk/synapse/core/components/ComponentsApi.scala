@@ -49,6 +49,8 @@ trait ComponentsApi {
   type RedMapLink[-T1, +T2] = ru.primetalk.synapse.core.components.RedMapLink[T1, T2]
   val RedMapLink = ru.primetalk.synapse.core.components.RedMapLink
 
+  type SignalCollection[+T] = Iterable[T]
+  val SignalCollection = Iterable
 
 
 }

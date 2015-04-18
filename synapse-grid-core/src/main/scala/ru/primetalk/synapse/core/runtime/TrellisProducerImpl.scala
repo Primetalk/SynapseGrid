@@ -19,8 +19,6 @@ package ru.primetalk.synapse.core.runtime
 //UnhandledProcessingExceptionHandler, defaultUnhandledExceptionHandler,
 //Context, TrellisProducer, TrellisElement, TotalTrellisProducer}
 
-import ru.primetalk.synapse.core.components.SignalDist
-
 import scala.Predef._
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -104,15 +102,15 @@ trait TrellisProducerImpl
     def apply(t: TrellisElement): TrellisElement = {
       val toProcess =
         if (isTrellisContactUsed)
-          new Signal(TrellisContact, t._2) :: t._2 //inners
+          SignalCollection(new Signal(TrellisContact, t._2)) ++: t._2 //inners
         else
           t._2
 
 
       @tailrec
-      def processAllSignals(signalsToProcess: List[Signal[_]],
+      def processAllSignals(signalsToProcess: SignalCollection[Signal[_]],
                             context: Context,
-                            nextStepSignalsBuffer: mutable.ListBuffer[Signal[_]]): (Context, List[Signal[_]]) =
+                            nextStepSignalsBuffer: mutable.ListBuffer[Signal[_]]): (Context, SignalCollection[Signal[_]]) =
         signalsToProcess match {
           case Nil =>
             (context, nextStepSignalsBuffer.toList)

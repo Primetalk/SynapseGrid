@@ -56,8 +56,8 @@ case class UnitOfComputation(signalAtTime: AtTime[Signal[_]], // the signal that
 
 case class ComputationCompleted(
                                  computation: UnitOfComputation,
-                                 newSignals: List[AtTime[Signal[_]]],
-                                 statesToRelease: List[AtTime[Contact[_]]])
+                                 newSignals: SignalCollection[AtTime[Signal[_]]],
+                                 statesToRelease: SignalCollection[AtTime[Contact[_]]])
 
 case class RunningUnitOfComputation(u: UnitOfComputation, future: Future[ComputationCompleted])
 
@@ -149,7 +149,7 @@ class ComputationState(rs: RuntimeSystem,
     }
   }
 
-  def addSignals(signalsAtTime: List[AtTime[Signal[_]]]) {
+  def addSignals(signalsAtTime: SignalCollection[AtTime[Signal[_]]]) {
     signalsAtTime.foreach(addSignal)
   }
 

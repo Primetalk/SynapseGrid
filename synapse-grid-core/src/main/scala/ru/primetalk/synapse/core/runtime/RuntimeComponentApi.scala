@@ -60,7 +60,7 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi{
                                       input: Contact[_],
                                       output: Contact[_],
                                       f: Signal[_] =>
-                                        List[Signal[_]]) extends RuntimeComponentTransparent {
+                                        SignalCollection[Signal[_]]) extends RuntimeComponentTransparent {
     val inputContacts = List[Contact[_]](input)
     val outputContacts = List[Contact[_]](output)
 
@@ -78,7 +78,7 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi{
                                               stateHandle: Contact[S],
                                               f: (S, Signal[_]) //(state, signal)
                                                 =>
-                                                (S, List[Signal[_]]) //(state, signals)
+                                                (S, SignalCollection[Signal[_]]) //(state, signals)
                                               ) extends RuntimeComponentTransparent {
     def isStateful: Boolean = true
   }

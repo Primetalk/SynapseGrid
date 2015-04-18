@@ -72,7 +72,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
 
       def currentState_=(ctx: Context)
 
-      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: List[Signal[_]])
+      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]])
 
       /** Adds an exception to the trellis.
         * Usually calls runtimeSystem.unhandledExceptionHandler.
@@ -218,7 +218,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
                                   ) extends TrellisBuilder {
 
 
-      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: List[Signal[_]]): Unit = {
+      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]]): Unit = {
         val procs = proc :: trace.processorsReversed
         signals match {
           case Nil => totalTrellisBuilderTracking.saveTerminatedSignal(Trace(trace.signalsReversed, procs))
@@ -286,7 +286,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
                                   ) extends TrellisBuilder {
 
 
-      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: List[Signal[_]]): Unit = {
+      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]]): Unit = {
         signals match {
           case Nil => totalTrellisBuilderTracking.saveTerminatedSignal(trace)
           case _ => newTraces ++= signals.map(signalToTSignal)

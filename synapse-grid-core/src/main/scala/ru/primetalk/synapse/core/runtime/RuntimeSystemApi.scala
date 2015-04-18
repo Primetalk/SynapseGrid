@@ -11,13 +11,14 @@ trait RuntimeSystemApi
   with ExceptionHandlingExt
   with RuntimeComponentApi with TrellisApi with ContactsIndexExt {
 
+  /** A dictionary of handlers for signals that appear on contacts.*/
   type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
   /** This contact is used to enable special simultaneous processing of signals.
     * For instance the contact can be used for debug purposes.
     * */
-  object TrellisContact extends Contact[List[Signal[_]]]
+  object TrellisContact extends Contact[SignalCollection[Signal[_]]]
   /** A runtime system is a representation of the system that is
-    * organized by Contacts and is ready for direct processing of TrellisElement. */
+    * reorganized by Contacts and is ready for direct processing of TrellisElement. */
   case class RuntimeSystem(name: String,
                            signalProcessors: ContactToSubscribersMap,
                            stopContacts: Set[Contact[_]],

@@ -1,5 +1,7 @@
 package ru.primetalk.synapse.core.runtime
 
+import scala.collection.{GenTraversableOnce, GenTraversable}
+
 /**
  * API for using Signal processors.
  * @author zhizhelev, 25.03.15.
@@ -22,9 +24,12 @@ trait RichSimpleSignalProcessorApi extends TrellisApi{
         val outputs = outputSignals.collect {
           case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
         }
-        if (outputs.length != 1)
-          throw new IllegalStateException(s"Cannot convert output results $outputs from $output to List(data).")
-        outputs.head
+        if (outputs.isEmpty)
+          throw new IllegalStateException(s"Cannot convert empty output results $outputs from $output to List(data).")
+        val result = outputs.head
+        if (outputs.tail.nonEmpty)
+          throw new IllegalStateException(s"Cannot convert multiple output results $outputs from $output to List(data).")
+        result
     }
 
   }

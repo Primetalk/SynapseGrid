@@ -12,7 +12,7 @@
  */
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components.{InnerSystemComponent, Link, RedMapLink}
+import ru.primetalk.synapse.core.components.InnerSystemComponent
 import ru.primetalk.synapse.core.dsl.{ContactsIndexExt, ExceptionHandlingExt}
 
 import scala.language.{existentials, implicitConversions}
@@ -381,15 +381,15 @@ with ContactsIndexExt with ExceptionHandlingExt{
       val proc = rsToTtp(rs) // rs.toTotalTrellisProducer
 
       def receive(signal: Signal[_]): List[Signal[_]] = {
-        def receive0(st: system.StateType, resSignals: List[Signal[_]], signals: List[Signal[_]]): (system.StateType, List[Signal[_]]) = signals match {
+        def receive0(st: system.StateType, resSignals: List[TraversableOnce[Signal[_]]], signals: List[Signal[_]]): (system.StateType, List[TraversableOnce[Signal[_]]]) = signals match {
           case Nil ⇒ (st, resSignals)
           case head :: tail ⇒
             val (newState, newSignals) = proc(st, head)
-            receive0(newState, newSignals reverse_::: resSignals, tail)
+            receive0(newState, newSignals :: resSignals, tail)
         }
-        val result = receive0(state, Nil, signal :: Nil)
-        state = result._1
-        result._2.reverse
+        val (newState, results) = receive0(state, Nil, signal :: Nil)
+        state = newState
+        results.reverse.flatten
       }
       receive
     }

@@ -54,14 +54,14 @@ object SimpleExamples {
   abstract class ExampleFlatMap[TInput, TOutput](name: String) extends Example[TInput, TOutput](name) {
     implicit val sb1 = this
 
-    lazy val exampleFlatMapTransducer: TInput => List[TOutput] = {
+    lazy val exampleFlatMapTransducer: TInput => SignalCollection[TOutput] = {
       val s = toStaticSystem
       Try{s.toDot.saveTo(s"target/${s.name}.dot")}
       val transducer = s.toDynamicSystem.toTransducer(input, output)
       transducer
     }
 
-    def apply(data:TInput):List[TOutput] = exampleFlatMapTransducer(data)
+    def apply(data:TInput):SignalCollection[TOutput] = exampleFlatMapTransducer(data)
 
   }
 
