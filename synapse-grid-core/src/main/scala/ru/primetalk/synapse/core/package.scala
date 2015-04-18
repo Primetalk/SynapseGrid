@@ -22,8 +22,7 @@ import ru.primetalk.synapse.core.subsystems.{StaticSystemApi, ComponentNavigatio
 import scala.language.implicitConversions
 
 package object core
-  extends SystemBuilderImplicitsApi
-  with SystemBuilderApi
+  extends SystemBuilderApi
   with TryDsl
   with StaticSystemApi
   with RichSimpleSignalProcessorApi

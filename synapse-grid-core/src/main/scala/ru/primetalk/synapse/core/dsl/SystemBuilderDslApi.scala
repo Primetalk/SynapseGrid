@@ -338,9 +338,9 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
     def flatMap[T2](f: T ⇒ TraversableOnce[T2], name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).flatMap(f, sb.nextLabel(name, "fM(" + f + ")"))
 
-    @deprecated("use #flatten", "13.04.2015")
+    @deprecated("use #flatten", "13.04.2015")@inline
     def splitToElements[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
-      (c, sb.auxContact[T2]).splitToElements(name) //flatMap(t => ev(t), nextLabel(name, "split"))
+      flatten(name) //flatMap(t => ev(t), nextLabel(name, "split"))
 
     def flatten[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
       (c, sb.auxContact[T2]).flatten(name) //flatMap(t => ev(t), nextLabel(name, "split"))

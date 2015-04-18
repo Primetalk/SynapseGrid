@@ -40,5 +40,17 @@ trait NextLabelExt extends SystemBuilderApi {
   //(AuxContactNumberingExtId)
   implicit def sbToLabelling(sb: SystemBuilder): LabellingExt = sb.extend[LabellingExt](LabellingExtId)
 
+  private[synapse] def nextLabel(userProvidedLabel: String, defaultLabel: => String)(implicit sb:SystemBuilder): String = {
+    val lsb = sbToLabelling(sb)
+    (userProvidedLabel, lsb.proposedLabels) match {
+      case ("", List()) ⇒ defaultLabel
+      case ("", head :: tail) ⇒
+        sb.assertWritable()
+        lsb.proposedLabels = tail
+        head
+      case (label, _) => label
+    }
+  }
+
 
 }
