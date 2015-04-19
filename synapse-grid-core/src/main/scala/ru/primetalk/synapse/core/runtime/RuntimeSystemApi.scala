@@ -46,4 +46,47 @@ trait RuntimeSystemApi
 
   type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem => TotalTrellisProducer
 
+  implicit class RichDynamicSystem(system: DynamicSystem) {
+
+    def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+      new RichSimpleSignalProcessor(system.receive).toTransducer(input, output)
+
+    def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+      new RichSimpleSignalProcessor(system.receive).toMapTransducer(input, output)
+
+    def toBuffered = new DynamicSystemBuffered(system)
+
+  }
+  /** A class that allows to use Dynamic system in a more comfortable way.
+    * One can send any data on any input of the dynamic system and
+    * the results are kept in output buffer.
+    * Occasionally one may read output signals (clearing them out if neccessary).
+    */
+  class DynamicSystemBuffered(dynamicSystem:DynamicSystem) {
+    private val outputBuffer = scala.collection.mutable.ListBuffer[Signal[_]]()
+    def send[T](input:Contact[T])(data:T) = {
+      val inputSignal = Signal(input, data)
+      val outputSignals = dynamicSystem.receive(inputSignal)
+      outputBuffer ++= outputSignals
+      this
+    }
+    def clear():Seq[Signal[_]] = {
+      val result = outputBuffer.toSeq
+      outputBuffer.clear()
+      result
+    }
+    def read[T](output:Contact[T]):Seq[T] =
+      outputBuffer.toSeq.get(output)
+
+    /** Removes signals that corresponds to the given contact
+      * @return data from removed signals */
+    def remove[T](output:Contact[T]):Seq[T] = {
+      val (res, rest) = outputBuffer.toSeq.partition(output)
+      outputBuffer.clear()
+      outputBuffer ++= rest
+      res.map(_.data)
+    }
+
+  }
+
 }

@@ -228,7 +228,7 @@ with ContactsIndexExt with ExceptionHandlingExt {
     ComponentDescriptorConverter = {
       case ComponentDescriptor(Link(from, to, label, RedMapLink(stopContacts)), path, system) ⇒
         val rs = systemToRuntimeSystem(path, system, converterWithoutRedLinks, stopContacts)
-        val proc = rs.toTotalTrellisProducer // toRuntimeComponentHeavy(system.privateStateHandles)
+        val proc = rs.toTotalTrellisProducer
         RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ proc(context, Signal(to, signal.data)))
     }
 
@@ -237,7 +237,7 @@ with ContactsIndexExt with ExceptionHandlingExt {
       */
     val redLinkDummy: ComponentDescriptorConverter = {
       case ComponentDescriptor(Link(from, to, label, RedMapLink(stopContacts)), path, system) ⇒
-        RuntimeComponentMultiState(system.name, system.privateStateHandles, (context, signal) ⇒ (context, List()))
+        RuntimeComponentFlatMap(label, from, to, (signal) ⇒ SignalCollection())
     }
 
     //  /** Converts components to a function that will do the work
@@ -384,7 +384,7 @@ with ContactsIndexExt with ExceptionHandlingExt {
                         //inContacts: Set[Contact[_]],
                         stopContacts: Set[Contact[_]],
                         rsToTtp: RuntimeSystemToTotalTrellisProducerConverter): RuntimeSystem = {
-      systemToRuntimeSystem(List(), system, componentToSignalProcessor2(rsToTtp, RuntimeComponent.linkToRuntimeComponent), stopContacts)
+      systemToRuntimeSystem(List(), system, componentToSignalProcessor2(rsToTtp, linkToRuntimeComponent), stopContacts)
     }
 
     //    def convertToRuntimeSystem(system: StaticSystem,)
@@ -392,7 +392,7 @@ with ContactsIndexExt with ExceptionHandlingExt {
                                 system: StaticSystem,
                                 rsToTtp: RuntimeSystemToTotalTrellisProducerConverter): SimpleSignalProcessor = {
 
-      val rs = systemToRuntimeSystem(path, system, componentToSignalProcessor2(rsToTtp, RuntimeComponent.linkToRuntimeComponent), system.outputContacts)
+      val rs = systemToRuntimeSystem(path, system, componentToSignalProcessor2(rsToTtp, linkToRuntimeComponent), system.outputContacts)
       val proc = rsToTtp(rs)
       proc.toSimpleSignalProcessor(system.s0)
     }

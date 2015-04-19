@@ -215,7 +215,7 @@ object StaticSystemActor {
     val converter = {
       val c =
         SystemConverting.componentToSignalProcessor2(_.toTotalTrellisProducer,
-          RuntimeComponent.linkToRuntimeComponent,
+          linkToRuntimeComponent,
           actorInnerSubsystemConverter)
       //      c += actorInnerSubsystemConverter
       c

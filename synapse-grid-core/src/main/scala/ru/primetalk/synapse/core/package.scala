@@ -16,7 +16,7 @@ package ru.primetalk.synapse
 import ru.primetalk.synapse.core.components.SignalsApi
 import ru.primetalk.synapse.core.dot.{SystemRendererApi, DotUtilsApi}
 import ru.primetalk.synapse.core.dsl._
-import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, SignalProcessingDsl, RichSimpleSignalProcessorApi}
+import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, SignalProcessingDsl}
 import ru.primetalk.synapse.core.subsystems.{StaticSystemApi, ComponentNavigationApi, EncapsulationApi, BaseTypedSystemApi}
 
 import scala.language.implicitConversions
@@ -25,7 +25,6 @@ package object core
   extends SystemBuilderApi
   with TryDsl
   with StaticSystemApi
-  with RichSimpleSignalProcessorApi
   with SignalProcessingDsl
   with ComponentNavigationApi
   with ExceptionHandlingExt

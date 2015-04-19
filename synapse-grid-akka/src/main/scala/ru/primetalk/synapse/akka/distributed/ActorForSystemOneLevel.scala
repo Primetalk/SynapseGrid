@@ -93,7 +93,7 @@ class ActorForSystemOneLevel(override val systemPath: SystemPath,
       SystemConverting.
         componentToSignalProcessor2(
           _.toTotalTrellisProducer,
-          RuntimeComponent.linkToRuntimeComponent,
+          linkToRuntimeComponent,
           actorInnerSubsystemConverter)
 
     SystemConverting.

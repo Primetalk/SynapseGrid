@@ -34,8 +34,12 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
 
     def newTotalTrellisBuilder(runtimeSystem: RuntimeSystem, context: Context): TotalTrellisBuilder
 
+    /** TrellisBuilder is a way for a final user to watch the process of trellis building.
+      * One may override #newTotalTrellisBuilder and put own implementation of TotalTrellisBuilder.*/
     trait TotalTrellisBuilder {
-      var currentState: Context
+      def currentState: Context
+
+      def currentState_=(ctx: Context)
 
       /** Saves the signal that is the last one in a trace. It didn't produce output. */
       def saveTerminatedSignal(signal: TSignal)
@@ -368,7 +372,6 @@ trait SignalProcessingSimpleApi extends SignalProcessingApi0 {
  */
 trait SignalProcessingDsl
   extends TrellisApi
-  with RichSimpleSignalProcessorApi
   with SignalProcessingApi0
   with SignalProcessingSimpleApi {
 
