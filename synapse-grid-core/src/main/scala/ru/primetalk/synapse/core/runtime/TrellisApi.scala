@@ -25,8 +25,25 @@ trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
 
   /** A function that makes single step (or a few steps) over time. */
   type TrellisProducer = TrellisElement => TrellisElement
-  /** A function that takes a single signal on input and returns the last trellis element. */
+  /** A function that takes a single signal on input and returns the last trellis element.
+    * This producer does not store managed state in it.*/
   type TotalTrellisProducer = ((Context, Signal[_]) => TrellisElement)
+
+  implicit class RichTotalTrellisProducer(ttp: TotalTrellisProducer) {
+    /** Creates hidden state that will be maintained between different signals.
+      * The resulting SimpleSignalProcessor is not thread safe!
+      * @param s0 initial state for the first signal. For further signals the internal state is updated automatically.
+      * */
+    def toSimpleSignalProcessor(s0: Context): SimpleSignalProcessor = {
+      @volatile
+      var state: Map[Contact[_], _] = s0
+      (signal: Signal[_]) => {
+        val r = ttp(state, signal)
+        state = r._1
+        r._2
+      }
+    }
+  }
 
 
 }

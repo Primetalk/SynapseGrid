@@ -181,7 +181,7 @@ class StaticSystemActor(override val systemPath: SystemPath,
 }
 
 
-object StaticSystemActor extends SystemConvertingSupport {
+object StaticSystemActor {
 
   type ActorRefGetter = (
     /*path: */ SystemPath,

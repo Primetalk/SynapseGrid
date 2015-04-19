@@ -1,12 +1,10 @@
 package ru.primetalk.synapse.core.runtime
 
-import scala.collection.{GenTraversableOnce, GenTraversable}
-
 /**
  * API for using Signal processors.
  * @author zhizhelev, 25.03.15.
  */
-trait RichSimpleSignalProcessorApi extends TrellisApi{
+trait RichSimpleSignalProcessorApi extends TrellisApi with RuntimeSystemApi{
   implicit class RichSimpleSignalProcessor(sp: SimpleSignalProcessor) {
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
       data: TInput =>
@@ -31,6 +29,16 @@ trait RichSimpleSignalProcessorApi extends TrellisApi{
           throw new IllegalStateException(s"Cannot convert multiple output results $outputs from $output to List(data).")
         result
     }
+
+  }
+
+  implicit class RichDynamicSystem(system: DynamicSystem) {
+
+    def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+      new RichSimpleSignalProcessor(system.receive).toTransducer(input, output)
+
+    def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+      new RichSimpleSignalProcessor(system.receive).toMapTransducer(input, output)
 
   }
 

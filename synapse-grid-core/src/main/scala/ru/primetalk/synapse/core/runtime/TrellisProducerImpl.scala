@@ -24,32 +24,13 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.existentials
 
+/** Deprecated because there is a SignalProcessingApi0
+  * that supports both Signal processing and tracking signal processing. */
+@deprecated("use SignalProcessingSimpleApi or SignalProcessingTrackingApi", "19.04.2015")
 trait TrellisProducerImpl
   extends TrellisApi
   with RuntimeSystemApi {
 
-
-  sealed trait SubsystemDirectSignal0 {
-    val subsystemName: String
-  }
-
-  /** An encapsulation of the signal that targets a subsystem's internal contact. */
-  case class SubsystemDirectSignal(subsystemName: String, signal: Signal[_]) extends SubsystemDirectSignal0
-
-  case class SubsystemDirectSignalDist(subsystemName: String, signal: SignalDist) extends SubsystemDirectSignal0
-
-  /** This contact is used to process signals of internal system.
-    *
-    * In asynchronous execution the resulting signal should come
-    * at the same level of "call stack". However as far as we usually get the signal asynchronously
-    * it is processed at top level. So in order to run it in inside the subsystem,
-    * we package asynchronous result into
-    * Signal(SubsystemSpecialContact, SubsystemDirectSignal( name, actual resulting signal))
-    */
-  object SubsystemSpecialContact extends Contact[SubsystemDirectSignal0]
-
-  /** This contact is used to process answers of internal system. */
-  object SubsystemSpecialAnswerContact extends Contact[SubsystemDirectSignal0]
 
   class RuntimeSystemForTrellisProcessing(val runtimeSystem: RuntimeSystem) {
 
@@ -159,5 +140,12 @@ trait TrellisProducerImpl
               s"Context value before processing:\n" + context.mkString("\n"), e)
       }
   }
+  //    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
+  //    def toTotalTrellisProducerOld: TotalTrellisProducer = {
+  //      val rsftp = new RuntimeSystemForTrellisProcessing(runtimeSystem)
+  //      val step = TrellisProducerSpeedy(rsftp)
+  //      val loopy = TrellisProducerLoopy(step, runtimeSystem.stopContacts)
+  //      loopy
+  //    }
 
 }

@@ -40,7 +40,9 @@ trait RuntimeSystemApi
                             outputContacts: Set[Contact[_]],
                             name: String,
                             receive: SimpleSignalProcessor,
-                            index: ContactsIndex) extends Named with Component
+                            index: ContactsIndex) extends Named with Component with SimpleSignalProcessor{
+    def apply(s:Signal[_]): SignalCollection[Signal[_]] = receive(s)
+  }
 
   type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem => TotalTrellisProducer
 

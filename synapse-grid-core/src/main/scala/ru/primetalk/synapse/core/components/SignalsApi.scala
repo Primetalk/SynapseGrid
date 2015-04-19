@@ -54,5 +54,31 @@ trait SignalsApi extends ContactsDsl {
   /** One may use notation (contact -> data) to represent a signal*/
   implicit def pairToSignal[T](p: (Contact[T], T)): Signal[T] = Signal(p._1, p._2)
 
+  sealed trait SubsystemDirectSignal0 {
+    val subsystemName: String
+  }
+
+  object SubsystemDirectSignal0 {
+    def unapply(s:SubsystemDirectSignal0):Option[String] = Some(s.subsystemName)
+  }
+//  import scala.language.existentials
+  /** An encapsulation of the signal that targets a subsystem's internal contact. */
+  case class SubsystemDirectSignal[T](subsystemName: String, signal: Signal[T]) extends SubsystemDirectSignal0
+
+  case class SubsystemDirectSignalDist(subsystemName: String, signal: SignalDist) extends SubsystemDirectSignal0
+
+  /** This contact is used to process signals of internal system.
+    *
+    * In asynchronous execution the resulting signal should come
+    * at the same level of "call stack". However as far as we usually get the signal asynchronously
+    * it is processed at top level. So in order to run it in inside the subsystem,
+    * we package asynchronous result into
+    * Signal(SubsystemSpecialContact, SubsystemDirectSignal( name, actual resulting signal))
+    */
+  object SubsystemSpecialContact extends Contact[SubsystemDirectSignal0]
+
+  /** This contact is used to process answers of internal system. */
+  object SubsystemSpecialAnswerContact extends Contact[SubsystemDirectSignal0]
+
 
 }

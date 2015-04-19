@@ -22,16 +22,15 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
   trait SignalProcessing0 {
     /** The type that is used to represent a single value related to signal */
     type TSignal
-
-    implicit def tSignalToSignal(s: TSignal): Signal[_]
-
-    def signalToTSignal(s: Signal[_]): TSignal
-
     type TSignals = List[TSignal]
     type TrellisElement = (Context, TSignals)
     type TrellisElementTracking = (Context, TSignals)
     type TrellisProducerTracking = TotalTrellisBuilder => TSignals => TSignals
     type TotalTrellisProducerTracking = ((Context, Signal[_]) => TrellisElementTracking)
+
+    implicit def tSignalToSignal(s: TSignal): Signal[_]
+
+    def signalToTSignal(s: Signal[_]): TSignal
 
     def newTotalTrellisBuilder(runtimeSystem: RuntimeSystem, context: Context): TotalTrellisBuilder
 
@@ -201,11 +200,37 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
     }
 
     /** Converts a runtime system to Trellis producer. */
-    def rsToTrellisProducer(runtimeSystem: RuntimeSystem): TotalTrellisProducerTracking
+    def rsToTrellisProducer(runtimeSystem: RuntimeSystem): TotalTrellisProducerTracking = {
+      val rsftp = new RuntimeSystemForTrellisProcessingTracking(runtimeSystem)
+      val step = TrellisProducerSpeedyTracking(rsftp)
+      val loopy = TrellisProducerLoopyTracking(step, runtimeSystem.stopContacts)
+      loopy
+    }
 
   }
 
-  object SignalProcessingTracking extends SignalProcessing0 {
+  val signalProcessing:SignalProcessing0
+
+  implicit class RichRuntimeSystem(runtimeSystem: RuntimeSystem) {
+    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
+    def toTotalTrellisProducer = //: TotalTrellisProducer
+      signalProcessing.rsToTrellisProducer(runtimeSystem)
+
+    //runtimeSystemToTotalTrellisProducerConverter(runtimeSystem)
+    //    /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
+    //    def toTotalTrellisProducerTracking: TotalTrellisProducerTracking = {
+    //      val rsftp = new RuntimeSystemForTrellisProcessingTracking(runtimeSystem)
+    //      val step = TrellisProducerSpeedyTracking(rsftp)
+    //      val loopy = TrellisProducerLoopyTracking(step, runtimeSystem.stopContacts)
+    //      loopy
+    //    }
+  }
+
+}
+/** TODO replaceable mode of signal processing.*/
+trait SignalProcessingTrackingApi extends SignalProcessingApi0 {
+  /** Implementation of SignalProcessing with tracking parent signals in Trace class.*/
+  trait SignalProcessingTracking extends SignalProcessing0 {
     type TSignal = Trace
 
     def tSignalToSignal(s: TSignal): Signal[_] = s.signal
@@ -263,17 +288,15 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
       }
     }
 
-    def rsToTrellisProducer(runtimeSystem: RuntimeSystem): TotalTrellisProducerTracking = {
-      /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
-      val rsftp = new RuntimeSystemForTrellisProcessingTracking(runtimeSystem)
-      val step = TrellisProducerSpeedyTracking(rsftp)
-      val loopy = TrellisProducerLoopyTracking(step, runtimeSystem.stopContacts)
-      loopy
-    }
-
   }
 
-  object SignalProcessingSimple extends SignalProcessing0 {
+//  object SignalProcessingTracking extends  SignalProcessingTracking
+  val signalProcessing:SignalProcessingTracking = new SignalProcessingTracking {}
+
+}
+trait SignalProcessingSimpleApi extends SignalProcessingApi0 {
+  /** SignalProcessing without tracking.*/
+  trait SignalProcessingSimple extends SignalProcessing0 {
     type TSignal = Signal[_]
 
     def tSignalToSignal(s: TSignal): Signal[_] = s
@@ -331,14 +354,23 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
       }
     }
 
-    def rsToTrellisProducer(runtimeSystem: RuntimeSystem): TotalTrellisProducerTracking = {
-      /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
-      val rsftp = new RuntimeSystemForTrellisProcessingTracking(runtimeSystem)
-      val step = TrellisProducerSpeedyTracking(rsftp)
-      val loopy = TrellisProducerLoopyTracking(step, runtimeSystem.stopContacts)
-      loopy
-    }
-
   }
+
+  object SignalProcessingSimple extends SignalProcessingSimple
+
+  val signalProcessing:SignalProcessingSimple = new SignalProcessingSimple{}
+
+}
+
+/**
+ * end-user API for trellis producers
+ * @author zhizhelev, 25.03.15.
+ */
+trait SignalProcessingDsl
+  extends TrellisApi
+  with RichSimpleSignalProcessorApi
+  with SignalProcessingApi0
+  with SignalProcessingSimpleApi {
+
 
 }

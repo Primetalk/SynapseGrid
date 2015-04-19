@@ -23,9 +23,12 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi{
   /** A runtime component that should be processed with pattern matching. */
   sealed trait RuntimeComponent extends Named {
     def isStateful: Boolean
+    def toTotalTrellisProducer:TotalTrellisProducer
   }
 
   /** The trace of a signal towards the original one.
+    * This class is intended for debug purposes.
+    * It can also be used in pattern matching and back tracking algorithm.
     *
     * @param signalsReversed a list of signals starting from the last produced one and
     *                        collecting the signals that have lead to the production of the last signal.
@@ -65,6 +68,9 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi{
     val outputContacts = List[Contact[_]](output)
 
     def isStateful: Boolean = false
+
+    lazy val toTotalTrellisProducer: TotalTrellisProducer =
+      (context, signal) => (context, f(signal))
   }
 
   /**
@@ -81,6 +87,14 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi{
                                                 (S, SignalCollection[Signal[_]]) //(state, signals)
                                               ) extends RuntimeComponentTransparent {
     def isStateful: Boolean = true
+
+    lazy val toTotalTrellisProducer: TotalTrellisProducer = {
+      val fun = f.asInstanceOf[(Any, Signal[_]) => (Any, SignalCollection[Signal[_]])]
+      (context, signal) => {
+        val r = fun(context(stateHandle), signal)
+        (context.updated(stateHandle, r._1), r._2)
+      }
+    }
   }
 
   /**
@@ -91,6 +105,8 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi{
                                          stateHandles: List[Contact[_]],
                                          f: TotalTrellisProducer) extends RuntimeComponent {
     def isStateful: Boolean = true
+
+    override def toTotalTrellisProducer: TotalTrellisProducer = f
   }
 
   object RuntimeComponent {
