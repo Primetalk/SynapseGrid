@@ -14,10 +14,10 @@
 package ru.primetalk.synapse
 
 import ru.primetalk.synapse.core.components.SignalsApi
-import ru.primetalk.synapse.core.dot.{SystemRendererApi, DotUtilsApi}
+import ru.primetalk.synapse.core.dot.{SystemRendererApi, FilesApi}
 import ru.primetalk.synapse.core.dsl._
 import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, SignalProcessingDsl}
-import ru.primetalk.synapse.core.subsystems.{StaticSystemApi, ComponentNavigationApi, EncapsulationApi, BaseTypedSystemApi}
+import ru.primetalk.synapse.core.subsystems._
 
 import scala.language.implicitConversions
 
@@ -30,7 +30,7 @@ package object core
   with ExceptionHandlingExt
   with SignalsApi
   with BaseTypedSystemDsl
-  with DotUtilsApi
+  with FilesApi
   with ContactsDsl
   with EncapsulationApi
   with SystemBuilderDsl2Api

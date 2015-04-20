@@ -128,7 +128,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
 
   implicit class DirectLinkBuilderOps[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
     def directly(name: String = "Δt") =
-      sb.addLink(p._1, p._2, name, new NopLink[T1, T2]())
+      sb.addLink(p._1, p._2, sb.nextLabel(name, "Δt"), new NopLink[T1, T2]())
 
     def filter(predicate: T1 ⇒ Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
       sb.addLink(p._1, p._2,

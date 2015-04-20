@@ -11,7 +11,7 @@ import scala.language.{implicitConversions, reflectiveCalls}
  *
  * @author zhizhelev, 24.03.15.
  */
-trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRendererApi{
+trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRendererApi with BaseTypedSystemDsl {
   /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
   implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
     a.toStaticSystem
@@ -47,9 +47,15 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRen
 
   }
   implicit class RichStaticSystem(system: StaticSystem) {
-    def toDot = SystemRenderer.staticSystem2ToDot(system)
+    def toDot(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
 
+    @deprecated("use toDot", "20.04.2015")
     def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
+
+  }
+
+  implicit class RichTypedSystem(system: TypedSystem[_]) {
+    def toDot(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system.toStaticSystem, level = level)
 
   }
 

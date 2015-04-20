@@ -12,6 +12,8 @@
  */
 package ru.primetalk.synapse.core.dsl
 
+import ru.primetalk.synapse.core.subsystems.BaseTypedSystemDsl
+
 import scala.language.implicitConversions
 
 /** Managed states are not accessible directly. Instead the state can be overwritten by sending some data

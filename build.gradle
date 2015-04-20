@@ -38,6 +38,8 @@ ext {
     rxDep = 'com.netflix.rxjava:rxjava-scala:0.20.7'
     junit = 'junit:junit:4.12'
     pegdown = 'org.pegdown:pegdown:1.4.2'
+    specs2 = "org.specs2:specs2-core_${scalaMajorVersion}:3.5"
+    specs2Junit = "org.specs2:specs2-junit_${scalaMajorVersion}:3.5"
 }
 // Troubleshooting:
 // gradle OutOfMemoryError: PermGen space:
@@ -81,6 +83,7 @@ allprojects {
     repositories {
 //        mavenLocal()
         mavenCentral()
+        maven{ url="http://dl.bintray.com/scalaz/releases" }
     }
 }
 
@@ -106,6 +109,11 @@ subprojects {
         testCompile junit
         testRuntime pegdown // it is required by scalatest gradle plugin.
         testCompile scalaTest
+        testCompile specs2
+        testCompile specs2Junit
+//                {
+//            exclude group: "org.scalaz.stream" // » scalaz-stream_2.11
+//        }
     }
 
     // making source.jar
@@ -138,6 +146,18 @@ subprojects {
     }
 
 
+    /**
+     * Run Spec2 tests
+     */
+    task specs(type: JavaExec, dependsOn: testClasses) {
+        main = 'org.specs2.runner.files'
+        args = ['console junitxml html']
+        classpath sourceSets.main.runtimeClasspath
+        classpath sourceSets.test.runtimeClasspath
+        classpath configurations.testRuntime
+        classpath configurations.runtime
+    }
+    test.dependsOn specs
 /*  publishing {
         publications {
             mavenJava(MavenPublication) {

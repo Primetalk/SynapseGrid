@@ -288,7 +288,7 @@ trait SignalProcessingTrackingApi extends SignalProcessingApi0 {
       def newSingleStepBuilder: TrellisBuilder = new TrackingTrellisBuilder(mutable.ListBuffer[TSignal](), this)
 
       override def addException(trace: TSignal, proc: RuntimeComponent, exception: Throwable): Unit = {
-        currentState = runtimeSystem.unhandledExceptionHandler(exception, "", tSignalToSignal(trace), currentState)
+        currentState = runtimeSystem.unhandledExceptionHandler(exception, proc.name, tSignalToSignal(trace), currentState)
       }
     }
 

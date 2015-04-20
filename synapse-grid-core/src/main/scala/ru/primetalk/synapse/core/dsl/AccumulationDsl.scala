@@ -1,5 +1,7 @@
 package ru.primetalk.synapse.core.dsl
 
+import ru.primetalk.synapse.core.subsystems.BaseTypedSystemDsl
+
 /**
  * DSL for working with accumulators
  */

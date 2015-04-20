@@ -13,7 +13,7 @@
  */
 package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.{InnerSystemComponent, Link, LinkInfo}
+import ru.primetalk.synapse.core.components.InnerSystemComponent
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -29,6 +29,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
 
     /** creates a contact that will be used as output contact. */
     def output[T](internalName: String): Contact[T]
+
   }
 
   /** DSL for constructing systems.
@@ -216,6 +217,20 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
       system
     }
 
+    /** Creates subsystem and adds it to this system as a component.
+      *
+      * @param name the name of the component
+      * @param outerBuilder function that creates outer interface of the system of type T
+      * @param definitionBuilder function that constructs StaticSystem for type T.
+      * @tparam T outer system's interface type
+      * @return outer system's interface
+      */
+    def newSubsystem[T](name:String)(implicit outerBuilder:OuterInterfaceBuilder => T, definitionBuilder: T => StaticSystem):T = {
+      val sb1 = new SystemBuilderC(name)
+      val s = outerBuilder(sb1)
+      val staticSystem = definitionBuilder(s)
+      s
+    }
     /** Adds a few subsystems at once. Useful for super systems construction. */
     def addSubsystems(subsystems: StaticSystem*) {
       subsystems.foreach(subsystem => addSubsystem(subsystem)(identity))
@@ -288,9 +303,10 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     */
   final class SystemBuilderExtensionId[T <: SystemBuilderExtension](val extend: SystemBuilder => T)
 
-  class SystemBuilderC(name: String) extends SystemBuilder {
+  class SystemBuilderC(name: String = "") extends SystemBuilder {
     implicit def sb: SystemBuilder = this
-    this.setSystemName(name)
+    if(name!="")
+      this.setSystemName(name)
   }
 
   def state[T](name:String, s0:T)(implicit sb:SystemBuilder) = sb.state(name, s0)
@@ -308,5 +324,8 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     implicit extensionInstanceId: SystemBuilderExtensionId[T]): T =
     sb.extend(extensionInstanceId)
 
+  trait WithStaticSystem {
+    def toStaticSystem: StaticSystem
+  }
 
 }
