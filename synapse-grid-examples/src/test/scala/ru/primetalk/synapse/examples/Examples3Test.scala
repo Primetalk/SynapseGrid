@@ -24,7 +24,7 @@ class Examples3Test extends FunSuite {
   test("Dump"){
     val ss = new SuperSystemBuilder()
     assert(orphanContactsRec(ss) === List())
-    ss.toDotAtLevel(2).saveTo("SuperSystem.dot")
+    ss.toDot(2).saveTo("SuperSystem.dot")
   }
 
 }

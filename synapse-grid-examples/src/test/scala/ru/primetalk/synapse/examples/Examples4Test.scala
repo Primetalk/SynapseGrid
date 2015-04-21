@@ -23,7 +23,7 @@ import ru.primetalk.synapse.examples.Examples4.SentenceSplitterBuilder
 class Examples4Test extends FunSuite {
   test("Dump SentenceSplitterBuilder"){
     assert(orphanContactsRec(SentenceSplitterBuilder) === List())
-    SentenceSplitterBuilder.toDot.saveTo("SentenceSplitter.dot")
+    SentenceSplitterBuilder.toDot().saveTo("SentenceSplitter.dot")
   }
   test("Run SentenceSplitterBuilder"){
     val s = SentenceSplitterBuilder.toStaticSystem

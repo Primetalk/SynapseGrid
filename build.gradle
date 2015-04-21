@@ -91,7 +91,6 @@ allprojects {
 subprojects {
     apply plugin: 'scala'
     apply plugin: 'maven'
-    apply plugin: 'maven-publish'
     apply plugin: 'signing'
     apply plugin: 'eclipse'
     apply plugin: "com.github.maiflai.scalatest"
@@ -146,18 +145,20 @@ subprojects {
     }
 
 
-    /**
-     * Run Spec2 tests
-     */
-    task specs(type: JavaExec, dependsOn: testClasses) {
-        main = 'org.specs2.runner.files'
-        args = ['console junitxml html']
-        classpath sourceSets.main.runtimeClasspath
-        classpath sourceSets.test.runtimeClasspath
-        classpath configurations.testRuntime
-        classpath configurations.runtime
+    if(new File(projectDir,"src/test/scala").exists()) {
+        /**
+         * Run Spec2 tests
+         */
+        task specs(type: JavaExec, dependsOn: testClasses) {
+            main = 'org.specs2.runner.files'
+            args = ['console junitxml html']
+            classpath sourceSets.main.runtimeClasspath
+            classpath sourceSets.test.runtimeClasspath
+            classpath configurations.testRuntime
+            classpath configurations.runtime
+        }
+        test.dependsOn specs
     }
-    test.dependsOn specs
 /*  publishing {
         publications {
             mavenJava(MavenPublication) {
@@ -184,75 +185,78 @@ subprojects {
         deployerJars "org.apache.maven.wagon:wagon-http:2.2"
     }
 
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                configuration = configurations.deployerJars
+    if (enableSigning) {
+        apply plugin: 'maven-publish'
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    configuration = configurations.deployerJars
 //                "https://oss.sonatype.org/service/local/staging/deploy/maven2"
 //                "https://oss.sonatype.org/content/repositories/snapshots"
-                repository(url: repositoryUrl) {
-                    authentication(userName: repositoryUsername, password: repositoryPassword)
-                }
+                    repository(url: repositoryUrl) {
+                        authentication(userName: repositoryUsername, password: repositoryPassword)
+                    }
 //              repository (url: nexusRep) {
 //					authentication(userName: nexusUsername, password: nexusPassword)	// declare credentials in ~/.gradle/gradle.properties
 //				}
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                pom.project {
-                    artifactId "${project.name}_${scalaMajorVersion}"
-                    packaging 'jar'
-                    description 'SynapseGrid is a framework for constructing reactive real-time immutable data flow systems. ' +
-                            '-core contains everything to run a single-threaded system, ' +
-                            '-akka contains everything to run systems over Akka actors, ' +
-                            '-slf4j - enables logging, ' +
-                            '-concurrent - running systems directly over ExecutorContext without the need for Akka, ' +
-                            '-examples - a few test systems. Also there are ' +
-                            '' +
-                            "The current version is $aVersion"
-                    url 'https://github.com/Primetalk/SynapseGrid'
-                    parent {
-                        groupId 'org.sonatype.oss'
-                        artifactId 'oss-parent'
-                        version 7
-                    }
-                    licenses {
-                        license {
-                            name 'BSD Software License, 2-clause version'
-                            url 'https://github.com/Primetalk/SynapseGrid/blob/master/LICENSE.md'
-                            distribution 'repo'
-                        }
-                    }
-                    developers {
-                        developer {
-                            id 'zhizhelev'
-                            name 'Arseniy Zhizhelev'
-                            email 'zhizhelev@primetalk.ru'
-                        }
-                        developer {
-                            id 'nehaev'
-                            name 'Anton Nehaev'
-                            email 'nehaev@primetalk.ru'
-                        }
-                        developer {
-                            id 'popov'
-                            name 'Pavel Popov'
-                            email 'popov@primetalk.ru'
-                        }
-
-                    }
-
-                    scm {
+                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                    pom.project {
+                        artifactId "${project.name}_${scalaMajorVersion}"
+                        packaging 'jar'
+                        description 'SynapseGrid is a framework for constructing reactive real-time immutable data flow systems. ' +
+                                '-core contains everything to run a single-threaded system, ' +
+                                '-akka contains everything to run systems over Akka actors, ' +
+                                '-slf4j - enables logging, ' +
+                                '-concurrent - running systems directly over ExecutorContext without the need for Akka, ' +
+                                '-examples - a few test systems. Also there are ' +
+                                '' +
+                                "The current version is $aVersion"
                         url 'https://github.com/Primetalk/SynapseGrid'
-                        connection 'scm:git:git@github.com:Primetalk/SynapseGrid.git'
-                        developerConnection 'scm:git:git@github.com:Primetalk/SynapseGrid.git'
-                    }
+                        parent {
+                            groupId 'org.sonatype.oss'
+                            artifactId 'oss-parent'
+                            version 7
+                        }
+                        licenses {
+                            license {
+                                name 'BSD Software License, 2-clause version'
+                                url 'https://github.com/Primetalk/SynapseGrid/blob/master/LICENSE.md'
+                                distribution 'repo'
+                            }
+                        }
+                        developers {
+                            developer {
+                                id 'zhizhelev'
+                                name 'Arseniy Zhizhelev'
+                                email 'zhizhelev@primetalk.ru'
+                            }
+                            developer {
+                                id 'nehaev'
+                                name 'Anton Nehaev'
+                                email 'nehaev@primetalk.ru'
+                            }
+                            developer {
+                                id 'popov'
+                                name 'Pavel Popov'
+                                email 'popov@primetalk.ru'
+                            }
 
+                        }
+
+                        scm {
+                            url 'https://github.com/Primetalk/SynapseGrid'
+                            connection 'scm:git:git@github.com:Primetalk/SynapseGrid.git'
+                            developerConnection 'scm:git:git@github.com:Primetalk/SynapseGrid.git'
+                        }
+
+                    }
                 }
             }
         }
-    }
-    signing {
-        required { enableSigning && gradle.taskGraph.hasTask("uploadArchives") }
-        sign configurations.archives
+        signing {
+            required { enableSigning && gradle.taskGraph.hasTask("uploadArchives") }
+            sign configurations.archives
+        }
     }
 }
 project(':synapse-grid-core') {}

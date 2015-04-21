@@ -15,6 +15,9 @@ trait ComponentsApi {
   type StaticSystem = ru.primetalk.synapse.core.components.StaticSystem
   val StaticSystem = ru.primetalk.synapse.core.components.StaticSystem
 
+  type WithStaticSystem = ru.primetalk.synapse.core.components.WithStaticSystem
+  val WithStaticSystem = ru.primetalk.synapse.core.components.WithStaticSystem
+
   type Component = ru.primetalk.synapse.core.components.Component
 
   type ComponentWithInternalStructure = ru.primetalk.synapse.core.components.ComponentWithInternalStructure

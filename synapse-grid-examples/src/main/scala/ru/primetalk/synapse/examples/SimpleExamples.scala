@@ -43,7 +43,7 @@ object SimpleExamples {
     implicit val sb1 = this
     lazy val exampleMapTransducer: TInput => TOutput  = {
       val s = toStaticSystem
-      Try{s.toDot.saveTo(s"target/${s.name}.dot")}
+      s.toDot().trySaveTo(s"target/${s.name}.dot")
       val transducer = s.toDynamicSystem.toMapTransducer(input, output)
       transducer
     }
@@ -56,7 +56,7 @@ object SimpleExamples {
 
     lazy val exampleFlatMapTransducer: TInput => SignalCollection[TOutput] = {
       val s = toStaticSystem
-      Try{s.toDot.saveTo(s"target/${s.name}.dot")}
+      s.toDot().trySaveTo(s"target/${s.name}.dot")
       val transducer = s.toDynamicSystem.toTransducer(input, output)
       transducer
     }

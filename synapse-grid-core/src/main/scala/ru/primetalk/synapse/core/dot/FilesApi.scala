@@ -3,6 +3,7 @@ package ru.primetalk.synapse.core.dot
 import java.io.{File, PrintWriter}
 
 import scala.language.implicitConversions
+import scala.util.Try
 
 /**
  * Simple API for saving files
@@ -19,6 +20,7 @@ trait FilesApi {
         wrt.close()
       }
     }
+    def trySaveTo(filePath: String): Try[Unit] = Try{saveTo(filePath)}
   }
 
   implicit def filenameToFile(filename: String): File = new File(filename)

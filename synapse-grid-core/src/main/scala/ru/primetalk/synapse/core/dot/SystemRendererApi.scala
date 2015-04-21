@@ -152,15 +152,16 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
     }
 
     protected def newNodeCounter = new NodeCounter
-    def saveToDot(system: StaticSystem, filePath: String) {
-      val wrt = new PrintWriter(new File(filePath), "UTF-8")
-      try {
-        wrt.print(staticSystem2ToDot(system))
-      } finally {
-        wrt.close()
-      }
-    }
 
+//    def saveToDot(system: StaticSystem, filePath: String) {
+//      val wrt = new PrintWriter(new File(filePath), "UTF-8")
+//      try {
+//        wrt.print(staticSystem2ToDot(system))
+//      } finally {
+//        wrt.close()
+//      }
+//    }
+//
     def staticSystem2ToDot(system: StaticSystem,
                            graphKind: String = "digraph",
                            level: Int = 0,

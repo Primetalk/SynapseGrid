@@ -22,7 +22,7 @@ import ru.primetalk.synapse.examples.Examples2.StringSplitterBuilder
 @RunWith(classOf[JUnitRunner])
 class Examples2Test extends FunSuite {
   test("2"){
-    StringSplitterBuilder.toDot.saveTo("StringSplitter.dot")
+    (StringSplitterBuilder:StaticSystem).toDot().trySaveTo("StringSplitter.dot")
   }
   test("collection"){
 //    val list = List(1)

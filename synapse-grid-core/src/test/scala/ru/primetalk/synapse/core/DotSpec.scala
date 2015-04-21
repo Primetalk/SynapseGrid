@@ -29,6 +29,6 @@ class DotSpec extends Specification { def is = s2"""
   }
   val s1 = createTypedSystem[S1]("S1")
 
-  val s1dot = s1.toDot
+  val s1dot = s1.toDot()///new RichStaticSystemType(s1)(withStaticSystemToStaticSystem).toDot()
 
 }

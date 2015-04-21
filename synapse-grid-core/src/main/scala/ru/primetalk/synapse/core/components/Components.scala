@@ -52,17 +52,7 @@ trait TwoPoleComponent[T1, T2] extends Component {
   lazy val outputContacts : Set[Contact[_]] = Set(to)
 }
 /** Transparent component whose internal structure can be represented as a StaticSystem.*/
-trait ComponentWithInternalStructure extends Component {
-  /** The key method of synapse grid library. Returns a transparent representation
-    * of the component in the form of system graph.*/
-  def toStaticSystem: StaticSystem
-}
-
-
-
-
-
-
+trait ComponentWithInternalStructure extends Component with WithStaticSystem
 
 /** The system that can be embedded into some other static system.
   * It has specially processed state:

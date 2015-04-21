@@ -44,7 +44,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     *
     * The builder is used in BaseTypedSystem as a DSL for system's construction.
     */
-  trait SystemBuilder extends OuterInterfaceBuilder {
+  trait SystemBuilder extends OuterInterfaceBuilder with WithStaticSystem {
     private var name =
       if (getClass.isAnonymousClass)
         ""
@@ -324,8 +324,9 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     implicit extensionInstanceId: SystemBuilderExtensionId[T]): T =
     sb.extend(extensionInstanceId)
 
-  trait WithStaticSystem {
-    def toStaticSystem: StaticSystem
-  }
-
+//  trait WithStaticSystem {
+//    def toStaticSystem: StaticSystem
+//  }
+//
+//  implicit def withStaticSystemToStaticSystem(ws:WithStaticSystem): StaticSystem = ws.toStaticSystem
 }

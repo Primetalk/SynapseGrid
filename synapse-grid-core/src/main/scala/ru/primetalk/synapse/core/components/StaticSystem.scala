@@ -1,5 +1,6 @@
 package ru.primetalk.synapse.core.components
 
+import scala.language.implicitConversions
 /**
  * The core class for SynapseGrid. Contains an immutable description of a system.
  * @param inputs input contacts of the system. Within the system it is prohibited to send signals on them.
@@ -74,6 +75,15 @@ with ComponentWithInternalStructure {
  */
 object StaticSystem {
   type State = Map[Contact[_], Any]
+
+}
+trait WithStaticSystem {
+  def toStaticSystem: StaticSystem
+}
+object WithStaticSystem{
+  implicit def withStaticSystemToStaticSystem(ws:WithStaticSystem): StaticSystem = ws.toStaticSystem
+
+
 }
 
 /** ExtensionId for a StaticSystem extension. Every extension can be

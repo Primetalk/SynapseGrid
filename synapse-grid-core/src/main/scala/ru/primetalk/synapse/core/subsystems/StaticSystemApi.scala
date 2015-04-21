@@ -12,15 +12,23 @@ import scala.language.{implicitConversions, reflectiveCalls}
  * @author zhizhelev, 24.03.15.
  */
 trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRendererApi with BaseTypedSystemDsl {
-  /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
-  implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
-    a.toStaticSystem
-  }
+//  /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
+//  implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
+//    a.toStaticSystem
+//  }
   /** Enriches arbitrary type with implicit converter to StaticSystem. Adds a few useful methods.*/
-  implicit class RichType[T](t:T)(implicit cvt:T => StaticSystem){
-    def toDot = SystemRenderer.staticSystem2ToDot(t:StaticSystem)
+  implicit class RichStaticSystemType[T](t:T)(implicit cvt:T => StaticSystem){
 
-    def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(t:StaticSystem, level = level)
+    @inline private def system = t:StaticSystem
+    /** Converts a StaticSystem to graph in dot-format.
+      * Note: if you get a "missed argument ..." error, just add empty parentheses.
+      * @param level how deep to dig into subsystems. Default level=0 - which means not to plot subsystem details at all.
+      */
+    def toDot(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
+
+    @deprecated("use toDot", "20.04.2015")
+    def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
+
 
     /**
      * Constructs a system around another one.
@@ -46,24 +54,12 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDslApi with SystemRen
     }
 
   }
-  implicit class RichStaticSystem(system: StaticSystem) {
-    def toDot(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
 
-    @deprecated("use toDot", "20.04.2015")
-    def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
-
-  }
-
-  implicit class RichTypedSystem(system: TypedSystem[_]) {
-    def toDot(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system.toStaticSystem, level = level)
-
-  }
-
-  implicit class RichSystemBuilder(systemBuilder: SystemBuilder)
-    extends RichStaticSystem(systemBuilder.toStaticSystem) {
-    def system = systemBuilder.toStaticSystem
-  }
-
+//  implicit class RichSystemBuilder(systemBuilder: SystemBuilder)
+//    extends RichStaticSystem(systemBuilder.toStaticSystem) {
+//    def system = systemBuilder.toStaticSystem
+//  }
+//
   /**
    * Some additional information about the system. In particular,
    * one may find orphan contacts.

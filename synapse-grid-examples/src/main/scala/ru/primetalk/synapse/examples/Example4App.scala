@@ -84,7 +84,7 @@ object Example4App extends App {
     val s = new SuperSystem
     private
     val ss = s.toStaticSystem
-    ss.toDotAtLevel(1).saveTo("Example4.dot")
+    ss.toDot(1).saveTo("Example4.dot")
     private
     val rs = new DynamicSystemRx(ss.toDynamicSystem)
     val nameInput = rs.rxInput(s.nameInput)

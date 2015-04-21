@@ -75,7 +75,7 @@ class DistributedTest extends FunSuite {
   private val system = parentSystem.toStaticSystem
   val root: ComponentWithInternalStructure = new ActorComponent(system, defaultSupervisorStrategy)
 
-  root.toStaticSystem.toDot.saveTo("root.dot")
+  root.toDot().saveTo("root.dot")
 
   /**
    * 1. Construct grid with two subsystems (or, at least - two contacts).
