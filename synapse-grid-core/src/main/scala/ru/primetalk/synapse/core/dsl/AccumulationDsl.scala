@@ -45,6 +45,43 @@ trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDslApi {
       trigger.delay(1).clearList(collection, name + ".clear")
       seqOut
     }
+
+    /** JOINs two signals.
+      *
+      * Creates intermediate state and collects all incoming signals from the source contact
+      * until some data appear on the trigger.
+      * Then clears the state and returns collected data in a single list together with the trigger signal.
+      * {{{
+      *   in1.prependUntil(in2).map{ case (list1, data2) => ... }
+      * }}}
+     */
+    def prependUntil[TTrigger](trigger:Contact[TTrigger], name: String = c.name + "Collector"):Contact[(List[T], TTrigger)] = {
+      val collection = sb.state[List[T]](name + "State", Nil)
+      c.prependList(collection, name + ".collect")
+      val seqOut = contact[(List[T],TTrigger)](name + ".reversed")
+      trigger.withState(collection).stateFlatMap{case (list, t2) => (Nil, Seq((list, t2)))} >> seqOut
+      seqOut
+    }
+    /**
+     * Saves incoming signals to internal state.
+     * The previous value is replaced with the new one.
+     * When a signal appears on the trigger contact the current remembered value
+     * {{{
+     *   in1.lastJoinUntil(in2).map{ case (data1, data2) => }
+     * }}}
+     * if there were no input, then the trigger signal do not appear on the output
+     * @param autoClear should clear internal state on trigger. Otherwise keeps the previous state.
+     */
+    def lastJoinUntil[TTrigger](trigger:Contact[TTrigger], name: String = c.name + "Collector", autoClear:Boolean = true):Contact[(T, TTrigger)] = {
+      val collection = sb.state[Option[T]](name + "State", None)
+      c.updateState(collection, name + ".collect"){ case (_, d)=>Some(d)}
+      val seqOut = contact[(T,TTrigger)](name + ".reversed")
+      trigger.withState(collection).stateFlatMap{
+        case (stateOpt, t2) =>
+          (if(autoClear) None else stateOpt, stateOpt.map(v => (v,t2)).toSeq)
+      } >> seqOut
+      seqOut
+    }
   }
 
 }
