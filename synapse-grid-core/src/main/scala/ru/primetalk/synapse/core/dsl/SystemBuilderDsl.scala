@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.dsl
 
 import ru.primetalk.synapse.core.components.StateUpdate
+import ru.primetalk.synapse.core.ext.{SystemBuilderApi, NextLabelExt, DevNullExt, AuxNumberingExt}
 
 import scala.collection.GenTraversableOnce
 import scala.reflect.ClassTag
@@ -32,7 +33,7 @@ import scala.reflect.ClassTag
 //TODO:[ ] поддержка timeout exception - и особая обработка. Возможность создания future и ожидания результата с таймаутом. mapFuture
 //TODO:[ ] создание вокруг подсистемы механизма Try и обработка исключений на уровне родительской системы
 
-trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNumberingExt with DevNullExt {
+trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumberingExt with DevNullExt {
 
   /**
    * DSL methods for creating links between the two given contacts.*/
@@ -84,7 +85,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       */
     def castFilter[T3 <: T2](t2Class: Class[T3], name: String = "") = {
       sb.addLink(pair._1, pair._2,
-        sb.nextLabel(name, "cast(" + t2Class.getSimpleName + ")"),
+        sb.nextLabel(name, "cast[" + t2Class.getSimpleName + "]"),
         new FlatMapLink[T1, T2](
           d ⇒ if (t2Class.isInstance(d))
             Seq(d.asInstanceOf[T2])
@@ -98,7 +99,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       */
     def castFilter2[T3 <: T2](implicit t3Class: ClassTag[T3]) = {
       sb.addLink(pair._1, pair._2,
-        sb.nextLabel("", "cast2(" + t3Class.runtimeClass.getSimpleName + ")"),
+        sb.nextLabel("", "cast2[" + t3Class.runtimeClass.getSimpleName + "]"),
         new FlatMapLink[T1, T2]({
           case t3Class(d) => Seq(d)
           case _ => Seq()
@@ -314,6 +315,12 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
     def withFilter(predicate: T ⇒ Boolean): Contact[T] =
       filter(predicate)
 
+    def ifConst(const: T, name: String = "") =
+      filterEquals(const, name)
+
+    def filterEquals(const: T, name: String = "") =
+      filter(_ == const, sb.nextLabel(name, "_ == " + const + "?"))
+
 
     /** Creates another contact and links it to this one with transformation f. */
     def map[T2](f: T ⇒ T2, name: String = ""): Contact[T2] =
@@ -327,7 +334,7 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       (c, sb.auxContact[T2]).map(t => value, sb.nextLabel(name, "⇒" + value))
 
     def castFilter2[T3 <: T](implicit t3Class: ClassTag[T3]) =
-      (c, sb.auxContact[T3]).castFilter(t3Class.runtimeClass.asInstanceOf[Class[T3]])
+      (c, sb.auxContact[T3]).castFilter2(t3Class)//.runtimeClass.asInstanceOf[Class[T3]])
 
     def castFilter[T3](t3Class: Class[T3], name: String = "") =
       (c, sb.auxContact[T3]).castFilter(t3Class)
@@ -522,9 +529,6 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       (c, c2).directly(sb.nextLabel("", ">>"))
 
 
-    def ifConst(const: T, name: String = "") =
-      filter(_ == const, sb.nextLabel(name, "_ == " + const + "?"))
-
     /** Analogous to foldLeft. Every input is mixed with state by function f.
       * The result is saved to the state and returned on the next contact.
       * */
@@ -554,5 +558,19 @@ trait SystemBuilderDslApi extends SystemBuilderApi with NextLabelExt with AuxNum
       c
     }
   }
+
+  /** Declares the first contact as input and creates link to the second */
+  def mappedInput[T, T2 >: T](c1: Contact[T], c2: Contact[T2])(implicit sb:SystemBuilder) =
+    c1.inputMappedTo(c2)
+
+  /** Declares the second contact as output and creates link from the first.
+    * NB! Returns inner contact c1. */
+  def mappedOutput[T, T2 >: T](c1: Contact[T], c2: Contact[T2])(implicit sb:SystemBuilder) = {
+    c1.mapToOutput(c2)
+    c1
+  }
+
+  def connect[T1, T2 >: T1](c1: Contact[T1], c2: Contact[T2], name: String = "")(implicit sb:SystemBuilder) =
+    c1 >> c2
 
 }

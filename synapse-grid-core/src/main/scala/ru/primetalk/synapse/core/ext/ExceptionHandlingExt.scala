@@ -1,4 +1,4 @@
-package ru.primetalk.synapse.core.dsl
+package ru.primetalk.synapse.core.ext
 
 import ru.primetalk.synapse.core.components.SignalsApi
 import ru.primetalk.synapse.core.runtime.TrellisApi

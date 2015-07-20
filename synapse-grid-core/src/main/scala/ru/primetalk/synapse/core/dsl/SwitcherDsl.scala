@@ -7,7 +7,7 @@ import scala.collection.mutable
  * a set of case branches that are "sealed" - the last branch "else" will take all the rest signals.
  * @author zhizhelev, 05.04.15.
  */
-trait SwitcherDsl extends SystemBuilderDslApi{
+trait SwitcherDsl extends SystemBuilderDsl{
 
   class SwitcherBuilder[T](c: Contact[T], name: String = "")(implicit sb: SystemBuilder) {
     val defaultId = name + "Else"

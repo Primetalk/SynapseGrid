@@ -1,9 +1,11 @@
 package ru.primetalk.synapse.core.dsl
 
+import ru.primetalk.synapse.core.ext.{SystemBuilderApi, NextLabelExt}
+
 import scala.util.Try
 
 /** DSL for working with links that catch exceptions and encapsulate them in Try monad.*/
-trait TryDsl extends SystemBuilderApi with NextLabelExt with SystemBuilderDslApi {
+trait TryDsl extends SystemBuilderApi with NextLabelExt with SystemBuilderDsl {
   implicit class TryLinkBuilderOps[T1, T2](c: (Contact[T1], Contact[Try[T2]]))(implicit sb: SystemBuilder) {
 
     /** If map is used with a try-contact, then it will automatically encapsulate

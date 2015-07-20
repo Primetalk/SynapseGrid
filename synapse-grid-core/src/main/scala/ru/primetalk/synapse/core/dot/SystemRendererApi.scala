@@ -16,7 +16,7 @@ package ru.primetalk.synapse.core.dot
 import java.io.{File, PrintWriter}
 
 import ru.primetalk.synapse.core.components.{InnerSystemComponent, StateUpdate}
-import ru.primetalk.synapse.core.dsl.{AuxNumberingExt, ContactStyleExt, DevNullExt}
+import ru.primetalk.synapse.core.ext.{DevNullExt, ContactStyleExt, AuxNumberingExt}
 
 import scala.collection.mutable
 

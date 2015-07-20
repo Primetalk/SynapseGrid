@@ -13,7 +13,7 @@
 package ru.primetalk.synapse.core.runtime
 
 import ru.primetalk.synapse.core.components.InnerSystemComponent
-import ru.primetalk.synapse.core.dsl.{ContactsIndexExt, ExceptionHandlingExt}
+import ru.primetalk.synapse.core.ext.{ExceptionHandlingExt, ContactsIndexExt}
 
 import scala.language.{existentials, implicitConversions}
 

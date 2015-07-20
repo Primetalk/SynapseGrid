@@ -24,7 +24,8 @@ package object akka
   extends AkkaExt
   with StaticSystemAkkaApi
   with AkkaSystemBuilderApi
-  with ActorContainerBuilderApi
+  with ActorContainerDsl
+  with ActorSnippetDsl
   with ActorSystemBuilderExt
   {
 

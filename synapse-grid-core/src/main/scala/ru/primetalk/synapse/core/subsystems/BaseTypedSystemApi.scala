@@ -12,7 +12,7 @@
  */
 package ru.primetalk.synapse.core.subsystems
 
-import ru.primetalk.synapse.core.dsl.SystemBuilderApi
+import ru.primetalk.synapse.core.ext.SystemBuilderApi
 
 trait BaseTypedSystemApi extends SystemBuilderApi with BaseTypedSystemDsl {
 

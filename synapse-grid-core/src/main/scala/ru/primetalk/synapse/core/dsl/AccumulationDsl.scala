@@ -5,7 +5,7 @@ import ru.primetalk.synapse.core.subsystems.BaseTypedSystemDsl
 /**
  * DSL for working with accumulators
  */
-trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDslApi {
+trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDsl {
 
   /**
    * Collects all inputs until some other contact not issue control

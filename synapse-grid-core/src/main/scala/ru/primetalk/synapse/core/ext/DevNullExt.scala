@@ -1,4 +1,4 @@
-package ru.primetalk.synapse.core.dsl
+package ru.primetalk.synapse.core.ext
 
 /**
  * @author zhizhelev, 05.04.15.

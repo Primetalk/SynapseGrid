@@ -21,7 +21,7 @@ package ru.primetalk.synapse.core.dsl
  * @author А.Жижелев (arseniy zhizhelev)
  *
  */
-trait ContinuationDsl extends SystemBuilderDslApi with SystemBuilderDsl2Api {
+trait ContinuationDsl extends SystemBuilderDsl {
   type FCont[T1, T2] = T1 ⇒ Continuation[T1, T2]
 
   /**

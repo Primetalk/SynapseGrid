@@ -20,7 +20,7 @@ import scala.language.implicitConversions
   * on a special contact.
   * On every state change a signal appears on a contact onUpdated
   * */
-trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBuilderDslApi {
+trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBuilderDsl {
 
   class ManagedStateSnippet[S](val name: String, initialValue: Option[S] = None)(implicit sb:SystemBuilder) {
 

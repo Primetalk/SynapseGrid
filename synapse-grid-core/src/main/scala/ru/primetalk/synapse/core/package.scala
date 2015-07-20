@@ -16,6 +16,7 @@ package ru.primetalk.synapse
 import ru.primetalk.synapse.core.components.SignalsApi
 import ru.primetalk.synapse.core.dot.{SystemRendererApi, FilesApi}
 import ru.primetalk.synapse.core.dsl._
+import ru.primetalk.synapse.core.ext._
 import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, SignalProcessingDsl}
 import ru.primetalk.synapse.core.subsystems._
 
@@ -33,7 +34,6 @@ package object core
   with FilesApi
   with ContactsDsl
   with EncapsulationApi
-  with SystemBuilderDsl2Api
   with ContinuationDsl
   with AccumulationDsl
   with ManagedStatesDsl

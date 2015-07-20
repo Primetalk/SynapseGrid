@@ -11,9 +11,10 @@
  *
  * Created: 28.06.13, zhizhelev
  */
-package ru.primetalk.synapse.core.dsl
+package ru.primetalk.synapse.core.ext
 
 import ru.primetalk.synapse.core.components.InnerSystemComponent
+import ru.primetalk.synapse.core.dsl.ContactsDsl
 
 import scala.annotation.tailrec
 import scala.collection.mutable

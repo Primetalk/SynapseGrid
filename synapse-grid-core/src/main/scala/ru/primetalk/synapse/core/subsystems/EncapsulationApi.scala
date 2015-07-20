@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.subsystems
 
-import ru.primetalk.synapse.core.dsl.SystemBuilderApi
+import ru.primetalk.synapse.core.ext.SystemBuilderApi
 
 /**
  * @author zhizhelev, 29.03.15.
