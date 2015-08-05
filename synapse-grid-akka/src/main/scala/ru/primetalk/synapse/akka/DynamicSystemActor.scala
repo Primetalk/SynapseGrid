@@ -14,6 +14,7 @@ package ru.primetalk.synapse.akka
 
 import akka.event.{LoggingReceive, Logging}
 import ru.primetalk.synapse.akka.SpecialActorContacts._
+import ru.primetalk.synapse.akka.impl.EscalatingActor
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import org.slf4j.MDC

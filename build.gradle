@@ -21,7 +21,7 @@ ext {
 
 
     scalaMajorVersion = '2.11'
-    scalaFullVersion = "${scalaMajorVersion}.6"
+    scalaFullVersion = "${scalaMajorVersion}.7"
     scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.4"
     shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.1.0"
 //    scalaMajorVersion = '2.10'

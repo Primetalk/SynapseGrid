@@ -440,8 +440,10 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     }
 
     /** Extracts current state value. */
-    def getState[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
+    def getStateOld[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
       (zipWithState(stateHolder) -> sb.auxContact[S]).map(_._1, sb.nextLabel(name, "_._1"))
+    def getState[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
+      c.withState(stateHolder).stateMap({case (s, _) => (s,s)}, sb.nextLabel(name,s"$stateHolder.get"))
 
     //    implicit
     //    def zippingLink[S](c: (Contact[T], Contact[(S, T)]))(sb: BasicSystemBuilder): ZippingLinkOps[S, T] = new ZippingLinkOps[S, T](c: (Contact[T], Contact[(S, T)]))(sb)

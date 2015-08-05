@@ -53,9 +53,6 @@ trait ActorSystemBuilderExt {
         c foreach(p => actor.tell(p._2, p._1), nextLabel(name, "tellToActor(" + actor.path + ")"))
       }
 
-      def tellToActorFromSelf(actor: ActorRef, name: String = "") = {
-        c from self tellToActor(actor, name)
-      }
     }
 
     class ImplRichContactActor[T](c: Contact[T]) {
@@ -74,6 +71,10 @@ trait ActorSystemBuilderExt {
           //          case msg ⇒
           //            throw new IllegalStateException("toActorIndirect(" + actorRefState + "): Impossible case:" + msg)
         }
+      }
+      /** Send a message from the previous contact to the given actor from self. */
+      def tellToActorFromSelf(actor: ActorRef, name: String = "") = {
+        c from self tellToActor(actor, name)
       }
     }
 

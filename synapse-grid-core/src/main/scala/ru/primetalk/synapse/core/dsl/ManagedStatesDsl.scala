@@ -18,17 +18,27 @@ import scala.language.implicitConversions
 
 /** Managed states are not accessible directly. Instead the state can be overwritten by sending some data
   * on a special contact.
-  * On every state change a signal appears on a contact onUpdated
+  * On every state change a signal appears on a contact onUpdated.
+  * TODO: detect changes and create event only when changed.
   * */
 trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBuilderDsl {
 
   class ManagedStateSnippet[S](val name: String, initialValue: Option[S] = None)(implicit sb:SystemBuilder) {
 
-    val state = sb.state[Option[S]](name + ".state", initialValue)
-    val onUpdated = contact[S](name + ".onUpdated")
-    val update = contact[S](name + ".update")
-    update.labelNext("Option(_)").map(Option(_)).saveTo(state)
-    update.delay(2) >> onUpdated
+    lazy val state = sb.state[Option[S]](name + ".state", initialValue)
+    /** Event when state has been updated, even to the same state value.*/
+    lazy val onUpdated = {
+      val c = contact[S](name + ".onUpdated")
+      update.delay(2) >> c
+      c
+    }
+
+    /** Input for the managed state. */
+    lazy val update = {
+      val c = contact[S](name + ".update")
+      c.labelNext("Option(_)").map(Option(_)).saveTo(state)
+      c
+    }
 
   }
 

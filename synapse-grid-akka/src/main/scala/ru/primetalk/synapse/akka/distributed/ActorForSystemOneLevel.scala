@@ -15,6 +15,7 @@ package ru.primetalk.synapse.akka.distributed
 import akka.actor._
 import akka.util.Timeout
 import ru.primetalk.synapse.akka._
+import ru.primetalk.synapse.akka.impl.AbstractStaticSystemActor
 import ru.primetalk.synapse.core.components.StaticSystem
 import ru.primetalk.synapse.core._
 

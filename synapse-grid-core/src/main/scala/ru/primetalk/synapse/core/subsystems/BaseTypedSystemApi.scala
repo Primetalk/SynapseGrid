@@ -26,7 +26,7 @@ trait BaseTypedSystemApi extends SystemBuilderApi with BaseTypedSystemDsl {
     * better decomposition. It is described in comment to TypedSystemConstructor
     */
   abstract class BaseTypedSystem(val name: String = "") extends WithStaticSystem {
-    protected implicit val sb: SystemBuilder = new SystemBuilderC(if (name == "") getClass.getSimpleName else name)
+    protected implicit val sb: SystemBuilder = new SystemBuilderC(if (name == "") {val n = getClass.getSimpleName;if(n.endsWith("$")) n.substring(0, n.length-1)else n} else name)
 
     protected def defineSystem(implicit sb: SystemBuilder) {}
 

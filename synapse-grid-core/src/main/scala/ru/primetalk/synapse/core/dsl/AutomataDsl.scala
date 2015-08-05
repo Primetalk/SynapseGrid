@@ -17,19 +17,22 @@ trait AutomataDsl extends SystemBuilderDsl {
 
 	/** The builder creates a state machine with `State` type of state. */
 	//trait AutomataBuilder[State] {//extends SystemBuilder {
-	class AutomataBuilder[State](initialState: State)(implicit sb: SystemBuilder) {
+	class AutomataBuilder[State](initialState: State, name:String = "automaton")(implicit sb: SystemBuilder) { ab =>
 
-		protected def stateName = "automatonState"
+		protected def stateName = name+"State"
 
 		/** All operations with automatonState should be done via DSL */
 		private val automatonState = sb.state[State](stateName, initialState)
 
+		/** Cache with contacts that are zipped with automaton state.
+			* To avoid duplicates.*/
 		private val zippedCache = scala.collection.mutable.Map[Contact[_], Contact[_]]()
 
 		private def zipped[T](c: Contact[T]): Contact[(State, T)] = {
 			zippedCache.getOrElseUpdate(c, c zipWithState(automatonState, "(State,_)")).asInstanceOf[Contact[(State, T)]]
 		}
 
+		/** Cache of contacts that are mapped in a particular state.*/
 		private val zippedFilteredCache = scala.collection.mutable.Map[(Contact[_], State), Contact[_]]()
 
 		private def zippedFiltered[T](c: Contact[T], s: State): Contact[T] = {
@@ -43,15 +46,15 @@ trait AutomataDsl extends SystemBuilderDsl {
 		}
 
 		/** The only way to change automaton state is to save new state value into saveToState. */
-		val saveToState = contact[State]("saveToState")
+		lazy val saveToState = contact[State]("saveToState")
 
-		val onTransition = {
+		lazy val onTransition = {
 			val c1 = contact[(State, State)]("onTransition")
 			(saveToState -> c1).stateMap(automatonState) { (oldState, newState) ⇒ (newState, (oldState, newState)) }
 			c1
 		}
 
-		val onAutomatonStateChanged = {
+		lazy val onAutomatonStateChanged = {
 			val c2 = contact[(State, State)]("onStateChanged")
 			onTransition.labelNext("hasChanged?") -> c2 filter { case (oldState, newState) ⇒ newState != oldState }
 			c2
@@ -66,7 +69,16 @@ trait AutomataDsl extends SystemBuilderDsl {
 				c
 			})
 
+		class AutomatonContactWithState[T1](c1: Contact[T1]) extends ContactWithState[T1, State](c1, automatonState)(sb) {
+			def when(s: State, name: String = ""):Unit = {
+
+			}
+			def zip = ab.zipped(c1)
+		}
 		implicit class StateContact[T](c: Contact[T]) {
+
+			def withAutomatonState: ContactWithState[T, State] =
+				new AutomatonContactWithState[T](c)
 
 			def zipWithAutomatonState: Contact[(State, T)] =
 				zipped(c)

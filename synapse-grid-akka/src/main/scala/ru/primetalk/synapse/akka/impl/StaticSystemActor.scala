@@ -11,14 +11,14 @@
  *
  * Created: 01.07.13, zhizhelev
  */
-package ru.primetalk.synapse.akka
+package ru.primetalk.synapse.akka.impl
 
-import akka.event.{LoggingReceive, Logging}
-import org.slf4j.MDC
-import ru.primetalk.synapse.akka.SpecialActorContacts._
 import akka.actor._
+import akka.event.{Logging, LoggingReceive}
+import org.slf4j.MDC
+import ru.primetalk.synapse.akka.SpecialActorContacts.{InitCompleted, _}
+import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.core._
-import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import ru.primetalk.synapse.core.components.SignalDist
 
 /** Escalates all exceptions to upper level. This actor is an appropriate default for
