@@ -46,3 +46,4 @@ package object core
   with ContactsIndexExt
   with SystemConvertingApi
   with BaseTypedSystemApi
+  with SwitcherDsl

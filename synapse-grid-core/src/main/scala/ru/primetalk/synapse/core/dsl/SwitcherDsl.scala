@@ -21,7 +21,7 @@ trait SwitcherDsl extends SystemBuilderDsl{
     val selector = sb.auxContact[(String, T)]
 
     def If(condition: T => Boolean, name: String = "") = {
-      require(conditions.size == 0, "If can only be the first clause in switcher. Use ElseIf or Else on other branches.")
+      require(conditions.isEmpty, "If can only be the first clause in switcher. Use ElseIf or Else on other branches.")
       ElseIf(condition, name)
     }
 

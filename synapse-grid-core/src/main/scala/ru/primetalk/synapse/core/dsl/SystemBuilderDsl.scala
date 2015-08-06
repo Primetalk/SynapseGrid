@@ -363,6 +363,10 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
       sb.addComponent(new StateUpdate[S, T](c, stateHandle, sb.nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
     }
 
+    /** Fold incoming data with state.*/
+    def fold[S](stateHandle: StateHandle[S], name: String = "")(fun:(S,T)=>S) =
+      updateState(stateHandle, sb.nextLabel(name, "fold(" + stateHandle + ")("+fun+")"))(fun)
+
     // Numeric state helpers inc, dec, addTo - these methods do appropriate math operations on Numeric states.
 
     def inc[S: Numeric](stateHandle: StateHandle[S], name: String = "") {
@@ -380,7 +384,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     def addTo[S](stateHandle: StateHandle[S], name: String = "")(implicit n: Numeric[S], ev: T <:< S) {
       sb.addComponent(new StateUpdate[S, T](c, stateHandle,
-        sb.nextLabel(name, "addTo(" + stateHandle + ")"),
+        sb.nextLabel(name, "" + stateHandle + " += _"),
         (s, a) => n.plus(s, a)
       ))
     }
