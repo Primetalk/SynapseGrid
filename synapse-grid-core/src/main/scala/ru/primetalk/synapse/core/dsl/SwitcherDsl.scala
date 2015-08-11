@@ -18,9 +18,12 @@ trait SwitcherDsl extends SystemBuilderDsl{
     var completed = false
     val conditions = mutable.ListBuffer[Condition]()
     val endPoints = mutable.ListBuffer[Contact[_]]()
+    /** Special intermediate contact to start fast signal processing. */
+    val fireSelector = sb.auxContact[(String, T)]
     val selector = sb.auxContact[(String, T)]
 
     def If(condition: T => Boolean, name: String = "") = {
+      ensureNotCompleted()
       require(conditions.isEmpty, "If can only be the first clause in switcher. Use ElseIf or Else on other branches.")
       ElseIf(condition, name)
     }
@@ -32,30 +35,31 @@ trait SwitcherDsl extends SystemBuilderDsl{
     }
 
     def ElseIf(condition: T => Boolean, name: String = "") = {
-      require(!completed, "the switcher " + name + " is completed.")
+      ensureNotCompleted()
       val id = sb.nextLabel(name, "" + conditions.size)
       conditions += Condition(id, condition)
       sCase(id)
     }
 
+    private def ensureNotCompleted() = require(!completed, "the switcher " + name + " is completed. (There should be one and only one Else in a switcher.)")
+
     def Else(name: String = "") = {
-      require(!completed, "the switcher " + name + " is completed.")
+      ensureNotCompleted()
+      val id = sb.nextLabel(name, defaultId)// this name will be used in sCase
+      val res = ElseIf(_ => true, id)
       completed = true
       compileSelector()
-      sCase(defaultId)
+      res
     }
 
-//    implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new LinkBuilderOps(c)(sb)
-//
     private def compileSelector() {
       completed = true
-      val conditionsList = conditions.toList
-      val preSelector = sb.auxContact[(String, T)]
-      (c -> preSelector).map(value => {
+      val conditionsList = conditions.toSeq
+      (c -> fireSelector).map(value => {
         val id = conditionsList.find(_.condition(value)).map(_.id).getOrElse(defaultId)
         (id, value)
       }, selectorName)
-      new ContactOps(preSelector)(sb).fireUntilSet(selector, endPoints.toSet)
+      new ContactOps(fireSelector)(sb).fireUntilSet(selector, endPoints.toSet)
     }
   }
   implicit class SwitcherContactOps[T](val c: Contact[T])(implicit sb: SystemBuilder) {

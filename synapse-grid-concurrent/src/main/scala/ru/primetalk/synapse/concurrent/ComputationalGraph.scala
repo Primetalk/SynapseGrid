@@ -343,6 +343,9 @@ object ComputationState {
     }
 
     def toParallelSimpleSignalProcessor: SimpleSignalProcessor =
+      parallel
+
+    def parallel: SimpleSignalProcessor =
       runtimeSystemToTotalTrellisProducer(ec)(toParallelRuntimeSystem).toSimpleSignalProcessor(system.s0)
 
     /**

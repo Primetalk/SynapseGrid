@@ -45,11 +45,11 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
     val stateLegacyModification = "shape=invhouse, fillcolor=lightpink, color=red, style=filled"
     val stateModification = "shape=octagon, color=red, style=rounded"
 
-    def quote(m: String) = "\""+m+"\""
+    def quote(m: String) = "\""+m.replaceAllLiterally("\"","\\\"")+"\""
     protected
     def stateNodeToDot(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Any, nodeKind: NodeKind): String = (c, nodeKind) match {
       case (StateHandle(name, _), StateNode) ⇒
-        s"$id [label=${"\"" + name + "\""}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
+        s"$id [label=${quote(name)}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
     }
 
     protected
@@ -77,15 +77,15 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
     protected
     def contactNodeToDot(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Any, nodeKind: NodeKind): String = (c, nodeKind) match {
       case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact ⇒
-        s"$id [label=${"\"\""}, shape=point, color=red]"
+        s"$id [label=${quote("")}, shape=point, color=red]"
       case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == AuxiliaryContact ⇒
-        s"$id [label=${"\"\""}, shape=point]"
+        s"$id [label=${quote("")}, shape=point]"
       case (Contact(name), InputNode) ⇒
-        s"$id [label=${"\"" + name + "\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=aquamarine]"
+        s"$id [label=${quote(name)}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=aquamarine]"
       case (Contact(name), InnerContact) ⇒
-        s"$id [label=${"\"" + name + "\""}, shape=ellipse]"
+        s"$id [label=${quote(name)}, shape=ellipse]"
       case (Contact(name), OutputNode) ⇒
-        s"$id [label=${"\"" + name + "\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
+        s"$id [label=${quote(name)}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
 
     }
 
@@ -123,7 +123,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
       //			case (Contact(name), OutputNode) ⇒
       //				s"$id [label=${"\"" + name + "\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
       case _ =>
-        s"$id [label=${"\"unknown\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=red]"
+        s"$id [label=${quote("unknown")}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=red]"
     }
 
     protected
@@ -168,7 +168,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
                            counter: NodeCounter = newNodeCounter): String = {
       val stylesExtOpt = system.extensionOpt[ContactStyleStaticExtension]
       val elements = mutable.ListBuffer[String]()
-      elements += "label=\"" + system.name + "\""
+      elements += "label=" + quote(system.name)
       elements += "rankdir = LR"
       if (graphKind == "subgraph")
         elements ++= List("fillcolor=azure", "style=filled")

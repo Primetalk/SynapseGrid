@@ -20,12 +20,10 @@ ext {
     enableSigning = !aVersion.contains('SNAPSHOT')
 
 
-//    scalaMajorVersion = '2.11'
-//    scalaFullVersion = "${scalaMajorVersion}.7"
-//    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.5"
-//    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.2.5"
-    scalaMajorVersion = '2.10'
-    scalaFullVersion = "${scalaMajorVersion}.5"
+    scalaMajorVersion = '2.11'
+    scalaFullVersion = "${scalaMajorVersion}.7"
+//    scalaMajorVersion = '2.10'
+//    scalaFullVersion = "${scalaMajorVersion}.5"
     scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.5"
     shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.2.5"
 

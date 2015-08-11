@@ -30,19 +30,20 @@ trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDsl {
     def collectReversedUntil[TTrigger](trigger: Contact[TTrigger], name: String = c.name + "ReversedCollector"): Contact[List[T]] = {
       val collection = sb.state[List[T]](name + "State", Nil)
       c.prependList(collection, name + ".collectReversed")
-      val seqOut = trigger.getState(collection, name + ".read")
-      trigger.delay(1).clearList(collection, name + ".clear")
-      seqOut
+      val seqOut = contact[List[T]](name + ".reversedOrder")
+      trigger.labelNext(name + ".removeAll").withState(collection).
+        stateMap{case (list, t)=> (Nil, list)} >>
+        seqOut
     }
 
     /** Creates intermediate state and collects all incoming signals in direct order until some data appear on the trigger.
       * Then clears the state and returns collected data in a single list. */
-    def collectUntil[TTrigger](trigger: Contact[TTrigger], name: String = c.name + "Collector"): Contact[List[T]] = {
+    def collectUntil[TTrigger](trigger: Contact[TTrigger], name: String = c.name + "CCollector"): Contact[List[T]] = {
       val collection = sb.state[List[T]](name + "State", Nil)
       c.prependList(collection, name + ".collect")
       val seqOut = contact[List[T]](name + ".directOrder")
-      (trigger.getState(collection, name + ".read") -> seqOut).labelNext("reverseStack").map(_.reverse)
-      trigger.delay(1).clearList(collection, name + ".clear")
+      trigger.labelNext(name + ".removeAll.reverse").withState(collection).
+        stateMap{case (list, t)=> (Nil, list.reverse)} >>
       seqOut
     }
 
@@ -55,11 +56,12 @@ trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDsl {
       *   in1.prependUntil(in2).map{ case (list1, data2) => ... }
       * }}}
      */
-    def prependUntil[TTrigger](trigger:Contact[TTrigger], name: String = c.name + "Collector"):Contact[(List[T], TTrigger)] = {
+    def prependUntil[TTrigger](trigger:Contact[TTrigger], name: String = c.name + "PCollector"):Contact[(List[T], TTrigger)] = {
       val collection = sb.state[List[T]](name + "State", Nil)
       c.prependList(collection, name + ".collect")
-      val seqOut = contact[(List[T],TTrigger)](name + ".reversed")
-      trigger.withState(collection).stateFlatMap{case (list, t2) => (Nil, Seq((list, t2)))} >> seqOut
+      val seqOut = contact[(List[T],TTrigger)](name + ".reversedOrder")
+      trigger.labelNext("(removeAll, _)").withState(collection).
+        stateMap{case (list, t2) => (Nil, (list, t2))} >> seqOut
       seqOut
     }
     /**
