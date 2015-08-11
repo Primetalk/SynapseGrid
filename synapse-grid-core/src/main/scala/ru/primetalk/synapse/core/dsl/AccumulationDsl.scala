@@ -73,15 +73,43 @@ trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDsl {
      * }}}
      * if there were no input, then the trigger signal do not appear on the output
      * @param autoClear should clear internal state on trigger. Otherwise keeps the previous state.
+     *
+     * Prefer to use rightJoin.
      */
+
     def lastJoinUntil[TTrigger](trigger:Contact[TTrigger], name: String = c.name + "Collector", autoClear:Boolean = true):Contact[(T, TTrigger)] = {
       val collection = sb.state[Option[T]](name + "State", None)
       c.updateState(collection, name + ".collect"){ case (_, d)=>Some(d)}
-      val seqOut = contact[(T,TTrigger)](name + ".reversed")
-      trigger.withState(collection).stateFlatMap{
+      val seqOut = contact[(T,TTrigger)](name + ".last")
+      (trigger.withState(collection) -> seqOut).stateFlatMap{
         case (stateOpt, t2) =>
           (if(autoClear) None else stateOpt, stateOpt.map(v => (v,t2)).toSeq)
-      } >> seqOut
+      }
+      seqOut
+    }
+
+    /** Creates a state for temporary storing the value
+      * from the current contact.
+      *
+      * A kind of a latch.
+      *
+      * for all  trigger signals that  appear during `latch delay`
+      * the join is successful.
+      * If nothing has been remembered, then nothing appears on the output.
+      *
+      * The latched value is cleared automatically after the given delay.
+      * This is better than `lastJoinUntil` when trigger do not appear in our timeslot. The
+      * remembered value is automatically removed anyway.
+      * */
+    def rightJoin[TTrigger](trigger:Contact[TTrigger], name: String = c.name + "RightJoin", delay:Int = 1):Contact[(Option[T], TTrigger)] = {
+      val collection = sb.state[Option[T]](name + "State", None)
+      c.updateState(collection, name + ".collect"){ case (_, d)=>Some(d)}
+      c.delay(delay).updateState(collection, name + ".collect"){ case (_, d)=>None}
+      val seqOut = contact[(Option[T],TTrigger)](name + ".rightJoin")
+      (trigger.labelNext("(savedOpt, _)").withState(collection) -> seqOut).stateMap{
+        case (stateOpt, t2) =>
+          (stateOpt, (stateOpt,t2))
+      }
       seqOut
     }
   }
