@@ -25,6 +25,9 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
   /** An interface of some object that can collect information about outer interface of a system.
     * Not only it create contact instances, but it usually transforms and collect them. */
   trait OuterInterfaceBuilder {
+    /** Changes the name of the component. */
+    def setSystemName(name:String)
+
     /** creates a contact that will be used as input contact. */
     def input[T](internalName: String): Contact[T]
 

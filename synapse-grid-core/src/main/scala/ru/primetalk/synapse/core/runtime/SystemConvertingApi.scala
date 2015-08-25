@@ -14,6 +14,7 @@ package ru.primetalk.synapse.core.runtime
 
 import ru.primetalk.synapse.core.components.InnerSystemComponent
 import ru.primetalk.synapse.core.ext.{ExceptionHandlingExt, ContactsIndexExt}
+import ru.primetalk.synapse.core.subsystems.ComponentNavigationApi
 
 import scala.language.{existentials, implicitConversions}
 
@@ -52,7 +53,7 @@ import scala.language.{existentials, implicitConversions}
  */
 trait SystemConvertingApi extends RuntimeComponentApi
 with TrellisApi with RuntimeSystemApi with SignalProcessingDsl
-with ContactsIndexExt with ExceptionHandlingExt {
+with ContactsIndexExt with ExceptionHandlingExt with ComponentNavigationApi{
 
   /** To enable debug information one may override #debug that is called within processing algorithms. */
   protected
@@ -71,7 +72,7 @@ with ContactsIndexExt with ExceptionHandlingExt {
     * The path is used in hierarchical subsystem transformations.
     * The parentSystem is used in red-links processing.
     */
-  case class ComponentDescriptor(component: Component, path: List[String] = List(), parentSystem: StaticSystem)
+  case class ComponentDescriptor(component: Component, path: SystemPath = List(), parentSystem: StaticSystem)
 
   /** ComponentDescriptorConverter is for complex components with internal structure. */
   type ComponentDescriptorConverter = PartialFunction[ComponentDescriptor, RuntimeComponent]
@@ -207,7 +208,7 @@ with ContactsIndexExt with ExceptionHandlingExt {
                                      rsToTtp: RuntimeSystemToTotalTrellisProducerConverter):
     ComponentDescriptorConverter = {
       case ComponentDescriptor(InnerSystemComponent(subsystem, subsystemStateHandle, sharedStateHandles), path, _) ⇒
-        val rs = systemToRuntimeSystem(subsystem.name :: path,
+        val rs = systemToRuntimeSystem(path :+ subsystem.name,
           subsystem,
           converterRecursive,
           subsystem.outputContacts)
@@ -344,7 +345,7 @@ with ContactsIndexExt with ExceptionHandlingExt {
       })
     }
 
-    def systemToRuntimeSystem(path: List[String],
+    def systemToRuntimeSystem(path: SystemPath,
                               system: StaticSystem,
                               converter: ComponentDescriptorConverter,
                               stopContacts: Set[Contact[_]]): RuntimeSystem = {

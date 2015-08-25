@@ -68,7 +68,7 @@ trait AbstractStaticSystemActor extends Actor {
       ls => innerProcessSignals(ls)
   }
 
-  protected def innerProcessSignals(ls: List[Signal[_]]) {
+  protected def innerProcessSignals(ls: List[Signal[_]]) = {
     MDC.put("akkaSource", "" + self.path)
     val results: List[Signal[_]] = ls.flatMap {
       signal: Signal[_] =>

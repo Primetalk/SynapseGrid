@@ -13,14 +13,46 @@ import scala.language.{implicitConversions, reflectiveCalls}
  * @author zhizhelev, 24.03.15.
  */
 trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRendererApi with BaseTypedSystemDsl {
-//  /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
-//  implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
-//    a.toStaticSystem
-//  }
-  /** Enriches arbitrary type with implicit converter to StaticSystem. Adds a few useful methods.*/
-  implicit class RichStaticSystemType[T](t:T)(implicit cvt:T => StaticSystem){
 
-    @inline private def system = t:StaticSystem
+  //  /** Converts to StaticSystem an arbitrary object with method toStaticSystem.*/
+  //  implicit def toStaticSystem(a: {def toStaticSystem: StaticSystem}): StaticSystem = {
+  //    a.toStaticSystem
+  //  }
+
+  implicit class RichComponent[T](t: T)(implicit cvt: T => Component) {
+    /**
+     * Constructs a system around a component.
+     * It's inputs and outputs are renamed to name+"."+input.name and it's name is anew.
+     * All it's state is shared.
+     *
+     * See also EncapsulationApi.
+     */
+    def encapsulateComponent(name: String = ""): StaticSystem = {
+      val s = cvt(t)
+
+      val aName = if (name == "") s.name else name
+
+      implicit val sb = new SystemBuilderC(aName)
+      def naming(n: String) = aName + "." + n
+
+      s.inputContacts.map { c =>
+        sb.input(naming(c.name)) >> c
+      }
+      s.outputContacts.map { c =>
+        c >> sb.output(naming(c.name))
+      }
+      sb.addComponent(s)
+      sb.toStaticSystem
+    }
+
+
+  }
+
+  /** Enriches arbitrary type with implicit converter to StaticSystem. Adds a few useful methods. */
+  implicit class RichStaticSystemType[T](t: T)(implicit cvt: T => StaticSystem) {
+
+    @inline private def system = t: StaticSystem
+
     /** Converts a StaticSystem to graph in dot-format.
       * Note: if you get a "missed argument ..." error, just add empty parentheses.
       * @param level how deep to dig into subsystems. Default level=0 - which means not to plot subsystem details at all.
@@ -38,29 +70,31 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRender
      *
      * See also EncapsulationApi.
      */
-    def encapsulate(name:String = ""):StaticSystem = {
+    @deprecated("use encapsulateSubsystem or encapsulateComponent", "25.08.2015")
+    def encapsulate(name: String = ""): StaticSystem = encapsulateSubsystem(name)
+    def encapsulateSubsystem(name: String = ""): StaticSystem = {
       val s = cvt(t)
-      val aName = if(name == "") s.name else name
+      val aName = if (name == "") s.name else name
       implicit val sb = new SystemBuilderC(aName)
-      def naming(n:String) = aName+"."+n
+      def naming(n: String) = aName + "." + n
 
-      s.inputs.map{c =>
+      s.inputs.map { c =>
         sb.input(naming(c.name)) >> c
       }
-      s.outputs.map{c =>
+      s.outputs.map { c =>
         c >> sb.output(naming(c.name))
       }
-      sb.addSubsystem(s, s.privateStateHandles:_*)
+      sb.addSubsystem(s, s.privateStateHandles: _*)
       sb.toStaticSystem
     }
 
   }
 
-//  implicit class RichSystemBuilder(systemBuilder: SystemBuilder)
-//    extends RichStaticSystem(systemBuilder.toStaticSystem) {
-//    def system = systemBuilder.toStaticSystem
-//  }
-//
+  //  implicit class RichSystemBuilder(systemBuilder: SystemBuilder)
+  //    extends RichStaticSystem(systemBuilder.toStaticSystem) {
+  //    def system = systemBuilder.toStaticSystem
+  //  }
+  //
   /**
    * Some additional information about the system. In particular,
    * one may find orphan contacts.
@@ -75,11 +109,11 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRender
         flatMap(_.outputContacts).toSet ++
         system.inputContacts
 
-    /** Special "/dev/null" contacts that are intentionally ignore incoming data*/
+    /** Special "/dev/null" contacts that are intentionally ignore incoming data */
     val nullContacts = {
       val extOpt = system.extensionOpt[ContactStyleStaticExtension]
-        extOpt.map(_.styledWith(DevNullContact)).getOrElse(Iterable.empty)
-    }// allOutputContacts.filter(_.contactStyle == DevNullContact)
+      extOpt.map(_.styledWith(DevNullContact)).getOrElse(Iterable.empty)
+    } // allOutputContacts.filter(_.contactStyle == DevNullContact)
 
     /** Component inputs that do not get data from anywhere. */
     val orphanComponentInputs = allInputContacts -- allOutputContacts

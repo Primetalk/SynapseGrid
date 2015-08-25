@@ -3,17 +3,26 @@ package ru.primetalk.synapse.core.subsystems
 import ru.primetalk.synapse.core.ext.SystemBuilderApi
 
 /**
+ * An API for creating an envelope around a subsystem while preserving outer interface.
+ * This is useful when we have a few similar systems.
+ *
+ * One may also create encapsulation from a StaticSystem.encapsulate.
+ * However, it will not have the same outer interface.
+ *
  * @author zhizhelev, 29.03.15.
  */
 trait EncapsulationApi extends SystemBuilderApi {
 
   object SimpleOuterInterfaceBuilder extends OuterInterfaceBuilder {
+    override def setSystemName(name: String) = {}
     override def input[T](internalName: String): Contact[T] = contact[T](internalName)
 
     override def output[T](internalName: String): Contact[T] = contact[T](internalName)
   }
 
   class EmbeddedOuterInterfaceBuilder(name:String)(implicit sb:SystemBuilder) extends OuterInterfaceBuilder{
+    override def setSystemName(name1: String) = sb.setSystemName(name + "." + name1)
+
     override def input[T](internalName: String): Contact[T] = sb.input(name + "." + internalName)
 
     override def output[T](internalName: String): Contact[T] = sb.output(name + "." + internalName)
@@ -26,6 +35,8 @@ trait EncapsulationApi extends SystemBuilderApi {
     val outer = outerDefinition(new EmbeddedOuterInterfaceBuilder(name)(sb))
 
     def toStaticSystem = sb.toStaticSystem
+
+//    def toComponent:Component = sb.toStaticSystem
   }
   /** Usage:
     * class OuterInterface(b:OuterInterfaceBuilder){
@@ -37,9 +48,10 @@ trait EncapsulationApi extends SystemBuilderApi {
     * }
     * defineEncapsulation(new OuterImplementation("mySystem1"))
     * */
-  def defineEncapsulation[Outer](en:EncapsulationBuilder[Outer])(implicit sb:SystemBuilder):Outer = {
-    sb.addSubsystem(en.toStaticSystem)
-    en.outer
+  def defineEncapsulation[Outer](name:String)(en:String => EncapsulationBuilder[Outer])(implicit sb:SystemBuilder):Outer = {
+    val b = en(name)
+    sb.addSubsystem(b.toStaticSystem)
+    b.outer
   }
 //  implicit class EncapsulationBuilderE(sb: BasicSystemBuilder) {
 //    /** Creates both outer interface of a system and internal implementation.

@@ -21,7 +21,7 @@ object SpecialActorContacts {
   /** A special contact that will get sender if inputs contain it. */
   object SenderInput extends Contact[ActorRef]
 
-  /** This contact receives Actor's context in the very beginning. */
+  /** This contact receives Actor's context at the very beginning. */
   object ContextInput extends Contact[ActorContext]
 
   /** Some contact that can receive some info before the actor is started. */

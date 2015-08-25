@@ -3,6 +3,8 @@ package ru.primetalk.synapse.akka.impl
 import akka.actor.{SupervisorStrategy, ActorRef, ActorRefFactory}
 import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.core.components.StaticSystem
+import ru.primetalk.synapse.core.EncapsulationBuilder
+import ru.primetalk.synapse.core.SystemBuilder
 
 /**
  * @author zhizhelev, 25.03.15.
@@ -35,6 +37,13 @@ trait StaticSystemAkkaApi {
     def toActorComponent(supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy) =
       new ActorComponent(s, supervisorStrategy)
 
+  }
+  /** Encapsulates the given outer interface and adds the implementation as an ActorComponent
+    * to the current SystemBuilder*/
+  def encapsulateAsActor[Outer](name:String, supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy)(implicit en:String => EncapsulationBuilder[Outer], sb:SystemBuilder):Outer = {
+    val b = en(name)
+    sb.addComponent(new ActorComponent(b.toStaticSystem, supervisorStrategy))
+    b.outer
   }
 
 
