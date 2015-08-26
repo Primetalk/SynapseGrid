@@ -16,7 +16,7 @@ ext {
 
 //    aVersion = '1.4.3-SNAPSHOT'
 //    enableSigning = false
-    aVersion = '1.4.5'//'1.2.0-SNAPSHOT'
+    aVersion = '1.4.6-SNAPSHOT'//'1.2.0-SNAPSHOT'
 
     enableSigning = !aVersion.contains('SNAPSHOT')
 
@@ -50,7 +50,7 @@ ext {
 // gradle OutOfMemoryError: PermGen space:
 // JAVAOPTS="-Xmx1024M -XX:MaxPermSize=512M"
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.5'
+    gradleVersion = '2.6'
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
