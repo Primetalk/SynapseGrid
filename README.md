@@ -58,7 +58,7 @@ Add a dependency to your build:
 Travis build status
 -------------------
 
-- PR status: [![Build Status](https://travis-ci.org/Primetalk/SynapseGrid.svg?branch=master)](https://travis-ci.org/Primetalk/SynapseGrid)
+- PR status: [![Build Status](https://travis-ci.org/Primetalk/SynapseGrid.svg)](https://travis-ci.org/Primetalk/SynapseGrid)
 
 See also (English)
 --------
