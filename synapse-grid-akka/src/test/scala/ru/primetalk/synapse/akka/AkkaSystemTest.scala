@@ -30,7 +30,7 @@ class AkkaSystemTest extends FunSuite {
     val in = b.input[Int]("in")
     val out = b.output[Int]("out")
   }
-  implicit val DecOuterImplementation = (name:String) => new EncapsulationBuilder(name)(new DecSubsystemInterface(_)){
+  def decSubsystemImplementation(name:String): EncapsulationBuilder[DecSubsystemInterface] = new EncapsulationBuilder(name)(new DecSubsystemInterface(_)){
     val akkaExt = sb.extend[ActorSystemBuilderExtension](ActorSystemBuilderExtensionId)
     (outer.in -> outer.out).map(_ -1, "_ - 1")
     outer.in.getState(akkaExt.self).info(s"$name.self="+_)
@@ -57,10 +57,10 @@ class AkkaSystemTest extends FunSuite {
       akkaExt.self
 //      val ping = new PingPongSubsystem("Ping")
       val dec1 = //defineEncapsulation("dec1")(DecOuterImplementation) //new DecSubsystem("dec1")
-      encapsulateAsActor[DecSubsystemInterface]("dec1")
+      encapsulateAsActor(decSubsystemImplementation("dec1"))
 //      sb.addComponent(dec1.toActorComponent())
       val dec2 = //defineEncapsulation("dec2")(DecOuterImplementation) // new DecSubsystem("dec2")
-      encapsulateAsActor[DecSubsystemInterface]("dec2")
+      encapsulateAsActor(decSubsystemImplementation("dec2"))
 //      sb.addSubsystem(dec2.toActorComponent().encapsulate("d2"))
       counter.filter(_>0, ">0") >> dec1.in
       dec1.out >> dec2.in

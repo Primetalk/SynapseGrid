@@ -40,10 +40,9 @@ trait StaticSystemAkkaApi {
   }
   /** Encapsulates the given outer interface and adds the implementation as an ActorComponent
     * to the current SystemBuilder*/
-  def encapsulateAsActor[Outer](name:String, supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy)(implicit en:String => EncapsulationBuilder[Outer], sb:SystemBuilder):Outer = {
-    val b = en(name)
-    sb.addComponent(new ActorComponent(b.toStaticSystem, supervisorStrategy))
-    b.outer
+  def encapsulateAsActor[Outer](en:EncapsulationBuilder[Outer], supervisorStrategy: SupervisorStrategy = defaultSupervisorStrategy)(implicit sb:SystemBuilder):Outer = {
+    sb.addComponent(new ActorComponent(en.toStaticSystem, supervisorStrategy))
+    en.outer
   }
 
 

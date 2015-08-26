@@ -48,10 +48,9 @@ trait EncapsulationApi extends SystemBuilderApi {
     * }
     * defineEncapsulation(new OuterImplementation("mySystem1"))
     * */
-  def defineEncapsulation[Outer](name:String)(en:String => EncapsulationBuilder[Outer])(implicit sb:SystemBuilder):Outer = {
-    val b = en(name)
-    sb.addSubsystem(b.toStaticSystem)
-    b.outer
+  def defineEncapsulation[Outer](en:EncapsulationBuilder[Outer])(implicit sb:SystemBuilder):Outer = {
+    sb.addSubsystem(en.toStaticSystem)
+    en.outer
   }
 //  implicit class EncapsulationBuilderE(sb: BasicSystemBuilder) {
 //    /** Creates both outer interface of a system and internal implementation.
