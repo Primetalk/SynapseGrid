@@ -1,25 +1,27 @@
 SynapseGrid
 ===========
 
+SynapseGrid is an original approach to implement functional reactive programming paradigm in Scala. The library is based 
+on a solid foundation of Petri nets.
+
 A few words about what SynapseGrid is:
 
 - framework for constructing systems that are:
   - reactive
   - event-driven
   - resilent  
-- it resembles other modern event-driven architectures (Akka, Storm, Hadoop).
-- it is probably one of the finest grained frameworks. The building block is as simple as a function!
+- it resembles other modern event-driven architectures (ScalaRx, Akka Streams, Spark, etc.).
 
 [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
 
 Feature highlights
 ------------------
 
-1. SynapseGrid allows function composition far more flexible than monads.
-2. Strictly typed message handling in Akka actors (a bit more natural than in Typed actors or Typed Channels).
-3. Multi input/multi output functions.
-4. Systems process portions of information ASAP.
-5. It is possible to nest subsystems (like matreshkas).
+1. SynapseGrid allows function composition of "multifunctions" (functions with a few inputs and outputs). It is more flexible than monads composition of Haskell Arrows.
+2. Strictly typed message handling in Akka actors (more natural than in Typed actors or Typed Channels).
+3. Multi input/multi output functions (multifunctions).
+4. Systems process portions of information ASAP. The grid can be the base of real time systems.
+5. It is possible to nest subsystems (like matreshkas) creating modular systems.
 6. Declarative composition in the form of DataFlow diagram.
 7. Easy to use DSL:
 <pre>
@@ -32,12 +34,31 @@ Feature highlights
   outputs(b,c)
 </pre>
 8. Dependency injection replacement (accompanied with Scala traits).
-9. DataFlow diagram for a system can be created easily — system.toDot:
+9. DataFlow diagram for a system can be created easily — system.toDot():
 ![example1 system picture](docs/images/example1.png)
 ![example2 system picture](docs/images/example2.png)
 ![example3 system picture](docs/images/example3.png)
 
 For details see [README in English](docs/README.EN.md).
+
+Getting started
+---------------
+Add a dependency to your build:
+
+ - gradle:
+ 
+      compile ['ru.primetalk:synapse-grid-core_2.11:1.4.5', 'ru.primetalk:synapse-grid-akka_2.11:1.4.5']
+ - sbt:
+ 
+      libraryDependencies += "ru.primetalk" % "synapse-grid-core_2.11" % "1.4.5"
+      libraryDependencies += "ru.primetalk" % "synapse-grid-akka_2.11" % "1.4.5"
+      
+(or any other build system: group: ru.primetalk, artifactId: synapse-grid-core, version: 1.4.5) 
+
+Travis build status
+-------------------
+
+- PR status: [![Build Status](https://travis-ci.org/Primetalk/SynapseGrid.svg?branch=master)](https://travis-ci.org/Primetalk/SynapseGrid)
 
 See also (English)
 --------
