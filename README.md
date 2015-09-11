@@ -1,5 +1,6 @@
 SynapseGrid
 ===========
+[![Build Status](https://travis-ci.org/Primetalk/SynapseGrid.svg)](https://travis-ci.org/Primetalk/SynapseGrid)
 
 SynapseGrid is an original approach to implement functional reactive programming paradigm in Scala. The library is based 
 on a solid foundation of Petri nets.
