@@ -22,23 +22,24 @@ ext {
 
 
     scalaMajorVersion = '2.11'
-    scalaFullVersion = "${scalaMajorVersion}.7"
+    scalaFullVersion = "${scalaMajorVersion}.8"
 //    scalaMajorVersion = '2.10'
 //    scalaFullVersion = "${scalaMajorVersion}.5"
-    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:2.2.5"
-    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.2.5"
+    scalaTest = "org.scalatest:scalatest_${scalaMajorVersion}:3.0.0"
+    shapelessDep = "com.chuusai:shapeless_${scalaMajorVersion}:2.3.2"
 
     scalaLib = "org.scala-lang:scala-library:${scalaFullVersion}"
     scalaReflect = "org.scala-lang:scala-reflect:${scalaFullVersion}"
 
-    akkaVersion = '2.3.12'
-    slf4j = 'org.slf4j:slf4j-api:1.7.12'
-    logback = 'ch.qos.logback:logback-classic:1.1.3'
+    akkaVersion = '2.4.13'
+    slf4j = 'org.slf4j:slf4j-api:1.7.21'
+    logback = 'ch.qos.logback:logback-classic:1.1.7'
     rxDep = "io.reactivex:rxscala_${scalaMajorVersion}:0.25.0"
     junit = 'junit:junit:4.12'
-    pegdown = 'org.pegdown:pegdown:1.5.0'
-    specs2 = "org.specs2:specs2-core_${scalaMajorVersion}:3.6.4"
-    specs2Junit = "org.specs2:specs2-junit_${scalaMajorVersion}:3.6.4"
+    pegdown = 'org.pegdown:pegdown:1.6.0'
+    specs2Version = '3.8.6' // 3.6.4
+    specs2 = "org.specs2:specs2-core_${scalaMajorVersion}:$specs2Version"
+    specs2Junit = "org.specs2:specs2-junit_${scalaMajorVersion}:$specs2Version"
 
     akka = [
             "com.typesafe.akka:akka-actor_$scalaMajorVersion:$akkaVersion",
@@ -50,7 +51,7 @@ ext {
 // gradle OutOfMemoryError: PermGen space:
 // JAVAOPTS="-Xmx1024M -XX:MaxPermSize=512M"
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.6'
+    gradleVersion = '3.2'
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
@@ -75,10 +76,16 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 buildscript {
     repositories {
-        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+//        jcenter()
     }
     dependencies {
-        classpath "com.github.maiflai:gradle-scalatest:0.8"
+        classpath "gradle.plugin.com.github.maiflai:gradle-scalatest:0.14"
+//        testCompile 'org.scalatest:scalatest_2.11:3.0.0'
+//        testRuntime 'org.pegdown:pegdown:1.6.0'
+        //classpath "com.github.maiflai:gradle-scalatest:0.14"
     }
 }
 
@@ -141,10 +148,9 @@ subprojects {
     }
 
     tasks.withType(ScalaCompile) {
-        scalaCompileOptions.useAnt = false
-        scalaCompileOptions.useCompileDaemon = true
+//        scalaCompileOptions.useCompileDaemon = true
         // optionally specify host and port of the daemon:
-        scalaCompileOptions.daemonServer = "localhost:4243"
+//        scalaCompileOptions.daemonServer = "localhost:4243"
 
         scalaCompileOptions.additionalParameters = ["-feature"]
     }
