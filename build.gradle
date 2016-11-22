@@ -79,13 +79,9 @@ buildscript {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
-//        jcenter()
     }
     dependencies {
         classpath "gradle.plugin.com.github.maiflai:gradle-scalatest:0.14"
-//        testCompile 'org.scalatest:scalatest_2.11:3.0.0'
-//        testRuntime 'org.pegdown:pegdown:1.6.0'
-        //classpath "com.github.maiflai:gradle-scalatest:0.14"
     }
 }
 
@@ -93,7 +89,6 @@ allprojects {
     apply plugin: 'idea'
 
     repositories {
-//        mavenLocal()
         mavenCentral()
         maven{ url="http://dl.bintray.com/scalaz/releases" }
     }

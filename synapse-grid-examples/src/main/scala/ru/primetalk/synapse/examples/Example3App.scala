@@ -17,6 +17,8 @@ import ru.primetalk.synapse.examples.Examples3.{Control, SuperSystemBuilder}
 import akka.actor.ActorSystem
 import akka.actor.ActorDSL._
 import ru.primetalk.synapse.core.Signal
+
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object Example3App extends App  {
@@ -32,5 +34,5 @@ object Example3App extends App  {
     case Signal(_, data) =>
       println("out="+data)
   }
-  actorSystem.shutdown()
+  Await.result(actorSystem.terminate(), Duration.Inf)
 }

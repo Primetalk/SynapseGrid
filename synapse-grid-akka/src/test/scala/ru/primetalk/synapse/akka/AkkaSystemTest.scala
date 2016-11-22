@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.akka
 
-import java.util.concurrent.{TimeUnit, CountDownLatch}
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 import akka.actor.ActorSystem
 import akka.actor.ActorDSL._
@@ -9,6 +9,9 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.slf4j._
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
  * @author zhizhelev, 24.08.15.
@@ -80,9 +83,7 @@ class AkkaSystemTest extends FunSuite {
       t ! Signal(s.counter, 10)
 //      val zero = in.receive()
       assert(latch.await(5, TimeUnit.SECONDS))
-    }finally{
-      as.shutdown()
-      as.awaitTermination()
-    }
+    } finally
+      Await.result(as.terminate(), Duration.Inf)
   }
 }
