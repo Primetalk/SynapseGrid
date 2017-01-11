@@ -1,7 +1,5 @@
 .gradle
-out
 .idea
-**/*.iml
 .settings
 .cache
 .classpath
