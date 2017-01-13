@@ -2,16 +2,20 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/SynapseGrid.iml" filepath="$PROJECT_DIR$/SynapseGrid.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-frames/synapse-frames.iml" filepath="$PROJECT_DIR$/synapse-frames/synapse-frames.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" filepath="$PROJECT_DIR$/synapse-grid-akka/synapse-grid-akka.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-grid-concurrent.iml" filepath="$PROJECT_DIR$/synapse-grid-concurrent.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" filepath="$PROJECT_DIR$/synapse-grid-core/synapse-grid-core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" filepath="$PROJECT_DIR$/synapse-grid-examples/synapse-grid-examples.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-grid-rx.iml" filepath="$PROJECT_DIR$/synapse-grid-rx.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-grid-shapeless.iml" filepath="$PROJECT_DIR$/synapse-grid-shapeless.iml" />
-      <module fileurl="file://$PROJECT_DIR$/synapse-grid-slf4j/synapse-grid-slf4j.iml" filepath="$PROJECT_DIR$/synapse-grid-slf4j/synapse-grid-slf4j.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/akka.iml" filepath="$PROJECT_DIR$/.idea/modules/akka.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/akka-build.iml" filepath="$PROJECT_DIR$/.idea/modules/akka-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/concurrent.iml" filepath="$PROJECT_DIR$/.idea/modules/concurrent.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/concurrent-build.iml" filepath="$PROJECT_DIR$/.idea/modules/concurrent-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/core.iml" filepath="$PROJECT_DIR$/.idea/modules/core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/core-build.iml" filepath="$PROJECT_DIR$/.idea/modules/core-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/examples.iml" filepath="$PROJECT_DIR$/.idea/modules/examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/examples-build.iml" filepath="$PROJECT_DIR$/.idea/modules/examples-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/root.iml" filepath="$PROJECT_DIR$/.idea/modules/root.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/root-build.iml" filepath="$PROJECT_DIR$/.idea/modules/root-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rx.iml" filepath="$PROJECT_DIR$/.idea/modules/rx.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rx-build.iml" filepath="$PROJECT_DIR$/.idea/modules/rx-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/slf4j.iml" filepath="$PROJECT_DIR$/.idea/modules/slf4j.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/slf4j-build.iml" filepath="$PROJECT_DIR$/.idea/modules/slf4j-build.iml" />
     </modules>
   </component>
 </project>
-
