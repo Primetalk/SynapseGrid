@@ -48,13 +48,17 @@ Add a dependency to your build:
 
  - gradle:
  
-      compile ['ru.primetalk:synapse-grid-core_2.11:1.4.5', 'ru.primetalk:synapse-grid-akka_2.11:1.4.5']
+      compile ['ru.primetalk:synapse-grid-core_2.11:1.4.7', 'ru.primetalk:synapse-grid-akka_2.11:1.4.7']
+
+   or
+      compile ['ru.primetalk:synapse-grid-core_2.11:1.4.7', 'ru.primetalk:synapse-grid-akka_2.11:1.4.7']
+
  - sbt:
  
-      libraryDependencies += "ru.primetalk" % "synapse-grid-core_2.11" % "1.4.5"
-      libraryDependencies += "ru.primetalk" % "synapse-grid-akka_2.11" % "1.4.5"
+      libraryDependencies += "ru.primetalk" %% "synapse-grid-core" % "1.4.7"
+      libraryDependencies += "ru.primetalk" %% "synapse-grid-akka" % "1.4.7"
       
-(or any other build system: group: ru.primetalk, artifactId: synapse-grid-core, version: 1.4.5) 
+(or any other build system: group: ru.primetalk, artifactId: synapse-grid-core, version: 1.4.7)
 
 Travis build status
 -------------------
