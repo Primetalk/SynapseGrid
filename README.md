@@ -26,9 +26,9 @@ Feature highlights
 6. Declarative composition in the form of DataFlow diagram.
 7. Easy to use DSL:
 <pre>
-  val a = contact\[String]\("a")
-  val b = contact\[String]\("b")
-  val c = contact\[Char]\("c")
+  val a = contact[String]("a")
+  val b = contact[String]("b")
+  val c = contact[Char]("c")
   a -> b flatMap (_.split("\\s+"))
   a -> c flatMap (_.toCharArray)
   inputs(a)
