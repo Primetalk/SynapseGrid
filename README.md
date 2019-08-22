@@ -18,7 +18,7 @@ A few words about what SynapseGrid is:
 Feature highlights
 ------------------
 
-1. SynapseGrid allows function composition of "multifunctions" (functions with a few inputs and outputs). It is more flexible than monads composition of Haskell Arrows.
+1. SynapseGrid allows function composition of "multifunctions" (functions with a few inputs and outputs). It is more flexible than monads composition of Kleisli Arrows.
 2. Strictly typed message handling in Akka actors (more natural than in Typed actors or Typed Channels).
 3. Multi input/multi output functions (multifunctions).
 4. Systems process portions of information ASAP. The grid can be the base of real time systems.
