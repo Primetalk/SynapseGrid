@@ -1,14 +1,11 @@
 package ru.primetalk.synapse.core
 
 import org.specs2._
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
 import scala.language.implicitConversions
 
 /**
  * @author zhizhelev, 19.04.15.
  */
-@RunWith(classOf[JUnitRunner])
 class DotSpec extends Specification { def is = s2"""
 
   StaticSystem.toDot should

@@ -3,9 +3,7 @@
  */
 package ru.primetalk.synapse.core.managed
 
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.core._
 
 import scala.language.implicitConversions
@@ -14,7 +12,6 @@ import scala.language.implicitConversions
  * @author nehaev
  *
  */
-@RunWith(classOf[JUnitRunner])
 class ManagedStateTest extends FunSuite {
 	
 	object AInput extends Contact[Int]("AInput")

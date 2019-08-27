@@ -62,7 +62,7 @@ val akkaExt = sb.extend(ActorSystemBuilderExtensionId)
 
   val actorRef = state[ActorRef](name, Actor.noSender)
 
-  ContextInput debug() labelNext s"create actor $name" map {
+  ContextInput.debug().labelNext(s"create actor $name") map {
     case contextRef ⇒
       contextRef.actorOf(Props(factory(contextRef.self)), name)
   } saveTo actorRef

@@ -1,13 +1,10 @@
 package ru.primetalk.synapse.core
 
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
 /**
  * @author zhizhelev, 24.08.15.
  */
-@RunWith(classOf[JUnitRunner])
 class SwitcherTest extends FunSuite{
   object SwitcherSystem extends BaseTypedSystem {
     val level = input[Int]("level")

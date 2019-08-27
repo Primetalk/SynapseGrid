@@ -12,13 +12,10 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.concurrent.ComputationState._
 
-@RunWith(classOf[JUnitRunner])
 class SubsystemTest extends FunSuite{
 
   class TwoStatesInnerSubsystem(name:String) extends BaseTypedSystem{

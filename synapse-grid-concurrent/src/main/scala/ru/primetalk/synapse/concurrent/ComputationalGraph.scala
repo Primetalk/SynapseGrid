@@ -19,6 +19,7 @@ import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.existentials
+import scala.util.{Failure, Success}
 
 
 /** The prerequisites for the UnitOfComputation
@@ -103,7 +104,9 @@ class ComputationState(rs: RuntimeSystem,
   }
 
   private[concurrent] val variables: Map[Contact[_], SafeVariable[_]] =
-    state0.map { case (sh, initialValue) => (sh, new SafeVariable(initialValue))}.toMap
+    state0.map { case (sh, initialValue) => (sh, new SafeVariable(initialValue))}
+      //.toMap  // comment out for Scala 2.13
+      //.toMap  // uncomment for Scala 2.12
 
 
   /** Changes context to the given value */
@@ -165,7 +168,7 @@ class ComputationState(rs: RuntimeSystem,
       val signal = signalAtTime.value
       val time = signalAtTime.time
 
-      val future = rc match {
+      val future: Future[ComputationCompleted] = rc match {
         case RuntimeComponentFlatMap(name, _, _, f) =>
           Future {
             val signals = f(signal)
@@ -191,11 +194,9 @@ class ComputationState(rs: RuntimeSystem,
             ComputationCompleted(t, AtTime.placeAfter(time, signals), AtTime.placeAfter(time, stateHandles))
           }
       }
-      future.onSuccess {
-        case cc => computationCompleted(cc)
-      }
-      future.onFailure {
-        case exception => computationFailed(t, exception)
+      future.onComplete {
+        case Success(cc) => computationCompleted(cc)
+        case Failure(exception) => computationFailed(t, exception)
       }
       addRunningComputation(RunningUnitOfComputation(t, future))
     }

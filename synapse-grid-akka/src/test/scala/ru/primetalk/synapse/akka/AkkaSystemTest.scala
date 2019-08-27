@@ -4,9 +4,7 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 import akka.actor.ActorSystem
 import akka.actor.ActorDSL._
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.slf4j._
 
@@ -16,7 +14,6 @@ import scala.concurrent.duration.Duration
 /**
  * @author zhizhelev, 24.08.15.
  */
-@RunWith(classOf[JUnitRunner])
 class AkkaSystemTest extends FunSuite {
 
   case class Ping(isPing:Boolean = true){

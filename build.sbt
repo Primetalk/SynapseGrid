@@ -6,10 +6,12 @@ lazy val commonSettings = Seq(
   version := "1.5.0-SNAPSHOT", //
 //  scalaVersion := "2.11.8",
 //  libraryDependencies += "org.specs2" %% "specs2" % "3.7" % Test,
-    scalaVersion := "2.12.1",
-    libraryDependencies += "org.specs2" %% "specs2" % "2.4.17" % Test,
+//  scalaVersion := "2.12.9",
+//  libraryDependencies += "org.specs2" %% "specs2" % "2.4.17" % Test,
+  scalaVersion := "2.13.0",
+  libraryDependencies += "org.specs2" %% "specs2-core" % "4.7.0" % Test,
   publishArtifact in Test := false,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test
 )
 
 lazy val core = (project in file("synapse-grid-core")).settings(
@@ -28,7 +30,7 @@ lazy val slf4j = (project in file("synapse-grid-slf4j")).settings(
   libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.22"
 ).dependsOn(core)
 
-lazy val akkaVersion = "2.4.16"
+lazy val akkaVersion = "2.5.24"
 
 lazy val akka = (project in file("synapse-grid-akka")).settings(
   commonSettings,
@@ -38,20 +40,20 @@ lazy val akka = (project in file("synapse-grid-akka")).settings(
   libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 ).dependsOn(slf4j)
 
-lazy val rx = (project in file("synapse-grid-rx")).settings(
-  commonSettings,
-  name := "synapse-grid-rx",
-  libraryDependencies += "io.reactivex" %% "rxscala" % "0.26.5"
-).dependsOn(core)
+//lazy val rx = (project in file("synapse-grid-rx")).settings(
+//  commonSettings,
+//  name := "synapse-grid-rx",
+//  libraryDependencies += "io.reactivex" %% "rxscala" % "0.26.5"
+//).dependsOn(core)
 
-lazy val examples = (project in file("synapse-grid-examples")).settings(
-  commonSettings,
-  name := "synapse-grid-examples",
-  publishArtifact := false
-).dependsOn(akka, rx)
+//lazy val examples = (project in file("synapse-grid-examples")).settings(
+//  commonSettings,
+//  name := "synapse-grid-examples",
+//  publishArtifact := false
+//).dependsOn(akka, rx)
 
 lazy val root = (project in file(".")).
-  aggregate(core, concurrent, slf4j, akka, rx, examples).
+  aggregate(core, concurrent, slf4j, akka).//, rx, examples).
   settings(
     aggregate in update := false,
     publishArtifact := false
