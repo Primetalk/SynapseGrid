@@ -14,7 +14,7 @@
  */
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components._
+import ru.primetalk.synapse.core.components.{Signal, _}
 
 import scala.language.existentials
 
@@ -55,6 +55,17 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
     val outputContacts: List[Contact[_]]
   }
 
+  case class BlackBoxRuntimeComponent(
+    name: String,
+    inputContacts: List[Contact[_]],
+    outputContacts: List[Contact[_]],
+    runtimeStatelessInterpreter: Signal[_] => Iterable[Signal[_]]
+  ) extends RuntimeComponentTransparent {
+    def isStateful: Boolean = false
+
+    override def toTotalTrellisProducer: TotalTrellisProducer =
+      (c, s) => (c, runtimeStatelessInterpreter(s))
+  }
   /**
    * The most popular runtime component. Transforms a signal into other signals.
    * This component is not only FlatMap link. It can represent almost any stateless part of a system.
@@ -141,5 +152,7 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
           val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data)
           (result, List())
       })
+    case BlackBoxStatelessComponent(name, inputContacts, outputContacts, runtimeStatelessInterpreter) ⇒
+      BlackBoxRuntimeComponent(name, inputContacts.toList, outputContacts.toList, runtimeStatelessInterpreter)
   }
 }

@@ -6,8 +6,8 @@ import simulacrum._
   def show(t: T): String
 }
 
-@typeclass trait ComponentInterpreter[C] {
-  def runtimeInterpreter(c: C): Signal[_] => Iterable[Signal[_]]
+@typeclass trait ComponentStatelessInterpreter[C] {
+  def runtimeStatelessInterpreter(c: C): Signal[_] => Iterable[Signal[_]]
 }
 
 @typeclass trait Graphviz[A] {
