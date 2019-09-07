@@ -23,6 +23,12 @@ trait Named {
     getClass.getSimpleName + "(\"" + name + "\")"
 }
 
+object Named {
+  implicit object ShowNamed extends Show[Named] {
+    override def show(t: Named): String = t.name
+  }
+}
+
 /**
  * Stateful elements of the system.
  */
@@ -93,4 +99,26 @@ case class StateUpdate[S, T2](
 
 object StateUpdate {
   def replace[S, T2 <: S](s: S, t: T2) = t
+}
+
+/**
+  * It's a low level uninterpretable black-box component that works directly on signals.
+  * @param name of the component
+  * @param inputContacts allowed input contacts
+  * @param outputContacts output contacts
+  * @param runtimeStatelessInterpreter interpreter that processes signal and returns
+  */
+case class BlackBoxStatelessComponent(
+  override val name: String,
+  override val inputContacts: Set[Contact[_]],
+  override val outputContacts: Set[Contact[_]],
+  runtimeStatelessInterpreter: Signal[_] => Iterable[Signal[_]]
+) extends Component {
+
+}
+
+object BlackBoxStatelessComponent {
+  implicit object ComponentFunctionInterpreter extends ComponentStatelessInterpreter[BlackBoxStatelessComponent] {
+    override def runtimeStatelessInterpreter(c: BlackBoxStatelessComponent): Signal[_] => Iterable[Signal[_]] = c.runtimeStatelessInterpreter
+  }
 }
