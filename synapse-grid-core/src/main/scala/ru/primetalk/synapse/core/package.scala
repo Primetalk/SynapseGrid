@@ -47,3 +47,4 @@ package object core
   with SystemConvertingApi
   with BaseTypedSystemApi
   with SwitcherDsl
+  with Switcher2Dsl

@@ -26,7 +26,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
     type TrellisElement = (Context, TSignals)
     type TrellisElementTracking = (Context, TSignals)
     type TrellisProducerTracking = TotalTrellisBuilder => TSignals => TSignals
-    type TotalTrellisProducerTracking = ((Context, Signal[_]) => TrellisElementTracking)
+    type TotalTrellisProducerTracking = (Context, Signal[_]) => TrellisElementTracking
 
     implicit def tSignalToSignal(s: TSignal): Signal[_]
 
@@ -119,6 +119,11 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
                 val (ns, signals) = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])](s, signal)
                 trellisBuilder.currentState = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]].updated(sh, ns).asInstanceOf[Context]
                 trellisBuilder.addSignals(trace, proc, signals)
+              case BlackBoxRuntimeComponent(_, _, _, f) =>
+                val results = f(signal)
+                trellisBuilder.addSignals(trace, proc, results)
+              case other =>
+                throw new IllegalStateException(s"Unexpected runtime component $other")
             }
           } catch {
             case e: Throwable =>
@@ -217,7 +222,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
 
   implicit class RichRuntimeSystem(runtimeSystem: RuntimeSystem) {
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
-    def toTotalTrellisProducer = //: TotalTrellisProducer
+    def toTotalTrellisProducer: signalProcessing.TotalTrellisProducerTracking =
       signalProcessing.rsToTrellisProducer(runtimeSystem)
 
     //runtimeSystemToTotalTrellisProducerConverter(runtimeSystem)

@@ -11,7 +11,7 @@ import scala.collection.mutable
   *
   * @author zhizhelev, 06.09.19.
   */
-trait Switcher2Dsl extends SystemBuilderDsl{
+trait Switcher2Dsl extends SystemBuilderDsl {
 
   class Switcher2Builder[T](c: Contact[Signal[T]], name: String = "")(implicit sb: SystemBuilder) {
     def fanOut(contacts: Contact[T]*): Unit = {
@@ -20,6 +20,7 @@ trait Switcher2Dsl extends SystemBuilderDsl{
         {
           case Signal(_, s@Signal(contact, _)) if outputContacts.contains(contact) =>
             Iterable.single(s)
+          case other => throw new IllegalStateException(s"Unexpected signal $other")
         }))
     }
 
