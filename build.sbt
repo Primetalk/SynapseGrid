@@ -17,11 +17,9 @@ lazy val commonSettings = Seq(
   ),
   publishArtifact in Test := false,
   libraryDependencies += "org.specs2" %% "specs2-core" % "4.7.0" % Test,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test,
+  scalacOptions in Test ++= Seq("-Yrangepos")
 )
-
-
-
 
 lazy val core = (project in file("synapse-grid-core")).settings(
   commonSettings,
