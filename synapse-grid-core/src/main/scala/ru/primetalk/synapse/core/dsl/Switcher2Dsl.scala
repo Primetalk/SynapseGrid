@@ -20,7 +20,11 @@ trait Switcher2Dsl extends SystemBuilderDsl {
         {
           case Signal(_, s@Signal(contact, _)) if outputContacts.contains(contact) =>
             Iterable.single(s)
-          case other => throw new IllegalStateException(s"Unexpected signal $other")
+          case Signal(_, s@Signal(contact, _)) =>
+            val outputNames = outputContacts.map(_.name)
+            throw new IllegalStateException(s"Signal of ${contact.name} doesn't correspond to $outputNames")
+          case other =>
+            throw new IllegalStateException(s"Unexpected signal $other")
         }))
     }
 
