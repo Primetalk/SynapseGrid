@@ -119,8 +119,10 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
                 val (ns, signals) = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])](s, signal)
                 trellisBuilder.currentState = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]].updated(sh, ns).asInstanceOf[Context]
                 trellisBuilder.addSignals(trace, proc, signals)
-              case BlackBoxRuntimeComponent(_, _, _, f) =>
-                val results = f(signal)
+              case rc: RuntimeComponent =>
+                val context = trellisBuilder.currentState
+                val (newContext, results) = rc.toTotalTrellisProducer(context, signal)
+                trellisBuilder.currentState = newContext
                 trellisBuilder.addSignals(trace, proc, results)
               case other =>
                 throw new IllegalStateException(s"Unexpected runtime component $other")
