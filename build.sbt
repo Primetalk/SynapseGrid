@@ -46,6 +46,11 @@ lazy val akka = (project in file("synapse-grid-akka")).settings(
   libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 ).dependsOn(slf4j)
 
+lazy val examples = (project in file("synapse-grid-examples")).settings(
+  commonSettings,
+  name := "synapse-grid-examples"
+).dependsOn(core, akka)
+
 //lazy val rx = (project in file("synapse-grid-rx")).settings(
 //  commonSettings,
 //  name := "synapse-grid-rx",
