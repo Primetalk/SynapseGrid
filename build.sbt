@@ -14,6 +14,7 @@ lazy val commonSettings = Seq(
     "-deprecation",
     "-feature",
     "-language:higherKinds"
+//    "-Ytyper-debug"
   ),
   publishArtifact in Test := false,
   libraryDependencies += "org.specs2" %% "specs2-core" % "4.7.0" % Test,
