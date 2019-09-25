@@ -26,15 +26,20 @@ trait B {
  // object contactA extends Contact[Int]
 }
 sealed trait TypeSets2 {
-  sealed trait TypeSet
+  //
+  sealed trait TypeSet extends Serializable with Product
   case object Empty extends TypeSet
-  // deduplicate!
-  final case class ConsTypeSet[E, S <: TypeSet](e: E,s: S) extends TypeSet
+  // This class enumerates elements of the set.
+  // In order to avoid duplicates, we make constructor private
+  // deduplication
+  final case class ConsTypeSet[E, S <: TypeSet] private (e: E,s: S) extends TypeSet
+  type +:[E, S <: TypeSet] = ConsTypeSet[E, S]
+
   // ∅ - \u2205
   type ∅ = Empty.type
+  val ∅ = Empty
   type Empty = Empty.type
-  // This class enumerates elements of the set.
-  // In order to avoid duplicates, we make constructor private and use
+
   // the trick with the implicit priorities.
   // In this trait we define general case, and in
   // the next trait we define the case when element belongs to the set.
@@ -44,6 +49,16 @@ sealed trait TypeSets2 {
   sealed trait AddWrapper[E, S<:TypeSet] {
     type AuxPlus <: TypeSet
     def auxPlus(e: E,s: S): AuxPlus
+  }
+
+  sealed trait EachElementIsSubtype[Up, TypeSet]
+
+  object EachElementIsSubtype {
+
+    implicit def EachElementIsSubtypeEmpty[Up]: EachElementIsSubtype[Up, Empty] = 
+      new EachElementIsSubtype[Up, Empty] {}
+    implicit def EachElementIsSubtypeCons[Up, E <: Up, S <: TypeSet](implicit ev: EachElementIsSubtype[Up, S]): EachElementIsSubtype[Up, ConsTypeSet[E, S]] = 
+      new EachElementIsSubtype[Up, ConsTypeSet[E, S]] {}
   }
   //type +:[E, S<:TypeSet] = AddWrapper#AuxPlus[E, S]
 
@@ -56,10 +71,10 @@ sealed trait TypeSets2 {
 //    type AuxPlus[E, S<:TypeSet] = S
 //  }
 
-  def addElement[E, S<:TypeSet](e: E, s: S)(implicit ev: AddWrapper[E,S]#AuxPlus): ev.type =
-    ev//addWrapper.auxPlus(e,s)
+//  def addElement[E, S<:TypeSet](e: E, s: S)(implicit ev: AddWrapper[E,S]#AuxPlus): ev.type =
+//    ev//addWrapper.auxPlus(e,s)
 
-  implicit def getEv[E, S<:TypeSet](e: E, s: S)(implicit addWrapper: AddWrapper[E,S]): addWrapper.AuxPlus =
+  implicit def addElement[E, S<:TypeSet](e: E, s: S)(implicit addWrapper: AddWrapper[E,S]): addWrapper.AuxPlus =
     addWrapper.auxPlus(e,s)
 
   implicit def getAddWrapper[E, S<:TypeSet] = new AddWrapper[E,S] {

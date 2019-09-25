@@ -11,7 +11,7 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
   We can also "render" the set if elements are implicit
     - render empty sets should be the same set0EqSet0
     - render set1 and set11 should be the same tr
-    - render set1 and set11 should be the same set1EqSet11
+    - set1 and set11 should be the same $set1eqSet11
   """
 
   implicit case object e1
@@ -21,12 +21,16 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
   implicit case object e3
   type e3 = e3.type
 
-  val set1: ConsTypeSet[e1.type, Empty.type] = getEv(e1, Empty)
+  val set1: ConsTypeSet[e1.type, Empty.type] = addElement(e1, Empty)
 
   val bel: e1 ∊ ConsTypeSet[e1, Empty.type] = BelongsTo.elementIsHeadOfTypeSet0[e1, Empty.type]
   val evBelongs = implicitly[e1 ∊ ConsTypeSet[e1.type, Empty.type] ](bel)
-  val set11: ConsTypeSet[e1.type, Empty.type] = getEv(e1, set1)
+  val set11: ConsTypeSet[e1.type, Empty.type] = addElement(e1, set1)
 
+  val set21: e2 +: e1 +: ∅ = addElement(e2, set11)
+  val bel1 = implicitly[e1 ∊ (e2 +: e1 +: ∅)]
+  def set1eqSet11 = set1 must be(set11)
+//  val evSet11eqSet1 = implicitly[set1.type =:= set11.type ]
   //val myEl2 = getEv[e1, myEl.type]
 //
 //  type set1 = e1 +: ∅
