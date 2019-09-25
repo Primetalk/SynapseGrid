@@ -30,6 +30,12 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
   val set21: e2 +: e1 +: ∅ = addElement(e2, set11)
   val bel1 = implicitly[e1 ∊ (e2 +: e1 +: ∅)]
   def set1eqSet11 = set1 must be(set11)
+
+
+  val evAllE1 = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, Empty.type]]]
+  val evAllE11 = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, ConsTypeSet[e1.type, Empty.type]]]]
+  //val evAllE12 = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, ConsTypeSet[e2.type, Empty.type]]]]
+
 //  val evSet11eqSet1 = implicitly[set1.type =:= set11.type ]
   //val myEl2 = getEv[e1, myEl.type]
 //

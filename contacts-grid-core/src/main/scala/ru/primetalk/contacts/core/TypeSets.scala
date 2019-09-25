@@ -55,10 +55,12 @@ sealed trait TypeSets2 {
 
   object EachElementIsSubtype {
 
-    implicit def EachElementIsSubtypeEmpty[Up]: EachElementIsSubtype[Up, Empty] = 
+    implicit def Empty[Up]: EachElementIsSubtype[Up, Empty] =
       new EachElementIsSubtype[Up, Empty] {}
-    implicit def EachElementIsSubtypeCons[Up, E <: Up, S <: TypeSet](implicit ev: EachElementIsSubtype[Up, S]): EachElementIsSubtype[Up, ConsTypeSet[E, S]] = 
+    implicit def Cons[Up, E <: Up, S <: TypeSet](implicit ev: EachElementIsSubtype[Up, S]): EachElementIsSubtype[Up, ConsTypeSet[E, S]] =
       new EachElementIsSubtype[Up, ConsTypeSet[E, S]] {}
+    //     implicit def Cons[Up, E, S <: TypeSet](implicit ev: EachElementIsSubtype[Up, S], ev2: E <:< Up): EachElementIsSubtype[Up, ConsTypeSet[E, S]] =
+    //      new EachElementIsSubtype[Up, ConsTypeSet[E, S]] {}
   }
   //type +:[E, S<:TypeSet] = AddWrapper#AuxPlus[E, S]
 
@@ -115,7 +117,20 @@ sealed trait TypeSets2 {
 //    implicit def elementBelongsToTailOfTypeSet[E, H, S <: TypeSet](implicit b: E ∊ S): E ∊ (H +: S) =
 //      new BelongsTo[E, H +: S] {}
   }
-//  trait ExtractorHelper[E, S<: TypeSet] {
+
+  @implicitNotFound("Couldn't prove that set is in another set")
+  sealed trait IsSubset[Subset <: TypeSet, SuperSet <: TypeSet]
+  // ⊂ - \u2282
+  type ⊂[Subset <: TypeSet, SuperSet <: TypeSet] = IsSubset[Subset, SuperSet]
+
+  object IsSubset {
+    implicit def empty[SuperSet2<:TypeSet]:
+      IsSubset[∅, SuperSet2] = new IsSubset[∅, SuperSet2] {}
+    implicit def cons[E, S <: TypeSet, SuperSet<:TypeSet](implicit headBelongs: E ∊ SuperSet, tailIsSubset: S ⊂ SuperSet):
+      IsSubset[E ConsTypeSet S, SuperSet] = new IsSubset[E ConsTypeSet S, SuperSet]{}
+  }
+
+  //  trait ExtractorHelper[E, S<: TypeSet] {
 //    def extract(es: E + S):
 //  }
 //  def head[E, S<: TypeSet](implicit ev: AddElementHelper[E,S]): ExtractorHelper = ev.unapply(es)._1
@@ -168,15 +183,15 @@ trait TypeSets extends TypeSets0 {
   }
 
   object UnionHelper {
-    implicit def caseAIsEmpty[B <: TypeSet]: UnionHelper[∅, B] =
+    implicit def empty[B <: TypeSet]: UnionHelper[∅, B] =
       new UnionHelper[∅, B] {
         type Out = B
         def out(a: ∅, b: B): Out = b
       }
-//    implicit def caseAHeadTail[E, S<: TypeSet, B <: TypeSet](implicit ev: UnionHelper[S,B], addEl: E + B): UnionHelper[E + S, B] =
-//      new UnionHelper[E + S, B] {
-//        type Out = E + ev.Out
-//        def out(a: E + S, b: B): Out = addEl.out(a.) + b
-//      }
+    implicit def cons[E, S<: TypeSet, B <: TypeSet](implicit ev: S UnionHelper B, addEl: E AddWrapper (S ∪ B)): UnionHelper[E +: S, B] =
+      new UnionHelper[E +: S, B] {
+        type Out = addEl.AuxPlus
+        def out(a: E +: S, b: B): Out = addEl.auxPlus(a.e, ev.out(a.s,b))
+      }
   }
 }
