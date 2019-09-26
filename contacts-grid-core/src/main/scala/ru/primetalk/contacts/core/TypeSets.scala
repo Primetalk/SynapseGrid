@@ -9,7 +9,7 @@ sealed trait TypeSets2 {
   type Empty = Empty.type
   // ∅ - \u2205 - synonyms
   type ∅ = Empty
-  val ∅ = Empty
+  val ∅ : Empty = Empty
   // This class enumerates elements of the set.
   // In order to avoid duplicates, we make constructor private and
   // take special measures for deduplication.
@@ -46,7 +46,9 @@ sealed trait TypeSets2 {
   implicit def addElement[E, S<:TypeSet](e: E, s: S)(implicit addWrapper: AddWrapper[E,S]): addWrapper.AuxPlus =
     addWrapper.auxPlus(e,s)
 
-  implicit def getAddWrapper[E, S<:TypeSet] = new AddWrapper[E,S] {
+  implicit def getAddWrapper[E, S<:TypeSet]: AddWrapper[E, S] {
+    type AuxPlus = ConsTypeSet[E, S]
+  } = new AddWrapper[E,S] {
     override type AuxPlus = E ConsTypeSet S
     def auxPlus(e: E,s: S): AuxPlus = ConsTypeSet[E,S](e,s)
 
@@ -62,7 +64,9 @@ sealed trait TypeSets2 {
   }
 
   object AddElementHelper {
-    implicit def AddElementHelperAddElementToTypeSet[E, S<:TypeSet] =
+    implicit def AddElementHelperAddElementToTypeSet[E, S<:TypeSet]: AddElementHelper[E, S] {
+      type Out = E ConsTypeSet S
+    } =
       new AddElementHelper[E,S] {
         type Out = E ConsTypeSet S
         // def out(e: E, s: S): Out = ConsSet(e, s)
@@ -128,12 +132,16 @@ sealed trait TypeSets1 extends TypeSets2 {
 //  def toList[S<:TypeSet](implicit lst: TypeSetRepr[S]): TypeSetRepr[S] = lst
 }
 sealed trait TypeSets0 extends TypeSets1 {
-  implicit def getAddWrapperIgnore[E, S<:TypeSet](implicit ev: E ∊ S ) = new AddWrapper[E,S] {
+  implicit def getAddWrapperIgnore[E, S<:TypeSet](implicit ev: E ∊ S ): AddWrapper[E, S] {
+    type AuxPlus = S
+  } = new AddWrapper[E,S] {
     override type AuxPlus = S
     def auxPlus(e: E, s: S): AuxPlus = s
   }
 
-  implicit def AddElementHelperAddElementToTypeSet[E, S<:TypeSet] =
+  implicit def AddElementHelperAddElementToTypeSet[E, S<:TypeSet]: AddElementHelper[E, S] {
+    type Out = ConsTypeSet[E, S]
+  } =
     new AddElementHelper[E,S] {
       type Out = E ConsTypeSet S
      // def out(e: E, s: S): Out = ConsSet(e, s)
@@ -145,7 +153,9 @@ sealed trait TypeSets0 extends TypeSets1 {
 }
 trait TypeSets extends TypeSets0 {
 
-  implicit def AddElementHelperAddElementToTypeSetWhenEBelongsToS[E, S<:TypeSet](implicit ev: E ∊ S) =
+  implicit def AddElementHelperAddElementToTypeSetWhenEBelongsToS[E, S<:TypeSet](implicit ev: E ∊ S): AddElementHelper[E, S] {
+    type Out = S
+  } =
     new AddElementHelper[E,S] {
       type Out = S
 //      def out(e: E, s: S): Out = s
