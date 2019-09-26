@@ -2,66 +2,33 @@ package ru.primetalk.contacts.core
 
 import scala.annotation.implicitNotFound
 
-trait A {
-  type Component[InputShape, OutputShape]
-  // apocalisp
-  sealed trait Bool {
-    type If[TrueBranch, FalseBranch]
-  }
-  sealed trait True extends Bool {
-    type If[TrueBranch, FalseBranch] = TrueBranch
-  }
-  sealed trait False extends Bool {
-    type If[TrueBranch, FalseBranch] = FalseBranch
-  }
-  trait MyProg0 {
-    type MyVarType[Param <: Bool] = Param#If[Int, String]
-  }
-  implicitly[MyProg0#MyVarType[True] =:= Int]
-  implicitly[MyProg0#MyVarType[False] =:= String]
-}
-trait B {
-  val a: Int
-  val b: Int
- // object contactA extends Contact[Int]
-}
 sealed trait TypeSets2 {
   //
   sealed trait TypeSet extends Serializable with Product
   case object Empty extends TypeSet
-  // This class enumerates elements of the set.
-  // In order to avoid duplicates, we make constructor private
-  // deduplication
-  final case class ConsTypeSet[E, S <: TypeSet] private (e: E,s: S) extends TypeSet
-  type +:[E, S <: TypeSet] = ConsTypeSet[E, S]
-
-  // ∅ - \u2205
-  type ∅ = Empty.type
-  val ∅ = Empty
   type Empty = Empty.type
-
-  // the trick with the implicit priorities.
-  // In this trait we define general case, and in
-  // the next trait we define the case when element belongs to the set.
-  //case class ConsSet[E, S <: TypeSet](element: E, set: S) extends TypeSet
+  // ∅ - \u2205 - synonyms
+  type ∅ = Empty
+  val ∅ = Empty
+  // This class enumerates elements of the set.
+  // In order to avoid duplicates, we make constructor private and
+  // take special measures for deduplication.
+  // Deduplication trick:
+  // The trick with the Scala implicit priorities.
+  // In this trait TypeSets2 we define general case, and in
+  // the next trait TypeSets1 we define the case when element belongs to the set.
+  final case class ConsTypeSet[E, S <: TypeSet] private (e: E,s: S) extends TypeSet
+  // This is an operator for representing sets without duplications
+  type +:[E, S <: TypeSet] = ConsTypeSet[E, S]
   // ⊕ - \u2295
+
+
 //  type +:[E, S<:TypeSet] = AddElementHelper[E, S]#Out
   sealed trait AddWrapper[E, S<:TypeSet] {
     type AuxPlus <: TypeSet
     def auxPlus(e: E,s: S): AuxPlus
   }
 
-  sealed trait EachElementIsSubtype[Up, TypeSet]
-
-  object EachElementIsSubtype {
-
-    implicit def Empty[Up]: EachElementIsSubtype[Up, Empty] =
-      new EachElementIsSubtype[Up, Empty] {}
-    implicit def Cons[Up, E <: Up, S <: TypeSet](implicit ev: EachElementIsSubtype[Up, S]): EachElementIsSubtype[Up, ConsTypeSet[E, S]] =
-      new EachElementIsSubtype[Up, ConsTypeSet[E, S]] {}
-    //     implicit def Cons[Up, E, S <: TypeSet](implicit ev: EachElementIsSubtype[Up, S], ev2: E <:< Up): EachElementIsSubtype[Up, ConsTypeSet[E, S]] =
-    //      new EachElementIsSubtype[Up, ConsTypeSet[E, S]] {}
-  }
   //type +:[E, S<:TypeSet] = AddWrapper#AuxPlus[E, S]
 
 //
@@ -103,6 +70,16 @@ sealed trait TypeSets2 {
       }
   }
 
+
+  @implicitNotFound("Couldn't prove that each element of TypeSet is subtype the given Up type")
+  sealed trait EachElementIsSubtype[Up, TypeSet]
+  object EachElementIsSubtype {
+    implicit def Empty[Up]: EachElementIsSubtype[Up, Empty] =
+      new EachElementIsSubtype[Up, Empty] {}
+    implicit def Cons[Up, E <: Up, S <: TypeSet](implicit ev: EachElementIsSubtype[Up, S]): EachElementIsSubtype[Up, ConsTypeSet[E, S]] =
+      new EachElementIsSubtype[Up, ConsTypeSet[E, S]] {}
+  }
+
   @implicitNotFound("Couldn't prove that element belongs to set")
   sealed trait BelongsTo[Element, S <: TypeSet]
   // ∊ - \u220A
@@ -110,14 +87,15 @@ sealed trait TypeSets2 {
   object BelongsTo {
     implicit def elementIsHeadOfTypeSet0[E, S <: TypeSet]: E ∊ (E ConsTypeSet S) =
       new BelongsTo[E, E ConsTypeSet S] {}
-//    implicit def elementIsHeadOfTypeSet[E, S <: TypeSet]: E ∊ (E +: S) =
-//      new BelongsTo[E, E +: S] {}
     implicit def elementBelongsToTailOfTypeSet0[E, H, S <: TypeSet](implicit b: E ∊ S): E ∊ (H ConsTypeSet S) =
       new BelongsTo[E, H ConsTypeSet S] {}
-//    implicit def elementBelongsToTailOfTypeSet[E, H, S <: TypeSet](implicit b: E ∊ S): E ∊ (H +: S) =
-//      new BelongsTo[E, H +: S] {}
   }
-
+  @implicitNotFound("Couldn't prove that predicate holds true for each element")
+  sealed trait ForAll[P[_], S<: TypeSet]
+  object ForAll {
+    implicit def empty[P[_]]: ForAll[P, Empty] = new ForAll[P, Empty] {}
+    implicit def cons[P[_], E, S<: TypeSet](implicit p: P[E], forAll: ForAll[P, S]): ForAll[P, E +: S] = new ForAll[P, E +: S] {}
+  }
   @implicitNotFound("Couldn't prove that set is in another set")
   sealed trait IsSubset[Subset <: TypeSet, SuperSet <: TypeSet]
   // ⊂ - \u2282
@@ -134,6 +112,7 @@ sealed trait TypeSets2 {
 //    def extract(es: E + S):
 //  }
 //  def head[E, S<: TypeSet](implicit ev: AddElementHelper[E,S]): ExtractorHelper = ev.unapply(es)._1
+  // this is equivalent to implicitly
   def typeSet[S<:TypeSet](implicit s: S): S = s
 }
 sealed trait TypeSets1 extends TypeSets2 {
