@@ -67,6 +67,7 @@ trait MySignals extends Signals {
     } = new MySignal[Cont, Contacts](c, data, cInContacts)
   }
 
+  // wraps a function into a component with a single input and single output.
   def lift[In <: Contact, Out <: Contact](in: In, out: Out)(f: In#T => Out#T)(
     implicit signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts]
   ):
@@ -79,4 +80,9 @@ trait MySignals extends Signals {
     }
   }
 
+  // wraps a single contact to be both input and output.
+  def trivialLift[C <: Contact](c: C)(
+    implicit signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts]
+  ):
+  MySignalOnContacts[C +: ∅] => Iterable[MySignalOnContacts[C +: ∅]] = Iterable.single
 }

@@ -8,6 +8,7 @@ class SignalsSpec extends Specification with MySignals {
     s2"""
   Methods of SignalsSpec should pass tests:
     - lift should yield expected results $testLift
+    - trivial lift should not change signal $testSingleContact
   """
 
   case object In extends Contact with Serializable {
@@ -33,6 +34,15 @@ class SignalsSpec extends Specification with MySignals {
     val outputSignal: Iterable[MySignalOnContacts[Out +: ∅]] = liftedF(inputSignal)
     val expectedOutputSignal = MySignalOps.wrap[Out, Out +: ∅](Out, expectedOutput)
 
+    outputSignal.head mustEqual expectedOutputSignal
+  }
+
+  def testSingleContact = {
+    val identity = trivialLift(In)
+    val inputData = 42
+    val inputSignal = MySignalOps.wrap[In, In +: ∅](In, inputData)
+    val outputSignal: Iterable[MySignalOnContacts[In +: ∅]] = identity(inputSignal)
+    val expectedOutputSignal = MySignalOps.wrap[In, In +: ∅](In, inputData)
     outputSignal.head mustEqual expectedOutputSignal
   }
 }
