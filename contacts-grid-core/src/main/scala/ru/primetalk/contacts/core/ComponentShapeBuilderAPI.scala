@@ -1,10 +1,12 @@
 package ru.primetalk.contacts.core
 
+import scala.language.reflectiveCalls
+
 trait ComponentShapeBuilderAPI extends TypeSets {
 
   case class ComponentShape2[InputShape<:TypeSet, OutputShape <: TypeSet](inputs: InputShape, outputs: OutputShape)
 
-  type Contact <: {
+  trait Contact {
     type T
   }
   sealed trait ComponentShape {
@@ -30,15 +32,15 @@ trait ComponentShapeBuilderAPI extends TypeSets {
       implicit
         inputsAreContacts: EachElementIsSubtype[Contact, Comp0#InputShape],
         outputsAreContacts: EachElementIsSubtype[Contact, Comp0#OutputShape],
-      InputShapeAddC: AddWrapper[C, Comp0#InputShape]
+      InputShapeAddC: AddElement[C, Comp0#InputShape]
     ): ComponentShape{
-      type InputShape = InputShapeAddC.AuxPlus
+      type InputShape = InputShapeAddC.AddElement
       type OutputShape = Comp0#OutputShape
     } = new ComponentShape {
-      override type InputShape = InputShapeAddC.AuxPlus
+      override type InputShape = InputShapeAddC.AddElement
       override type OutputShape = Comp0#OutputShape
 
-      override val inputs: InputShapeAddC.AuxPlus = InputShapeAddC.auxPlus(c, componentShape.inputs)
+      override val inputs: InputShapeAddC.AddElement = InputShapeAddC.apply(c, componentShape.inputs)
 
       override val outputs: Comp0#OutputShape = componentShape.outputs
     }
@@ -48,8 +50,17 @@ trait ComponentShapeBuilderAPI extends TypeSets {
   }
   type SignalProcessor = Signal => Iterable[Signal]
 
-  trait SignalOnContacts[Contacts <: TypeSet]
+  trait SignalOnContacts[Contacts <: TypeSet] {
+    type C <: Contact
+  }
 
+  // typeclass for dealing with signals
+  trait SignalOnContactsOps[Contacts<:TypeSet, S <: SignalOnContacts[Contacts] ] {
+    def unwrap(s: S): (S#C, S#C#T)
+    def get[C<:Contact](s: S, c: C)(implicit cEqSC: S#C =:= C = null, cEqSCT: S#C#T =:= C#T = null): Option[C#T] =
+      if(cEqSC == null) None else Some(cEqSCT(unwrap(s)._2))
+    def wrap[C<:Contact](c: C, data: C#T)(implicit cInContacts: C BelongsTo Contacts): SignalOnContacts[Contacts]
+  }
   sealed trait Component {
     type Shape <: ComponentShape
     type Handler = SignalOnContacts[Shape#InputShape] => Iterable[SignalOnContacts[Shape#OutputShape]]
@@ -70,8 +81,21 @@ trait ComponentShapeBuilderAPI extends TypeSets {
     evOutputs: OutputSignal#Contact ∊ CompShape#OutputShape
   ): Component = ???
 
-  def lift[A,B, In <: Contact{ type T = A}, Out <: Contact{ type T = B}](in: In, out: Out, f: A => B):
-    SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]] = ???
+
+  def lift[In <: Contact, Out <: Contact](in: In, out: Out, f: In#T => Out#T)(
+    implicit inSignalOnContactsOps: SignalOnContactsOps[In +: ∅, SignalOnContacts[In +: ∅]],
+    outSignalOnContactsOps: SignalOnContactsOps[Out +: ∅, SignalOnContacts[Out +: ∅]]
+  ):
+    SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]] = signalOnContactIn =>
+   {
+     inSignalOnContactsOps.get(signalOnContactIn, in) match {
+       case Some(dataIn) =>
+         val res = f(dataIn)
+         Iterable.single(outSignalOnContactsOps.wrap(out, res))
+       case None =>
+         Iterable.empty
+     }
+   }
 
   type Plus[Shape1 <: ComponentShape, Shape2 <: ComponentShape] = ComponentShape{
     type InputShape = Shape1#InputShape ∪ Shape2#InputShape

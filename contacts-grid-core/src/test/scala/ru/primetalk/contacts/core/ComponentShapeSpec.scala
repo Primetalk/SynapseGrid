@@ -8,13 +8,13 @@ class ComponentShapeSpec extends Specification with ComponentShapeBuilderAPI { d
 
     - inputs of the component should be known set $inputsEq
   """
-  sealed trait MyContact {
+  sealed trait MyContact extends Contact {
     type T
   }
   abstract class ContactImpl[A](val name: String) extends Product with Serializable with MyContact {
     override type T = A
   }
-  override type Contact = MyContact
+ // override type Contact = MyContact
   case object In1 extends ContactImpl[String]("In1")
   case object Out1 extends ContactImpl[String]("Out1")
   val myComponent: ComponentShape {
