@@ -1,6 +1,7 @@
 package ru.primetalk.contacts.core
 
 import org.specs2.Specification
+import org.specs2.matcher.MatchResult
 
 class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
 
@@ -24,16 +25,25 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
   val set1: ConsTypeSet[e1.type, Empty.type] = addElement(e1, Empty)
 
   val bel: e1 ∊ ConsTypeSet[e1, Empty.type] = BelongsTo.elementIsHeadOfTypeSet0[e1, Empty.type]
-  val evBelongs = implicitly[e1 ∊ ConsTypeSet[e1.type, Empty.type] ](bel)
+  val evBelongs: e1 ∊ ConsTypeSet[e1.type, Empty.type] = implicitly[e1 ∊ ConsTypeSet[e1.type, Empty.type] ](bel)
   val set11: ConsTypeSet[e1.type, Empty.type] = addElement(e1, set1)
 
   val set21: e2 +: e1 +: ∅ = addElement(e2, set11)
-  val bel1 = implicitly[e1 ∊ (e2 +: e1 +: ∅)]
-  def set1eqSet11 = set1 must be(set11)
+  val bel1: e1 ∊ (e2 +: e1 +: ∅) = implicitly[e1 ∊ (e2 +: e1 +: ∅)]
+  def set1eqSet11: MatchResult[ConsTypeSet[e1.type, Empty.type]] = set1 must be(set11)
 
 
-  val evAllE1 = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, Empty.type]]]
-  val evAllE11 = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, ConsTypeSet[e1.type, Empty.type]]]]
+  val evAllE1: EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, Empty.type]] = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, Empty.type]]]
+  val evAllE11: EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, ConsTypeSet[e1.type, Empty.type]]] = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, ConsTypeSet[e1.type, Empty.type]]]]
+
+  val set23: ConsTypeSet[e3.type, ConsTypeSet[e2.type, ∅.type]] =  e3 +: e2 +: ∅
+  val set123: ConsTypeSet[e3.type, ConsTypeSet[e2.type, ConsTypeSet[e1.type, ∅.type]]] = e3 +: e2 +: e1 +: ∅
+  val set123_2 =  set21 ∪ set23
+
+  val set123eq = implicitly[TypeSetEq[e3 +: e2 +: e1 +: ∅, e3 +: e1 +: e2 +: ∅]]
+
+
+  //val set123eq2 = implicitly[TypeSetEq[e3 +: e2 +: e1 +: ∅, e3 +: e1 +: ∅]]
   //val evAllE12 = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, ConsTypeSet[e2.type, Empty.type]]]]
 
 //  val evSet11eqSet1 = implicitly[set1.type =:= set11.type ]

@@ -2,7 +2,7 @@ package ru.primetalk.contacts.core
 
 import scala.annotation.implicitNotFound
 
-sealed trait TypeSets2 {
+sealed trait TypeSets1 {
   //
   sealed trait TypeSet extends Serializable with Product
   case object Empty extends TypeSet
@@ -21,58 +21,43 @@ sealed trait TypeSets2 {
   // This is an operator for representing sets without duplications
   type +:[E, S <: TypeSet] = ConsTypeSet[E, S]
   // ⊕ - \u2295
-
-
-//  type +:[E, S<:TypeSet] = AddElementHelper[E, S]#Out
-  sealed trait AddWrapper[E, S<:TypeSet] {
-    type AuxPlus <: TypeSet
-    def auxPlus(e: E,s: S): AuxPlus
+  sealed trait AddElement[E, S<:TypeSet] {
+    type AddElement <: TypeSet
+    def apply(e: E, s: S): AddElement
   }
 
-  //type +:[E, S<:TypeSet] = AddWrapper#AuxPlus[E, S]
+  def addElement[E, S<:TypeSet](e: E, s: S)(implicit addWrapper: AddElement[E,S]): addWrapper.AddElement =
+    addWrapper.apply(e,s)
 
+  trait TypeSetOps2[S<:TypeSet] {
+    def s: S
+    def +:[E](e: E)(implicit addWrapper: AddElement[E,S]): addWrapper.AddElement =
+      addWrapper.apply(e,s)
+  }
+  implicit def getAddElementPriority2[E, S<:TypeSet]: AddElement[E, S] {
+    type AddElement = ConsTypeSet[E, S]
+  } = new AddElement[E,S] {
+    override type AddElement = E ConsTypeSet S
+    override def apply(e: E, s: S): AddElement = ConsTypeSet[E,S](e,s)
+  }
 //
-//  sealed trait AddWrapperHead extends AddWrapper {
-//    type AuxPlus[E, S<:TypeSet] = E ConsTypeSet S
+//  @implicitNotFound("Couldn't add element to set")
+//  sealed trait AddElementHelper[E, S<:TypeSet] {
+//    type Out <: TypeSet
+//    //def out(e: E, s: S): Out
+//    //def unapply(es: Out): (E, S)
 //  }
 //
-//  sealed trait AddWrapperIgnore extends AddWrapper {
-//    type AuxPlus[E, S<:TypeSet] = S
+//  object AddElementHelper {
+//    implicit def AddElementHelperAddElementToTypeSet[E, S<:TypeSet]: AddElementHelper[E, S] {
+//      type Out = E ConsTypeSet S
+//    } =
+//      new AddElementHelper[E,S] {
+//        type Out = E ConsTypeSet S
+//        // def out(e: E, s: S): Out = ConsSet(e, s)
+//        // def unapply(es: Out): (E, S) = (es.element, es.set)
+//      }
 //  }
-
-//  def addElement[E, S<:TypeSet](e: E, s: S)(implicit ev: AddWrapper[E,S]#AuxPlus): ev.type =
-//    ev//addWrapper.auxPlus(e,s)
-
-  implicit def addElement[E, S<:TypeSet](e: E, s: S)(implicit addWrapper: AddWrapper[E,S]): addWrapper.AuxPlus =
-    addWrapper.auxPlus(e,s)
-
-  implicit def getAddWrapper[E, S<:TypeSet]: AddWrapper[E, S] {
-    type AuxPlus = ConsTypeSet[E, S]
-  } = new AddWrapper[E,S] {
-    override type AuxPlus = E ConsTypeSet S
-    def auxPlus(e: E,s: S): AuxPlus = ConsTypeSet[E,S](e,s)
-
-  }
-  //  type +:[E, S<:TypeSet] <: TypeSet
-  //sealed trait +:[E, S<:TypeSet]// = AddElementHelper[E, S]#Out
-
-  @implicitNotFound("Couldn't add element to set")
-  sealed trait AddElementHelper[E, S<:TypeSet] {
-    type Out <: TypeSet
-    //def out(e: E, s: S): Out
-    //def unapply(es: Out): (E, S)
-  }
-
-  object AddElementHelper {
-    implicit def AddElementHelperAddElementToTypeSet[E, S<:TypeSet]: AddElementHelper[E, S] {
-      type Out = E ConsTypeSet S
-    } =
-      new AddElementHelper[E,S] {
-        type Out = E ConsTypeSet S
-        // def out(e: E, s: S): Out = ConsSet(e, s)
-        // def unapply(es: Out): (E, S) = (es.element, es.set)
-      }
-  }
 
 
   @implicitNotFound("Couldn't prove that each element of TypeSet is subtype the given Up type")
@@ -100,6 +85,23 @@ sealed trait TypeSets2 {
     implicit def empty[P[_]]: ForAll[P, Empty] = new ForAll[P, Empty] {}
     implicit def cons[P[_], E, S<: TypeSet](implicit p: P[E], forAll: ForAll[P, S]): ForAll[P, E +: S] = new ForAll[P, E +: S] {}
   }
+  @implicitNotFound("Couldn't prove that predicate holds true for each element")
+  sealed trait Exists[P[_], S<: TypeSet]
+  object Exists {
+    implicit def consHead[P[_], E, S<: TypeSet](implicit p: P[E]): Exists[P, E +: S] = new Exists[P, E +: S] {}
+    implicit def consTail[P[_], E, S<: TypeSet](implicit exists: Exists[P, S]): Exists[P, E +: S] = new Exists[P, E +: S] {}
+  }
+
+  @implicitNotFound("Couldn't prove that typesets are equal")
+  trait TypeSetEq[A<:TypeSet, B<:TypeSet]
+  object TypeSetEq {
+    implicit def typeSetEq[A<:TypeSet, B<:TypeSet](implicit ev1: IsSubset[A,B], ev2: IsSubset[B,A]): TypeSetEq[A, B] = new TypeSetEq[A, B]{}
+  }
+  /**
+    * IsSubset type-level operation.
+    * O(N^^2)
+    * TODO: implement O(N) hash-based implementation.
+    */
   @implicitNotFound("Couldn't prove that set is in another set")
   sealed trait IsSubset[Subset <: TypeSet, SuperSet <: TypeSet]
   // ⊂ - \u2282
@@ -111,59 +113,20 @@ sealed trait TypeSets2 {
     implicit def cons[E, S <: TypeSet, SuperSet<:TypeSet](implicit headBelongs: E ∊ SuperSet, tailIsSubset: S ⊂ SuperSet):
       IsSubset[E ConsTypeSet S, SuperSet] = new IsSubset[E ConsTypeSet S, SuperSet]{}
   }
-
-  //  trait ExtractorHelper[E, S<: TypeSet] {
-//    def extract(es: E + S):
-//  }
-//  def head[E, S<: TypeSet](implicit ev: AddElementHelper[E,S]): ExtractorHelper = ev.unapply(es)._1
-  // this is equivalent to implicitly
-  def typeSet[S<:TypeSet](implicit s: S): S = s
-}
-sealed trait TypeSets1 extends TypeSets2 {
-//  sealed trait TypeSetRepr[S<:TypeSet]
-////  type TypeSetRepr[S<:TypeSet] = List[Any]
-//  case object TSNil extends TypeSetRepr[Empty]
-//  case class TSCons[E, S<:TypeSet](e: E, typeSetRepr: TypeSetRepr[S]) extends TypeSetRepr[E+:S]
-//  object TypeSetRepr {
-//    implicit def emptyRepr: TypeSetRepr[Empty] = TSNil
-//
-//    implicit def consRepr[E, S <: TypeSet](implicit e: E, s: TypeSetRepr[S]): TypeSetRepr[E+:S] = TSCons[E, S](e, s)
-//  }
-//  def toList[S<:TypeSet](implicit lst: TypeSetRepr[S]): TypeSetRepr[S] = lst
 }
 sealed trait TypeSets0 extends TypeSets1 {
-  implicit def getAddWrapperIgnore[E, S<:TypeSet](implicit ev: E ∊ S ): AddWrapper[E, S] {
-    type AuxPlus = S
-  } = new AddWrapper[E,S] {
-    override type AuxPlus = S
-    def auxPlus(e: E, s: S): AuxPlus = s
+  implicit def getAddElementPriority1[E, S<:TypeSet](implicit ev: E ∊ S ): AddElement[E, S] {
+    type AddElement = S
+  } = new AddElement[E,S] {
+    override type AddElement = S
+    def apply(e: E, s: S): AddElement = s
   }
-
-  implicit def AddElementHelperAddElementToTypeSet[E, S<:TypeSet]: AddElementHelper[E, S] {
-    type Out = ConsTypeSet[E, S]
-  } =
-    new AddElementHelper[E,S] {
-      type Out = E ConsTypeSet S
-     // def out(e: E, s: S): Out = ConsSet(e, s)
-      // def unapply(es: Out): (E, S) = (es.element, es.set)
-    }
-
-//  implicit def addElement[E, S<:TypeSet](implicit e: E, s: S, ev: AddElementHelper[E, S]): E +: S =
-//    ev.out(e,s)
 }
 trait TypeSets extends TypeSets0 {
 
-  implicit def AddElementHelperAddElementToTypeSetWhenEBelongsToS[E, S<:TypeSet](implicit ev: E ∊ S): AddElementHelper[E, S] {
-    type Out = S
-  } =
-    new AddElementHelper[E,S] {
-      type Out = S
-//      def out(e: E, s: S): Out = s
-      //def unapply(es: Out): (E, S) = (es.element, es.set)
-
-    }
-
   // ∪ \u222A
+  def ∪[A <: TypeSet, B <: TypeSet](a: A, b: B)(implicit unionHelper: UnionHelper[A,B]): unionHelper.Out = unionHelper.out(a,b)
+
   type ∪[A <: TypeSet, B <: TypeSet] = UnionHelper[A, B]#Out
 
   sealed trait UnionHelper[A <: TypeSet, B <: TypeSet] {
@@ -177,10 +140,15 @@ trait TypeSets extends TypeSets0 {
         type Out = B
         def out(a: ∅, b: B): Out = b
       }
-    implicit def cons[E, S<: TypeSet, B <: TypeSet](implicit ev: S UnionHelper B, addEl: E AddWrapper (S ∪ B)): UnionHelper[E +: S, B] =
+    implicit def cons[E, S<: TypeSet, B <: TypeSet](implicit ev: S UnionHelper B, addEl: E AddElement (S ∪ B)): UnionHelper[E +: S, B] =
       new UnionHelper[E +: S, B] {
-        type Out = addEl.AuxPlus
-        def out(a: E +: S, b: B): Out = addEl.auxPlus(a.e, ev.out(a.s,b))
+        type Out = addEl.AddElement
+        def out(a: E +: S, b: B): Out = addEl.apply(a.e, ev.out(a.s,b))
       }
+  }
+
+
+  implicit class TypeSetOps[S<:TypeSet](val s: S) extends TypeSetOps2[S] {
+    def ∪[B <: TypeSet](b: B)(implicit unionHelper: UnionHelper[S,B]): unionHelper.Out = unionHelper.out(s, b)
   }
 }
