@@ -1,0 +1,38 @@
+package ru.primetalk.contacts.core
+
+import org.specs2.Specification
+
+class SignalsSpec extends Specification with MySignals {
+
+  def is =
+    s2"""
+  Methods of SignalsSpec should pass tests:
+    - lift should yield expected results $testLift
+  """
+
+  case object In extends Contact with Serializable {
+    type T = Int
+  }
+
+  type In = In.type
+
+  case object Out extends Contact {
+    type T = String
+  }
+
+  type Out = Out.type
+
+  def f(i: Int): String = i.toString
+
+  val liftedF: MySignalOnContacts[In +: ∅] => Iterable[MySignalOnContacts[Out +: ∅]] = lift(In, Out)(f)
+
+  def testLift = {
+    val inputData = 42
+    val expectedOutput = f(inputData)
+    val inputSignal = MySignalOps.wrap[In, In +: ∅](In, inputData)
+    val outputSignal: Iterable[MySignalOnContacts[Out +: ∅]] = liftedF(inputSignal)
+    val expectedOutputSignal = MySignalOps.wrap[Out, Out +: ∅](Out, expectedOutput)
+
+    outputSignal.head mustEqual expectedOutputSignal
+  }
+}
