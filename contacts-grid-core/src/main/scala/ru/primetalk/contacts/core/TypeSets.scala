@@ -5,12 +5,21 @@ import scala.language.reflectiveCalls
 
 sealed trait TypeSets1 {
   //
-  sealed trait TypeSet extends Serializable with Product
-  case object Empty extends TypeSet
+  sealed trait TypeSet extends Serializable with Product {
+    private[core] def elements: Set[Any]
+    override def equals(o: Any): Boolean = o match {
+      case t: TypeSet => elements == t.elements
+      case _ => false
+    }
+    override def hashCode(): Int = elements.hashCode()
+  }
+  case object Empty extends TypeSet {
+    private[core] def elements: Set[Any] = Set.empty
+  }
   type Empty = Empty.type
   // ∅ - \u2205 - synonyms
   type ∅ = Empty
-  val ∅ : Empty = Empty
+  val ∅ : Empty.type = Empty
   // This class enumerates elements of the set.
   // In order to avoid duplicates, we make constructor private and
   // take special measures for deduplication.
@@ -18,7 +27,14 @@ sealed trait TypeSets1 {
   // The trick with the Scala implicit priorities.
   // In this trait TypeSets2 we define general case, and in
   // the next trait TypeSets1 we define the case when element belongs to the set.
-  final case class ConsTypeSet[E, S <: TypeSet] private (e: E,s: S) extends TypeSet
+  final case class ConsTypeSet[E, S <: TypeSet] private (e: E,s: S) extends TypeSet {
+    private[core] lazy val elements: Set[Any] = s.elements.+(e)
+    override def equals(o: Any): Boolean = o match {
+      case t: TypeSet => elements == t.elements
+      case _ => false
+    }
+    override def hashCode(): Int = elements.hashCode()
+  }
   // This is an operator for representing sets without duplications
   type +:[E, S <: TypeSet] = ConsTypeSet[E, S]
   type Singleton[E] = E +: ∅
@@ -89,6 +105,7 @@ sealed trait TypeSets1 {
         def extract(s: H ConsTypeSet S): E = b.extract(s.s)
       }
   }
+  // ∀ - \u2200
   @implicitNotFound("Couldn't prove that predicate holds true for each element")
   sealed trait ForAll[P[_], S<: TypeSet]
   object ForAll {
@@ -96,15 +113,20 @@ sealed trait TypeSets1 {
     implicit def cons[P[_], E, S<: TypeSet](implicit p: P[E], forAll: ForAll[P, S]): ForAll[P, E +: S] = new ForAll[P, E +: S] {}
   }
 
+  type ∀[P[_], S <: TypeSet] = ForAll[P, S]
+
   @implicitNotFound("Couldn't prove that each element of TypeSet is subtype the given Up type")
   sealed trait IsSubtype[Up, T]
   implicit def isSubtype[Up, T <: Up]: IsSubtype[Up, T] = new IsSubtype[Up, T] {}
   type EachElementIsSubtype2[Up, S<: TypeSet] = ForAll[({ type lambda[T] = IsSubtype[Up, T]})#lambda, S]
 
+  // ∃ - \u2203
   @implicitNotFound("Couldn't prove that predicate holds true for each element")
   sealed trait Exists[P[_], S<: TypeSet]
 
   implicit def consTail[P[_], E, S<: TypeSet](implicit exists: Exists[P, S]): Exists[P, E +: S] = new Exists[P, E +: S] {}
+
+  type ∃[P[_], S <: TypeSet] = Exists[P, S]
 
   @implicitNotFound("Couldn't prove that typesets are equal")
   trait TypeSetEq[A<:TypeSet, B<:TypeSet]
@@ -130,6 +152,17 @@ sealed trait TypeSets1 {
 
   type IsSubset2[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[({type P[E] = BelongsTo[E, SuperSet]})#P, Subset]
   //type IsSubset3[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[BelongsTo[?, SuperSet], Subset]
+
+  @implicitNotFound("Couldn't find all elements as implicits")
+  sealed trait RenderTypeSet[S <: TypeSet] {
+    def apply: S
+  }
+  implicit def RenderTypeSetEmpty: RenderTypeSet[Empty] = new RenderTypeSet[Empty] {
+    def apply: Empty = Empty
+  }
+  implicit def RenderTypeSetCons[E, S <: TypeSet](implicit renderTypeSet: RenderTypeSet[S], e: E): RenderTypeSet[E ConsTypeSet S] = new RenderTypeSet[E ConsTypeSet S]{
+    override def apply: ConsTypeSet[E, S] = ConsTypeSet(e, renderTypeSet.apply)
+  }
 }
 sealed trait TypeSets0 extends TypeSets1 {
   implicit def consHead[P[_], E, S<: TypeSet](implicit p: P[E]): Exists[P, E +: S] = new Exists[P, E +: S] {}
@@ -166,6 +199,27 @@ sealed trait TypeSets0 extends TypeSets1 {
         (ConsTypeSet(esb.e, s), b)
       }
     }
+  sealed trait IntersectionHelper[A <: TypeSet, B <: TypeSet] {
+    type Out <: TypeSet
+    def apply(a: A, b: B): Out
+    def unwrap(o: Out): (A, B)
+  }
+
+  implicit def IntersectionHelperEmpty[B <: TypeSet](implicit b: RenderTypeSet[B]): IntersectionHelper[∅, B] =
+    new IntersectionHelper[∅, B] {
+      type Out = ∅
+      def apply(a: ∅, b: B): Out = a
+      def unwrap(o: Out): (∅, B) = (∅, b.apply)
+    }
+  implicit def IntersectionHelperConsNotContains[E, S <: TypeSet, B <: TypeSet](implicit intersectSB: S IntersectionHelper B, e: E): IntersectionHelper[E ConsTypeSet S, B] =
+    new IntersectionHelper[E ConsTypeSet S, B] {
+      type Out = intersectSB.Out
+      def apply(a: E ConsTypeSet S, b: B): Out = intersectSB.apply(a.s, b)
+      def unwrap(o: Out): (E ConsTypeSet S, B) = {
+        val (s, b) = intersectSB.unwrap(o)
+        (ConsTypeSet(e, s), b)
+      }
+    }
 }
 
 trait UnionTypeSets extends TypeSets0 {
@@ -191,16 +245,42 @@ trait UnionTypeSets extends TypeSets0 {
     unionHelper(a,b)
 
 }
-trait TypeSets extends UnionTypeSets {
 
-  implicit class TypeSetOps[S<:TypeSet](val s: S) extends AddElementTypeSetOps[S] with UnionTypeSetOps[S] {
+trait IntersectTypeSets extends UnionTypeSets {
+  implicit def IntersectionHelperConsContains[E, S <: TypeSet, B <: TypeSet](implicit intersectSB: S IntersectionHelper B, ev: E BelongsTo B): IntersectionHelper[E ConsTypeSet S, B] =
+    new IntersectionHelper[E ConsTypeSet S, B] {
+      type Out = E ConsTypeSet intersectSB.Out
+      def apply(a: E ConsTypeSet S, b: B): Out = ConsTypeSet(a.e, intersectSB.apply(a.s, b))
+      def unwrap(o: Out): (E ConsTypeSet S, B) = {
+        val (s, b) = intersectSB.unwrap(o.s)
+        (ConsTypeSet(o.e, s), b)
+      }
+    }
+
+  trait IntersectionTypeSetOps[S<:TypeSet] {
+    def s: S
+    def ∩[B <: TypeSet](b: B)(implicit helper: IntersectionHelper[S,B]): helper.Out = helper.apply(s, b)
+  }
+  // ∩ \u2229
+  def ∩[A <: TypeSet, B <: TypeSet](a: A, b: B)(implicit helper: IntersectionHelper[A,B]): helper.Out = helper.apply(a, b)
+
+
+}
+
+trait TypeSets extends IntersectTypeSets {
+
+  implicit class TypeSetOps[S<:TypeSet](val s: S) extends
+    AddElementTypeSetOps[S]
+    with UnionTypeSetOps[S]
+    with IntersectionTypeSetOps[S]
+  {
     // runtime contains, O(N)
     def contains0[E](e: E): Boolean = s match {
       case ConsTypeSet(h, t) => h == e || t.contains0(e)
       case _ => false
     }
     def shouldContain[E](e: E)(implicit ev: E BelongsTo S): Unit = ()
-    // compile-time contains, O(1)
+    // compile-time contains, O(1), could be inlined
     def contains[E](e: E)(implicit ev: E BelongsTo S = null): Boolean = ev != null
   }
 }
