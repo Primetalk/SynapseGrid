@@ -93,16 +93,25 @@ sealed trait TypeSets1 {
   sealed trait BelongsTo[Element, S <: TypeSet] {
     def extract(s: S): Element
   }
+  sealed trait BelongsToHead[Element, H, S <: TypeSet] extends BelongsTo[Element, H ConsTypeSet S] {
+    def elementIsHead: H =:= Element
+  }
+  sealed trait BelongsToTail[Element, H, S <: TypeSet] extends BelongsTo[Element, H ConsTypeSet S] {
+    def belongsToTail: Element ∊ S
+  }
   // ∊ - \u220A
   type ∊[Element, S <: TypeSet] = BelongsTo[Element, S]
   object BelongsTo {
-    implicit def elementIsHeadOfTypeSet0[E, S <: TypeSet]: E ∊ (E ConsTypeSet S) =
-      new BelongsTo[E, E ConsTypeSet S] {
-        def extract(s: E ConsTypeSet S): E = s.e
+    implicit def elementIsHeadOfTypeSet0[E, H, S <: TypeSet](implicit ev: H =:= E): E ∊ (H ConsTypeSet S) =
+      new BelongsToHead[E, H, S] {
+        def extract(s: H ConsTypeSet S): E = ev(s.e)
+        override def elementIsHead: H =:= E = ev
       }
     implicit def elementBelongsToTailOfTypeSet0[E, H, S <: TypeSet](implicit b: E ∊ S): E ∊ (H ConsTypeSet S) =
-      new BelongsTo[E, H ConsTypeSet S] {
+      new BelongsToTail[E, H, S] {
         def extract(s: H ConsTypeSet S): E = b.extract(s.s)
+
+        override def belongsToTail: E ∊ S = b
       }
   }
   // ∀ - \u2200
@@ -139,17 +148,36 @@ sealed trait TypeSets1 {
     * TODO: implement O(N) hash-based implementation.
     */
   @implicitNotFound("Couldn't prove that set is in another set")
-  sealed trait IsSubset[Subset <: TypeSet, SuperSet <: TypeSet]
+  sealed trait IsSubset[Subset <: TypeSet, SuperSet <: TypeSet] {
+    def extract[E](b: SuperSet)(implicit eInA: E ∊ Subset): E
+  }
   // ⊂ - \u2282
   type ⊂[Subset <: TypeSet, SuperSet <: TypeSet] = IsSubset[Subset, SuperSet]
 
   object IsSubset {
-    implicit def empty[SuperSet2<:TypeSet]:
-      IsSubset[∅, SuperSet2] = new IsSubset[∅, SuperSet2] {}
+    implicit def empty[SuperSet<:TypeSet]:
+      IsSubset[∅, SuperSet] = new IsSubset[∅, SuperSet] {
+      def extract[E](b: SuperSet)(implicit eInA: E ∊ Empty): E =
+        throw new IllegalArgumentException("It should not be possible to prove that an element belongs to an empty set. It must be a bug")
+
+    }
     implicit def cons[E, S <: TypeSet, SuperSet<:TypeSet](implicit headBelongs: E ∊ SuperSet, tailIsSubset: S ⊂ SuperSet):
-      IsSubset[E ConsTypeSet S, SuperSet] = new IsSubset[E ConsTypeSet S, SuperSet]{}
+      IsSubset[E ConsTypeSet S, SuperSet] = new IsSubset[E ConsTypeSet S, SuperSet]{
+      override def extract[E2](b: SuperSet)(implicit eInA: E2 ∊ ConsTypeSet[E, S]): E2 = eInA match {
+        case belongsToHead : BelongsToHead[E2, E, S] => // Basically this means that E2 == E
+          belongsToHead.elementIsHead(headBelongs.extract(b))
+        case belongsToTail : BelongsToTail[E2, E, S] =>
+          tailIsSubset.extract(b)(belongsToTail.belongsToTail)
+      }
+    }
   }
 
+  // It's not implicit, because it's a bit heavyweight. Also it should be placed in the low priority trait
+  // So that normal processing of BelongsTo is not broken
+  def inferEBelongsToBIfEBelongsToASubset[E, Subset <: TypeSet, SuperSet <: TypeSet]
+  (implicit eInA: E ∊ Subset, aIsSubsetOfB: Subset ⊂ SuperSet): E ∊ SuperSet = new BelongsTo[E, SuperSet] {
+    override def extract(s: SuperSet): E = aIsSubsetOfB.extract[E](s)
+  }
   type IsSubset2[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[({type P[E] = BelongsTo[E, SuperSet]})#P, Subset]
   //type IsSubset3[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[BelongsTo[?, SuperSet], Subset]
 
