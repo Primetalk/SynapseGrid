@@ -1,6 +1,7 @@
 package ru.primetalk.contacts.core
 
 import scala.annotation.implicitNotFound
+import scala.language.reflectiveCalls
 
 sealed trait TypeSets1 {
   //
@@ -20,25 +21,28 @@ sealed trait TypeSets1 {
   final case class ConsTypeSet[E, S <: TypeSet] private (e: E,s: S) extends TypeSet
   // This is an operator for representing sets without duplications
   type +:[E, S <: TypeSet] = ConsTypeSet[E, S]
+  type Singleton[E] = E +: ∅
   // ⊕ - \u2295
   sealed trait AddElement[E, S<:TypeSet] {
-    type AddElement <: TypeSet
-    def apply(e: E, s: S): AddElement
+    type Sum <: TypeSet
+    def apply(e: E, s: S): Sum
+    def unwrap(sum: Sum): (E, S)
   }
 
-  def addElement[E, S<:TypeSet](e: E, s: S)(implicit addWrapper: AddElement[E,S]): addWrapper.AddElement =
+  def addElement[E, S<:TypeSet](e: E, s: S)(implicit addWrapper: AddElement[E,S]): addWrapper.Sum =
     addWrapper.apply(e,s)
 
-  trait TypeSetOps2[S<:TypeSet] {
+  trait AddElementTypeSetOps[S<:TypeSet] {
     def s: S
-    def +:[E](e: E)(implicit addWrapper: AddElement[E,S]): addWrapper.AddElement =
+    def +:[E](e: E)(implicit addWrapper: AddElement[E,S]): addWrapper.Sum =
       addWrapper.apply(e,s)
   }
   implicit def getAddElementPriority2[E, S<:TypeSet]: AddElement[E, S] {
-    type AddElement = ConsTypeSet[E, S]
+    type Sum = ConsTypeSet[E, S]
   } = new AddElement[E,S] {
-    override type AddElement = E ConsTypeSet S
-    override def apply(e: E, s: S): AddElement = ConsTypeSet[E,S](e,s)
+    override type Sum = E ConsTypeSet S
+    override def apply(e: E, s: S): Sum = ConsTypeSet[E,S](e,s)
+    override def unwrap(sum: Sum): (E, S) = (sum.e, sum.s)
   }
 //
 //  @implicitNotFound("Couldn't add element to set")
@@ -70,14 +74,20 @@ sealed trait TypeSets1 {
   }
 
   @implicitNotFound("Couldn't prove that element belongs to set")
-  sealed trait BelongsTo[Element, S <: TypeSet]
+  sealed trait BelongsTo[Element, S <: TypeSet] {
+    def extract(s: S): Element
+  }
   // ∊ - \u220A
   type ∊[Element, S <: TypeSet] = BelongsTo[Element, S]
   object BelongsTo {
     implicit def elementIsHeadOfTypeSet0[E, S <: TypeSet]: E ∊ (E ConsTypeSet S) =
-      new BelongsTo[E, E ConsTypeSet S] {}
+      new BelongsTo[E, E ConsTypeSet S] {
+        def extract(s: E ConsTypeSet S): E = s.e
+      }
     implicit def elementBelongsToTailOfTypeSet0[E, H, S <: TypeSet](implicit b: E ∊ S): E ∊ (H ConsTypeSet S) =
-      new BelongsTo[E, H ConsTypeSet S] {}
+      new BelongsTo[E, H ConsTypeSet S] {
+        def extract(s: H ConsTypeSet S): E = b.extract(s.s)
+      }
   }
   @implicitNotFound("Couldn't prove that predicate holds true for each element")
   sealed trait ForAll[P[_], S<: TypeSet]
@@ -85,12 +95,16 @@ sealed trait TypeSets1 {
     implicit def empty[P[_]]: ForAll[P, Empty] = new ForAll[P, Empty] {}
     implicit def cons[P[_], E, S<: TypeSet](implicit p: P[E], forAll: ForAll[P, S]): ForAll[P, E +: S] = new ForAll[P, E +: S] {}
   }
+
+  @implicitNotFound("Couldn't prove that each element of TypeSet is subtype the given Up type")
+  sealed trait IsSubtype[Up, T]
+  implicit def isSubtype[Up, T <: Up]: IsSubtype[Up, T] = new IsSubtype[Up, T] {}
+  type EachElementIsSubtype2[Up, S<: TypeSet] = ForAll[({ type lambda[T] = IsSubtype[Up, T]})#lambda, S]
+
   @implicitNotFound("Couldn't prove that predicate holds true for each element")
   sealed trait Exists[P[_], S<: TypeSet]
-  object Exists {
-    implicit def consHead[P[_], E, S<: TypeSet](implicit p: P[E]): Exists[P, E +: S] = new Exists[P, E +: S] {}
-    implicit def consTail[P[_], E, S<: TypeSet](implicit exists: Exists[P, S]): Exists[P, E +: S] = new Exists[P, E +: S] {}
-  }
+
+  implicit def consTail[P[_], E, S<: TypeSet](implicit exists: Exists[P, S]): Exists[P, E +: S] = new Exists[P, E +: S] {}
 
   @implicitNotFound("Couldn't prove that typesets are equal")
   trait TypeSetEq[A<:TypeSet, B<:TypeSet]
@@ -113,42 +127,80 @@ sealed trait TypeSets1 {
     implicit def cons[E, S <: TypeSet, SuperSet<:TypeSet](implicit headBelongs: E ∊ SuperSet, tailIsSubset: S ⊂ SuperSet):
       IsSubset[E ConsTypeSet S, SuperSet] = new IsSubset[E ConsTypeSet S, SuperSet]{}
   }
+
+  type IsSubset2[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[({type P[E] = BelongsTo[E, SuperSet]})#P, Subset]
+  //type IsSubset3[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[BelongsTo[?, SuperSet], Subset]
 }
 sealed trait TypeSets0 extends TypeSets1 {
+  implicit def consHead[P[_], E, S<: TypeSet](implicit p: P[E]): Exists[P, E +: S] = new Exists[P, E +: S] {}
+
   implicit def getAddElementPriority1[E, S<:TypeSet](implicit ev: E ∊ S ): AddElement[E, S] {
-    type AddElement = S
+    type Sum = S
   } = new AddElement[E,S] {
-    override type AddElement = S
-    def apply(e: E, s: S): AddElement = s
+    override type Sum = S
+    def apply(e: E, s: S): Sum = s
+    override def unwrap(sum: Sum): (E, S) = (ev.extract(sum), sum)
   }
-}
-trait TypeSets extends TypeSets0 {
 
-  // ∪ \u222A
-  def ∪[A <: TypeSet, B <: TypeSet](a: A, b: B)(implicit unionHelper: UnionHelper[A,B]): unionHelper.Out = unionHelper.out(a,b)
-
-  type ∪[A <: TypeSet, B <: TypeSet] = UnionHelper[A, B]#Out
 
   sealed trait UnionHelper[A <: TypeSet, B <: TypeSet] {
     type Out <: TypeSet
-    def out(a: A, b: B): Out
+    def apply(a: A, b: B): Out
+    def unwrap(o: Out): (A, B)
   }
+  implicit def UnionHelperEmpty[B <: TypeSet]: UnionHelper[∅, B] =
+    new UnionHelper[∅, B] {
+      type Out = B
+      def apply(a: ∅, b: B): Out = b
+      def unwrap(o: Out): (∅, B) = (∅, o)
+    }
+  // this method will be used if `E` doesn't belong to `B`
+  implicit def UnionHelperConsPriority0[E, S<: TypeSet, B <: TypeSet](implicit unionSB: S UnionHelper B): UnionHelper[E ConsTypeSet S, B] =
+    new UnionHelper[E ConsTypeSet S, B] {
+      override type Out = E ConsTypeSet unionSB.Out
+      def apply(ePlusS: E ConsTypeSet S, b: B): Out = {
+        ConsTypeSet(ePlusS.e, unionSB.apply(ePlusS.s, b))
+      }
+      def unwrap(esb: E ConsTypeSet unionSB.Out): (E ConsTypeSet S, B) = {
+        val (s,b) = unionSB.unwrap(esb.s)
+        (ConsTypeSet(esb.e, s), b)
+      }
+    }
+}
 
-  object UnionHelper {
-    implicit def empty[B <: TypeSet]: UnionHelper[∅, B] =
-      new UnionHelper[∅, B] {
-        type Out = B
-        def out(a: ∅, b: B): Out = b
+trait UnionTypeSets extends TypeSets0 {
+
+  implicit def UnionHelperConsEInB[E, S<: TypeSet, B <: TypeSet](implicit unionSB: S UnionHelper B, eInB: E BelongsTo B): UnionHelper[E ConsTypeSet S, B] =
+    new UnionHelper[E ConsTypeSet S, B] {
+      override type Out = unionSB.Out
+      def apply(ePlusS: E ConsTypeSet S, b: B): Out = {
+        unionSB.apply(ePlusS.s, b)
       }
-    implicit def cons[E, S<: TypeSet, B <: TypeSet](implicit ev: S UnionHelper B, addEl: E AddElement (S ∪ B)): UnionHelper[E +: S, B] =
-      new UnionHelper[E +: S, B] {
-        type Out = addEl.AddElement
-        def out(a: E +: S, b: B): Out = addEl.apply(a.e, ev.out(a.s,b))
+      def unwrap(esb: unionSB.Out): (E ConsTypeSet S, B) = {
+        val (s,b) = unionSB.unwrap(esb)
+        (ConsTypeSet(eInB.extract(b), s), b)
       }
+    }
+
+  trait UnionTypeSetOps[S<:TypeSet] {
+    def s: S
+    def ∪[B <: TypeSet](b: B)(implicit unionHelper: UnionHelper[S,B]): unionHelper.Out = unionHelper.apply(s, b)
   }
+  // ∪ \u222A
+  def ∪[A <: TypeSet, B <: TypeSet](a: A, b: B)(implicit unionHelper: UnionHelper[A,B]): unionHelper.Out =
+    unionHelper(a,b)
 
+}
+trait TypeSets extends UnionTypeSets {
 
-  implicit class TypeSetOps[S<:TypeSet](val s: S) extends TypeSetOps2[S] {
-    def ∪[B <: TypeSet](b: B)(implicit unionHelper: UnionHelper[S,B]): unionHelper.Out = unionHelper.out(s, b)
+  implicit class TypeSetOps[S<:TypeSet](val s: S) extends AddElementTypeSetOps[S] with UnionTypeSetOps[S] {
+    // runtime contains, O(N)
+    def contains0[E](e: E): Boolean = s match {
+      case ConsTypeSet(h, t) => h == e || t.contains0(e)
+      case _ => false
+    }
+    def shouldContain[E](e: E)(implicit ev: E BelongsTo S): Unit = ()
+    // compile-time contains, O(1)
+    def contains[E](e: E)(implicit ev: E BelongsTo S = null): Boolean = ev != null
   }
 }
