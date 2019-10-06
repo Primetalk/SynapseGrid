@@ -116,13 +116,8 @@ trait MySignals extends Signals {
   }
 
   // Check if signals are compatible
-  implicit def eqContactsEqSignals[A<:TypeSet, B<:TypeSet](implicit eq: A IsSubset B): SignalContactsAreSubset[SignalOnContacts[A], SignalOnContacts[B]] =
-    new SignalContactsAreSubset[SignalOnContacts[A], SignalOnContacts[B]] {
-      // we can cast signals because we do not store contacts set in the signal. So
-      // internally (in runtime) these signals are identical.
-      override def apply(s: SignalOnContacts[A]): SignalOnContacts[B] =
-        s.asInstanceOf[SignalOnContacts[B]]
-    }
+  implicit def eqContactsEqSignals[A<:TypeSet, B<:TypeSet](implicit aIsSubsetOfB: A IsSubset B): SignalContactsAreSubset[SignalOnContacts[A], SignalOnContacts[B]] =
+    (s: SignalOnContacts[A]) => new MySignal[s.C, B](s.contact, s.data, inferEBelongsToBIfEBelongsToASubset[s.C, A, B](s.contactIsInContacts, aIsSubsetOfB))
 
   // wraps a function into a component with a single input and single output.
   def lift[In <: Contact, Out <: Contact]
