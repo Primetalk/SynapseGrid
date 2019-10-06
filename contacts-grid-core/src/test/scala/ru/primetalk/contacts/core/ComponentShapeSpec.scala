@@ -2,6 +2,8 @@ package ru.primetalk.contacts.core
 
 import org.specs2.Specification
 
+import TypeSets._
+
 class ComponentShapeSpec extends Specification with ComponentShapeBuilderAPI { def is = s2"""
 
   This is specification of ComponentShape
@@ -9,10 +11,10 @@ class ComponentShapeSpec extends Specification with ComponentShapeBuilderAPI { d
     - inputs of the component should be known set $inputsEq
   """
   sealed trait MyContact extends Contact {
-    type T
+    type Data
   }
   abstract class ContactImpl[A](val name: String) extends Product with Serializable with MyContact {
-    override type T = A
+    override type Data = A
   }
  // override type Contact = MyContact
   case object In1 extends ContactImpl[String]("In1")
@@ -24,5 +26,5 @@ class ComponentShapeSpec extends Specification with ComponentShapeBuilderAPI { d
 
   val inputs: ConsTypeSet[In1.type, ∅] = addElement(In1, ∅)
   def inputsEq =
-    inputs must be(myComponent.inputs)
+    inputs === myComponent.inputs
 }
