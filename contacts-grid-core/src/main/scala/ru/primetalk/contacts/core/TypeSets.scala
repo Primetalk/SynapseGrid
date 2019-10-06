@@ -284,3 +284,5 @@ trait TypeSets extends IntersectTypeSets {
     def contains[E](e: E)(implicit ev: E BelongsTo S = null): Boolean = ev != null
   }
 }
+
+object TypeSets extends TypeSets
