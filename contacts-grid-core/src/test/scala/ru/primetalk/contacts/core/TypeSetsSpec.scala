@@ -19,11 +19,11 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
     - `{c,b,a} == {c,a,b}` ${`{c,b,a} == {c,a,b}`}
   """
 
-  implicit case object a
+  case object a
   type a = a.type
-  implicit case object b
+  case object b
   type b = b.type
-  implicit case object c
+  case object c
   type c = c.type
 
   val `{a}`: a ConsTypeSet ∅ = a +: Empty
@@ -46,7 +46,7 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
   val `{c,b}`: ConsTypeSet[c, ConsTypeSet[b, ∅]] =  c +: `{b}`
   val `{c,b,a}`: ConsTypeSet[c, ConsTypeSet[b, ConsTypeSet[a, ∅]]] = c +: b +: a +: Empty
   val `{b,a} ∪ {c,b}` =  `{b,a}` ∪ `{c,b}`
-  val `{b} ∩ {b}` = ∩(`{b}`, `{b}`)
+  val `{b} ∩ {b}` = ∩(`{b}`, `{b}`)(IntersectionHelperConsContains[b, Empty, ConsTypeSet[b, ∅]])
 
   val `{c,b,a} =T= {c,a,b}` = implicitly[TypeSetEq[c +: b +: a +: ∅, c +: a +: b +: ∅]]
 
@@ -54,7 +54,8 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
 
   def `{c,b,a} == ( {b,a} ∪ {c,b})` = `{c,b,a}` === (`{b,a}` ∪ `{c,b}`)
 
-  def `{b} == {b,a} ∩ {c,b}` = `{b}` === (`{b,a}` ∩ `{c,b}`)
+  val `{b,a} ∩ {c,b}`: IntersectionHelper[ConsTypeSet[b, ConsTypeSet[a, ∅]], ConsTypeSet[c, ConsTypeSet[b, ∅]]]#Out = `{b,a}` ∩`{c,b}`
+  def `{b} == {b,a} ∩ {c,b}` = `{b}` === (`{b,a} ∩ {c,b}`)
   //val set123eq2 = implicitly[TypeSetEq[e3 +: e2 +: e1 +: ∅, e3 +: e1 +: ∅]]
   //val evAllE12 = implicitly[EachElementIsSubtype[e1.type, ConsTypeSet[e1.type, ConsTypeSet[e2.type, ∅]]]]
 

@@ -160,8 +160,8 @@ sealed trait TypeSets1 {
   implicit def RenderTypeSetEmpty: RenderTypeSet[Empty] = new RenderTypeSet[Empty] {
     def apply: Empty = Empty
   }
-  implicit def RenderTypeSetCons[E, S <: TypeSet](implicit renderTypeSet: RenderTypeSet[S], e: E): RenderTypeSet[E ConsTypeSet S] = new RenderTypeSet[E ConsTypeSet S]{
-    override def apply: ConsTypeSet[E, S] = ConsTypeSet(e, renderTypeSet.apply)
+  implicit def RenderTypeSetCons[E, S <: TypeSet](implicit renderTypeSet: RenderTypeSet[S], e: ValueOf[E]): RenderTypeSet[E ConsTypeSet S] = new RenderTypeSet[E ConsTypeSet S]{
+    override def apply: ConsTypeSet[E, S] = ConsTypeSet(e.value, renderTypeSet.apply)
   }
 }
 sealed trait TypeSets0 extends TypeSets1 {
@@ -211,13 +211,13 @@ sealed trait TypeSets0 extends TypeSets1 {
       def apply(a: ∅, b: B): Out = a
       def unwrap(o: Out): (∅, B) = (∅, b.apply)
     }
-  implicit def IntersectionHelperConsNotContains[E, S <: TypeSet, B <: TypeSet](implicit intersectSB: S IntersectionHelper B, e: E): IntersectionHelper[E ConsTypeSet S, B] =
+  implicit def IntersectionHelperConsNotContains[E, S <: TypeSet, B <: TypeSet](implicit intersectSB: S IntersectionHelper B, e: ValueOf[E]): IntersectionHelper[E ConsTypeSet S, B] =
     new IntersectionHelper[E ConsTypeSet S, B] {
       type Out = intersectSB.Out
       def apply(a: E ConsTypeSet S, b: B): Out = intersectSB.apply(a.s, b)
       def unwrap(o: Out): (E ConsTypeSet S, B) = {
         val (s, b) = intersectSB.unwrap(o)
-        (ConsTypeSet(e, s), b)
+        (ConsTypeSet(e.value, s), b)
       }
     }
 }
