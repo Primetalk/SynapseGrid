@@ -2,6 +2,8 @@ package ru.primetalk.contacts.core
 
 import org.specs2.Specification
 
+import TypeSets._
+
 class SignalsSpec extends Specification with MySignals {
 
   def is =
@@ -12,13 +14,13 @@ class SignalsSpec extends Specification with MySignals {
   """
 
   case object In extends Contact with Serializable {
-    type T = Int
+    type Data = Int
   }
 
   type In = In.type
 
   case object Out extends Contact {
-    type T = String
+    type Data = String
   }
 
   type Out = Out.type
