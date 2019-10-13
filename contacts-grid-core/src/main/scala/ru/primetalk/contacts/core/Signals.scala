@@ -35,26 +35,71 @@ trait Signals {
   // typeclass for dealing with signals
   // restores type information based on the actual contact that is in the signal.
   trait SignalOnContactsOps[S[_<:TypeSet]<:SignalOnContacts0] {
+
     type Self = SignalOnContactsOps[S]
+
     type Set[A<:TypeSet] = S[A]
+
     def unwrap[Contacts<:TypeSet](s: S[Contacts]): (s.C, s.C#Data) = (s.contact, s.data)
+
     def get2[Contacts<:TypeSet](s: S[Contacts])(c: s.C): s.C#Data = unwrap(s)._2
-    def get[C<:Contact, Contacts<:TypeSet](s: S[Contacts], c: C)(implicit cInContacts: C BelongsTo Contacts): Option[C#Data] = unwrap(s) match {
-      case (contact, data) if contact == c => Some(data.asInstanceOf[C#Data])
+
+    def get[C<:Contact, Contacts<:TypeSet](s: S[Contacts], c: C)(implicit cInContacts: C BelongsTo Contacts): Option[c.Data] = unwrap(s) match {
+      case (contact, data) if contact == c => Some(data.asInstanceOf[c.Data])
       case _ => None
     }
+
     def getIterable[C<:Contact, Contacts<:TypeSet](s: S[Contacts], c: C)(implicit cInContacts: C BelongsTo Contacts): Iterable[C#Data] = unwrap(s) match {
       case (contact, data) if contact == c => Iterable.single(data.asInstanceOf[C#Data])
       case _ => Iterable.empty
     }
 //      if(scEqC == null) None else Some(sctEqCT(unwrap(s)._2))
     def wrap[Cont<:Contact, Contacts<:TypeSet](c: Cont, data: Cont#Data)(implicit cInContacts: Cont BelongsTo Contacts): S[Contacts] { type C = Cont }
+
     def projection[Cont <: Contact, Contacts<:TypeSet, B<:TypeSet]
-    (s: S[Contacts]{ type C = Cont }, b: B)(implicit ev: Cont BelongsTo B): S[B] { type C = Cont }
+    (s: S[Contacts]{ type C = Cont }, b: B)(implicit ev: Cont BelongsTo B)
+    : S[B] { type C = Cont }
+
+    def projection0[A <: TypeSet, B <: TypeSet, Signal <: S[A]]
+    (s: Signal, b: B): Option[S[B] { type C = s.C }] =
+      belongsTo0(s.contact, b).map{ b => wrap[s.C, B](s.contact, s.data)(b) }
   }
 
+
+  class unwrapSignal[A <: TypeSet, B <: TypeSet, C <: UnionHelper[A,B]](val unionHelper: C) {
+    def apply(out: unionHelper.Out, signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
+      val (a: A, b: B) = unionHelper.unwrap(out)
+      // TODO: extract BelongsTo from UnionHelper
+      (
+        ops.projection0(signalOnContacts, a),
+        ops.projection0(signalOnContacts, b)
+      )
+    }
+    def apply(a: A, b: B, signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
+        // TODO: extract BelongsTo from UnionHelper
+        (
+          ops.projection0(signalOnContacts, a),
+          ops.projection0(signalOnContacts, b)
+        )
+    }
+  }
+  class unwrapSignal2[A <: TypeSet, B <: TypeSet, C <: UnionHelper[A,B]](a: A, b: B, unionHelper: C) {
+
+    def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
+      // TODO: extract BelongsTo from UnionHelper
+      (
+        ops.projection0(signalOnContacts, a),
+        ops.projection0(signalOnContacts, b)
+      )
+    }
+  }
+
+  // <:<
   @implicitNotFound("Couldn't prove that signal contacts is a subset of the other signal contacts")
-  trait SignalContactsAreSubset[SA <: SignalOnContacts0, SB <: SignalOnContacts0] {
+  trait SignalContactsAreCompatibleOneWay[SA, SB] {
     def apply(s: SA): SB
   }
 
@@ -116,7 +161,7 @@ trait MySignals extends Signals {
   }
 
   // Check if signals are compatible
-  implicit def eqContactsEqSignals[A<:TypeSet, B<:TypeSet](implicit aIsSubsetOfB: A IsSubset B): SignalContactsAreSubset[SignalOnContacts[A], SignalOnContacts[B]] =
+  implicit def eqContactsEqSignals[A<:TypeSet, B<:TypeSet](implicit aIsSubsetOfB: A ⊂ B): SignalContactsAreCompatibleOneWay[SignalOnContacts[A], SignalOnContacts[B]] =
     (s: SignalOnContacts[A]) => new MySignal[s.C, B](s.contact, s.data, inferEBelongsToBIfEBelongsToASubset[s.C, A, B](s.contactIsInContacts, aIsSubsetOfB))
 
   // wraps a function into a component with a single input and single output.
