@@ -50,8 +50,8 @@ trait Signals {
       case _ => None
     }
 
-    def getIterable[C<:Contact, Contacts<:TypeSet](s: S[Contacts], c: C)(implicit cInContacts: C BelongsTo Contacts): Iterable[C#Data] = unwrap(s) match {
-      case (contact, data) if contact == c => Iterable.single(data.asInstanceOf[C#Data])
+    def getIterable[C<:Contact, Contacts<:TypeSet](s: S[Contacts], c: C)(implicit cInContacts: C BelongsTo Contacts): Iterable[c.Data] = unwrap(s) match {
+      case (contact, data) if contact == c => Iterable.single(data.asInstanceOf[c.Data])
       case _ => Iterable.empty
     }
 //      if(scEqC == null) None else Some(sctEqCT(unwrap(s)._2))
@@ -173,10 +173,10 @@ trait MySignals extends Signals {
   implicit class MyContactOps[Cont <: Contact](c: Cont) {
     def wrap[Contacts <: TypeSet]
     (data: Cont#Data)
-    (implicit signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts], ev: Cont BelongsTo Contacts): MySignalOnContacts[Contacts] { type C = Cont} =
+    (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts], ev: Cont BelongsTo Contacts): SignalOnContacts[Contacts] { type C = Cont} =
       signalOnContactsOps.wrap[Cont, Contacts](c, data)
   }
-  implicit object MySignalOps extends SignalOnContactsOps[MySignalOnContacts] {
+  implicit object MySignalOps extends SignalOnContactsOps[SignalOnContacts] {
     override def wrap[
       Cont <: Contact,
       Contacts <: TypeSet
@@ -185,8 +185,9 @@ trait MySignals extends Signals {
     : MySignalOnContacts[Contacts] {
       type C = Cont
     } = new MySignal[Cont, Contacts](c, data, cInContacts)
+
     def projection[Cont <: Contact, Contacts<:TypeSet, B<:TypeSet]
-    (s: MySignalOnContacts[Contacts]{ type C = Cont }, b: B)(implicit ev: Cont BelongsTo B): MySignalOnContacts[B]  { type C = Cont } = new MySignalOnContacts[B]{
+    (s: SignalOnContacts[Contacts]{ type C = Cont }, b: B)(implicit ev: Cont BelongsTo B): MySignalOnContacts[B]  { type C = Cont } = new MySignalOnContacts[B]{
       override def contactIsInContacts: Cont BelongsTo B = ev
 
       override type C = Cont
@@ -206,17 +207,17 @@ trait MySignals extends Signals {
   def lift[In <: Contact, Out <: Contact]
   (in: In, out: Out)(f: In#Data => Out#Data)
   (implicit
-   signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts]
+   signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
   ): signalOnContactsOps.Set[In +: ∅] => Iterable[signalOnContactsOps.Set[Out +: ∅]]
   =
     signalOnContactIn =>
       signalOnContactsOps.getIterable(signalOnContactIn, in)
         .map(f.andThen(signalOnContactsOps.wrap(out, _)))
   def liftIterable[In <: Contact, Out <: Contact]
-  (in: In, out: Out)(f: In#Data => Iterable[Out#Data])
+  (in: In, out: Out)(f: in.Data => Iterable[out.Data])
   (implicit
-   signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts]
-  ): signalOnContactsOps.Set[In +: ∅] => Iterable[signalOnContactsOps.Set[Out +: ∅]]
+   signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
+  ): SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]]
   =
     signalOnContactIn =>
       signalOnContactsOps.getIterable(signalOnContactIn, in)
@@ -224,8 +225,8 @@ trait MySignals extends Signals {
 
   // wraps a single contact to be both input and output.
   def trivialLift[C <: Contact](c: C)(
-    implicit signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts]
-  ): signalOnContactsOps.Set[C +: ∅] => Iterable[signalOnContactsOps.Set[C +: ∅]]
+    implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
+  ): SignalOnContacts[C +: ∅] => Iterable[SignalOnContacts[C +: ∅]]
   =
     Iterable.single
 
@@ -234,8 +235,8 @@ trait MySignals extends Signals {
   (in: In, out: Out)
   (implicit
     ev: In#Data <:< Out#Data,
-    signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts]
-  ): signalOnContactsOps.Set[In +: ∅] => Iterable[signalOnContactsOps.Set[Out +: ∅]]
+    signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
+  ): SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]]
   =
     signalOnContactIn =>
       signalOnContactsOps.getIterable(signalOnContactIn, in)

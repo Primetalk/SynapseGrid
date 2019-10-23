@@ -30,11 +30,13 @@ class BreadboardSpec extends Specification with ComponentShapeBuilderAPI with My
   case object In2 extends ContactImpl[Int]("In2")
   case object Out2 extends ContactImpl[String]("Out2")
 
-  def parse(s: String): Iterable[Int] = Try(s.toInt).fold(_ => Iterable.empty, Iterable.single)
+  def parse(s: String): Iterable[Int] = Try(s.toInt).toOption
   def show(i: Int): String = i.toString
 
-  val Parse: SignalOnContacts[In1.type +: core.TypeSets.∅] => Iterable[SignalOnContacts[Out1.type +: core.TypeSets.∅]] = liftIterable(In1, Out1)(parse)
-  val Show: SignalOnContacts[In2.type +: primetalk.contacts.core.TypeSets.∅] => Iterable[SignalOnContacts[Out2.type +: primetalk.contacts.core.TypeSets.∅]] = lift(In2, Out2)(show)
+  // : SignalOnContacts[In1.type +: core.TypeSets.∅] => Iterable[SignalOnContacts[Out1.type +: core.TypeSets.∅]]
+  // : SignalOnContacts[In2.type +: ∅] => Iterable[SignalOnContacts[Out2.type +: ∅]]
+  val Parse = liftIterable(In1, Out1)(parse)
+  val Show  = lift(In2, Out2)(show)
   val shape1 = InOutShape(In1, Out1)
   val shape2 = InOutShape(In2, Out2)
   val Parser = createComponent(shape1)(Parse)

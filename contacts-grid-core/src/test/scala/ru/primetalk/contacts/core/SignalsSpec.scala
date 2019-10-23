@@ -27,13 +27,13 @@ class SignalsSpec extends Specification with MySignals {
 
   def f(i: Int): String = i.toString
 
-  val liftedF: MySignalOnContacts[In +: ∅] => Iterable[MySignalOnContacts[Out +: ∅]] = lift(In, Out)(f)
+  val liftedF: SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]] = lift(In, Out)(f)
 
   def testLift = {
     val inputData = 42
     val expectedOutput = f(inputData)
     val inputSignal = MySignalOps.wrap[In, In +: ∅](In, inputData)
-    val outputSignal: Iterable[MySignalOnContacts[Out +: ∅]] = liftedF(inputSignal)
+    val outputSignal: Iterable[SignalOnContacts[Out +: ∅]] = liftedF(inputSignal)
     val expectedOutputSignal = MySignalOps.wrap[Out, Out +: ∅](Out, expectedOutput)
 
     outputSignal.head mustEqual expectedOutputSignal
@@ -43,7 +43,7 @@ class SignalsSpec extends Specification with MySignals {
     val identity = trivialLift(In)
     val inputData = 42
     val inputSignal = MySignalOps.wrap[In, In +: ∅](In, inputData)
-    val outputSignal: Iterable[MySignalOnContacts[In +: ∅]] = identity(inputSignal)
+    val outputSignal: Iterable[SignalOnContacts[In +: ∅]] = identity(inputSignal)
     val expectedOutputSignal = MySignalOps.wrap[In, In +: ∅](In, inputData)
     outputSignal.head mustEqual expectedOutputSignal
   }
