@@ -35,12 +35,8 @@ class BreadboardSpec extends Specification with ComponentShapeBuilderAPI with My
 
   val Parse: SignalOnContacts[In1.type +: core.TypeSets.∅] => Iterable[SignalOnContacts[Out1.type +: core.TypeSets.∅]] = liftIterable(In1, Out1)(parse)
   val Show: SignalOnContacts[In2.type +: primetalk.contacts.core.TypeSets.∅] => Iterable[SignalOnContacts[Out2.type +: primetalk.contacts.core.TypeSets.∅]] = lift(In2, Out2)(show)
-  val shape1: ComponentShape {
-    type InputShape = contacts.core.TypeSets.ConsTypeSet[In1.type, contacts.core.TypeSets.∅]
-
-    type OutputShape = contacts.core.TypeSets.ConsTypeSet[Out1.type, contacts.core.TypeSets.∅]
-  } = addOutput(Out1, addInput(In1, EmptyComponentShape))
-  val shape2 = addOutput(Out2, addInput(In2, EmptyComponentShape))
+  val shape1 = InOutShape(In1, Out1)
+  val shape2 = InOutShape(In2, Out2)
   val Parser = createComponent(shape1)(Parse)
   val Shower = createComponent(shape2)(Show)
   val both = parallelAddComponent(Parser, Shower)

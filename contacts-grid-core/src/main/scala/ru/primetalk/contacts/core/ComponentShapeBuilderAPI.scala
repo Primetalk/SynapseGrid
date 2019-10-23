@@ -2,6 +2,7 @@ package ru.primetalk.contacts.core
 
 import scala.language.reflectiveCalls
 import TypeSets._
+import ru.primetalk.contacts
 import ru.primetalk.contacts.core
 
 trait ComponentShapeBuilderAPI extends Signals {
@@ -59,6 +60,12 @@ trait ComponentShapeBuilderAPI extends Signals {
 
     override val outputs: OutputShapeAddC.Sum = OutputShapeAddC(c, componentShape.outputs)
   }
+
+  def InOutShape[In<:Contact, Out<:Contact](in: In, out: Out)(
+  ): ComponentShape{
+    type InputShape = In +: Empty
+    type OutputShape = Out +: Empty
+  } = addOutput(out, addInput(in, EmptyComponentShape))
 
   sealed trait Component {
     type Shape <: ComponentShape
