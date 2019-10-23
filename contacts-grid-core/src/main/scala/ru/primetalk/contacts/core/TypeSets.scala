@@ -216,6 +216,12 @@ sealed trait TypeSets0 extends TypeSets1 {
 
 
   @implicitNotFound("Couldn't evaluate union of A and B")
+//  sealed trait UnionHelper0 {
+//    type TypeSet1 <: TypeSet
+//    type TypeSet2 <: TypeSet
+//    type Out <: TypeSet
+//  }
+//  @implicitNotFound("Couldn't evaluate union of A and B")
   sealed trait UnionHelper[A <: TypeSet, B <: TypeSet] {
     type Out <: TypeSet
     def apply(a: A, b: B): Out

@@ -45,7 +45,7 @@ trait ComponentShapeBuilderAPI extends Signals {
 
   sealed trait Component {
     type Shape <: ComponentShape
-    type Handler = SignalOnContacts[Shape#InputShape] => Iterable[SignalOnContacts[Shape#OutputShape]]
+    type Handler = SignalOnContacts[shape.InputShape] => Iterable[SignalOnContacts[shape.OutputShape]]
     val shape: Shape
     val handler: Handler
   }
@@ -75,8 +75,8 @@ trait ComponentShapeBuilderAPI extends Signals {
     Comp2 <: Component//{ type Shape = Shape2 }
   ](comp1: Comp1, comp2: Comp2)(
    implicit
-   inputShapesUnion: UnionHelper[comp1.Shape#InputShape, comp2.Shape#InputShape],
-   outputShapesUnion: UnionHelper[comp1.Shape#OutputShape, comp2.Shape#OutputShape],
+   inputShapesUnion: UnionHelper[comp1.shape.InputShape, comp2.shape.InputShape],
+   outputShapesUnion: UnionHelper[comp1.shape.OutputShape, comp2.shape.OutputShape],
    signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
   ): Component {
     type Shape = ComponentShape {
@@ -94,16 +94,15 @@ trait ComponentShapeBuilderAPI extends Signals {
       override val inputs: InputShape = inputShapesUnion.apply(comp1.shape.inputs, comp2.shape.inputs)
       override val outputs: OutputShape = outputShapesUnion.apply(comp1.shape.outputs, comp2.shape.outputs)
     }
+    override type Handler = SignalOnContacts[inputShapesUnion.Out] => Iterable[SignalOnContacts[outputShapesUnion.Out]]
+    def castContactAny[A<:TypeSet](s: SignalOnContacts[A]): SignalOnContacts[A]{type C = Contact} = s.asInstanceOf[SignalOnContacts[A]{type C = Contact}]
     override val handler: Handler = signalOnContacts => {
-      val (s1, s2) = (new unwrapSignal2(comp1.shape.inputs, comp2.shape.inputs, inputShapesUnion)).apply(signalOnContacts)
-      val out1 = s1.flatMap(a => comp1.handler(a))
-      val out2 = s2.flatMap(a => comp2.handler(a))
-      val res =  out1.flatMap(s => signalOnContactsOps.projection0
-        [comp1.Shape#OutputShape, outputShapesUnion.Out, SignalOnContacts[comp1.Shape#OutputShape]](s, shape.outputs)
-      ) ++
-        out2.flatMap(s => signalOnContactsOps.projection0
-          [comp2.Shape#OutputShape, outputShapesUnion.Out, SignalOnContacts[comp2.Shape#OutputShape]](s, shape.outputs)
-      )
+      val (s1, s2) = (new unwrapSignal2(comp1.shape.inputs, comp2.shape.inputs)(inputShapesUnion)).apply(signalOnContacts)
+      val out1: Iterable[SignalOnContacts[comp1.shape.OutputShape]] = s1.flatMap(a => comp1.handler(a))
+      val out2: Iterable[SignalOnContacts[comp2.shape.OutputShape]] = s2.flatMap(a => comp2.handler(a))
+      val res =
+        out1.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_)) ++
+        out2.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_))
       res
     }
   }
@@ -131,16 +130,16 @@ trait ComponentShapeBuilderAPI extends Signals {
 
   trait Breadboard { breadboard =>
     type Shape <: BreadboardShape
-    def shape: Shape
+    val shape: Shape
     def projectSignals: SignalOnContacts[Shape#SourceShape] => Iterable[SignalOnContacts[Shape#SinkShape]]
     type Implementation <: Component {
       type Shape = ComponentShape {
-        type InputShape = breadboard.Shape#SinkShape
-        type OutputShape = breadboard.Shape#SourceShape
+        type InputShape = breadboard.shape.SinkShape
+        type OutputShape = breadboard.shape.SourceShape
       }
     }
     def implementation: Implementation
-    def tick: SignalOnContacts[Shape#SinkShape] => Iterable[SignalOnContacts[Shape#SourceShape]] = implementation.handler
+    def tick: SignalOnContacts[Shape#SinkShape] => Iterable[SignalOnContacts[Shape#SourceShape]] = ??? //implementation.handler
     def toComponent[I <: TypeSet, O <: TypeSet](inputs: I, outputs: O)(implicit i: I IsSubsetOf Shape#SinkShape, o: O IsSubsetOf Shape#SourceShape): Component {
       type Shape = ComponentShape {
         type InputShape = I
@@ -152,8 +151,8 @@ trait ComponentShapeBuilderAPI extends Signals {
   def addComponentToBreadboard[B<:Breadboard, C<:Component]
   (breadboard: B, component: C)
   (implicit
-   bbUnionSinks: UnionHelper[breadboard.Shape#SinkShape, component.shape.InputShape],
-   bbUnionSources: UnionHelper[breadboard.Shape#SourceShape, component.shape.OutputShape],
+   bbUnionSinks: UnionHelper[breadboard.shape.SinkShape, component.shape.InputShape],
+   bbUnionSources: UnionHelper[breadboard.shape.SourceShape, component.shape.OutputShape],
    implUnionII: UnionHelper[breadboard.Implementation#Shape#InputShape, component.Shape#InputShape],
    implUnionOO: UnionHelper[breadboard.Implementation#Shape#OutputShape, component.Shape#OutputShape],
    signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
@@ -164,22 +163,22 @@ trait ComponentShapeBuilderAPI extends Signals {
     }
     type Implementation = Component {
       type Shape = ComponentShape {
-        type InputShape = implUnionII.Out
-        type OutputShape = implUnionOO.Out
+        type InputShape = bbUnionSinks.Out
+        type OutputShape = bbUnionSources.Out
       }
     }
-  } = new Breadboard {
+  } = new Breadboard { newBreadboard =>
     type Shape = BreadboardShape {
       type SourceShape = bbUnionSources.Out
       type SinkShape = bbUnionSinks.Out
     }
     type Implementation = Component {
       type Shape = ComponentShape {
-        type InputShape = implUnionII.Out
-        type OutputShape = implUnionOO.Out
+        type InputShape = newBreadboard.shape.SinkShape
+        type OutputShape = newBreadboard.shape.SourceShape
       }
     }
-    override def shape: Shape = new BreadboardShape {
+    override val shape: Shape = new BreadboardShape {
       type SourceShape = bbUnionSources.Out
       type SinkShape = bbUnionSinks.Out
       override val sources: bbUnionSources.Out = bbUnionSources.apply(breadboard.shape.sources, component.shape.outputs)
@@ -188,10 +187,10 @@ trait ComponentShapeBuilderAPI extends Signals {
     override def projectSignals: SignalOnContacts[bbUnionSources.Out] => Iterable[SignalOnContacts[bbUnionSinks.Out]] = s =>
       signalOnContactsOps.projection0[bbUnionSources.Out, bbUnionSinks.Out, SignalOnContacts[bbUnionSources.Out]](s, shape.sinks)
 
-    override def implementation: Implementation =
-      parallelAddComponent[breadboard.Implementation, component.type ](
-        breadboard.implementation, component)(
-        implUnionII, implUnionOO, signalOnContactsOps)
+    override def implementation: Implementation = ???
+//      parallelAddComponent[breadboard.Implementation, C](
+//        breadboard.implementation, component)//(
+//        bbUnionSinks, bbUnionSources, signalOnContactsOps)
 
     override def toComponent[I <: core.TypeSets.TypeSet, O <: core.TypeSets.TypeSet](inputs1: I, outputs1: O)(implicit i: core.TypeSets.IsSubsetOf[I, bbUnionSinks.Out], o: core.TypeSets.IsSubsetOf[O, bbUnionSources.Out]): Component {
       type Shape = ComponentShape {
@@ -209,7 +208,13 @@ trait ComponentShapeBuilderAPI extends Signals {
         override val inputs: InputShape = inputs1
         override val outputs: OutputShape = outputs1
       }
-      override val handler: Handler = ???
+      override val handler: Handler = signalOnContacts => {
+//        val results = signalOnContactsOps.projection0(signalOnContacts, newBreadboard.shape.sinks).toIterable.flatMap{ signalOnInputs =>
+//          tick.apply(signalOnInputs)
+//        }
+//        results.flatMap(s => signalOnContactsOps.projection0(s, outputs1))
+        ???
+      }
     }
   }
 

@@ -2,6 +2,7 @@ package ru.primetalk.contacts.core
 
 import scala.annotation.implicitNotFound
 import TypeSets._
+import ru.primetalk.contacts
 import ru.primetalk.contacts.core
 
 trait Signals {
@@ -61,41 +62,78 @@ trait Signals {
     : S[B] { type C = Cont }
 
     def projection0[A <: TypeSet, B <: TypeSet, Signal <: S[A]]
-    (s: Signal, b: B): Option[S[B] { type C = s.C }] =
-      belongsTo0(s.contact, b).map{ b => wrap[s.C, B](s.contact, s.data)(b) }
+    (s: Signal, b: B): Iterable[S[B] { type C = s.C }] =
+      belongsTo0(s.contact, b).map{ sb => wrap[s.C, B](s.contact, s.data)(sb) }
+
+    def projection00Contact[A <: TypeSet, B <: TypeSet]
+    (b: B)(s: S[A]): Iterable[S[B] { type C = Contact }] = {
+      val contact = s.contact.asInstanceOf[Contact]
+      belongsTo0(contact, b).map{ sb => wrap[Contact, B](contact, s.data)(sb) }
+    }
   }
 
 
-  class unwrapSignal[A <: TypeSet, B <: TypeSet, C <: UnionHelper[A,B]](val unionHelper: C) {
-    def apply(out: unionHelper.Out, signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
-    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
-      val (a: A, b: B) = unionHelper.unwrap(out)
-      // TODO: extract BelongsTo from UnionHelper
-      (
-        ops.projection0(signalOnContacts, a),
-        ops.projection0(signalOnContacts, b)
-      )
-    }
-    def apply(a: A, b: B, signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
-    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
-        // TODO: extract BelongsTo from UnionHelper
+//  class unwrapSignal[C <: UnionHelper0](val unionHelper: C) {
+//    def apply(out: unionHelper.Out, signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+//    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
+//      //val (s: String, "") = ("", "")
+//      val (a: A, b: B) = unionHelper.unwrap(out)
+//      // TODO: extract BelongsTo from UnionHelper
+////      (
+////        ops.projection0(signalOnContacts, a),
+////        ops.projection0(signalOnContacts, b)
+////      )
+//      ???
+//    }
+//    def apply(a: A, b: B, signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+//    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
+//        // TODO: extract BelongsTo from UnionHelper
+////        (
+////          ops.projection0(signalOnContacts, a),
+////          ops.projection0(signalOnContacts, b)
+////        )
+//      ???
+//    }
+//  }
+//  abstract class unwrapSignalTrait[A <: TypeSet, B <: TypeSet, C <: UnionHelper[A,B]](val unionHelper: C) {
+//   def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+//    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]])
+//  }
+//  class unwrapSignal2[A <: TypeSet, B <: TypeSet, C <: UnionHelper[A, B]](a: A, b: B)(implicit unionHelper: C) {
+//      def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts]): (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
+//        (
+//          ops.projection0[unionHelper.Out, A, SignalOnContacts[unionHelper.Out]](signalOnContacts, a),
+//          ops.projection0[unionHelper.Out, B, SignalOnContacts[unionHelper.Out]](signalOnContacts, b)
+//        )
+//      }
+//
+//  }
+
+  class unwrapSignal2[A <: TypeSet, B <: TypeSet](a: A, b: B) {
+    def apply[C <: UnionHelper[A, B]](implicit unionHelper: C): {
+      def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+      : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]])
+    } = new {
+      def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts]): (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
         (
-          ops.projection0(signalOnContacts, a),
-          ops.projection0(signalOnContacts, b)
+          ops.projection0[unionHelper.Out, A, SignalOnContacts[unionHelper.Out]](signalOnContacts, a),
+          ops.projection0[unionHelper.Out, B, SignalOnContacts[unionHelper.Out]](signalOnContacts, b)
         )
+      }
     }
   }
-  class unwrapSignal2[A <: TypeSet, B <: TypeSet, C <: UnionHelper[A,B]](a: A, b: B, unionHelper: C) {
-
-    def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
-    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
-      // TODO: extract BelongsTo from UnionHelper
-      (
-        ops.projection0(signalOnContacts, a),
-        ops.projection0(signalOnContacts, b)
-      )
-    }
-  }
+//  }, ) {
+//
+//    def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts])
+//    : (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
+//      // TODO: extract BelongsTo from UnionHelper
+////      (
+////        ops.projection0(signalOnContacts, a),
+////        ops.projection0(signalOnContacts, b)
+////      )
+//      ???
+//    }
+//  }
 
   // <:<
   @implicitNotFound("Couldn't prove that signal contacts is a subset of the other signal contacts")
