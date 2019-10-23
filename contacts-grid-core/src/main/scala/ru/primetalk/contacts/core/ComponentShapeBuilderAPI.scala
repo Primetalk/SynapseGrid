@@ -43,6 +43,23 @@ trait ComponentShapeBuilderAPI extends Signals {
       override val outputs: Comp0#OutputShape = componentShape.outputs
     }
 
+  def addOutput[C<:Contact, Comp0 <: ComponentShape](c: C, componentShape: Comp0)(
+    implicit
+    inputsAreContacts: EachElementIsSubtype[Contact, Comp0#InputShape],
+    outputsAreContacts: EachElementIsSubtype[Contact, Comp0#OutputShape],
+    OutputShapeAddC: AddElement[C, Comp0#OutputShape]
+  ): ComponentShape{
+    type InputShape = componentShape.InputShape
+    type OutputShape = OutputShapeAddC.Sum
+  } = new ComponentShape {
+    type InputShape = componentShape.InputShape
+    type OutputShape = OutputShapeAddC.Sum
+
+    override val inputs: componentShape.InputShape = componentShape.inputs
+
+    override val outputs: OutputShapeAddC.Sum = OutputShapeAddC(c, componentShape.outputs)
+  }
+
   sealed trait Component {
     type Shape <: ComponentShape
     type Handler = SignalOnContacts[shape.InputShape] => Iterable[SignalOnContacts[shape.OutputShape]]
@@ -51,17 +68,25 @@ trait ComponentShapeBuilderAPI extends Signals {
   }
 
   type ShapedComponent[S] = Component { type Shape = S}
-//
-//  def createComponent[CompShape<: ComponentShape,
-//    InputContacts <: TypeSet,
-//    InputSignal<: SignalOnContacts[InputContacts],
-//    OutputSignal <: Signal
-//  ](f: InputSignal => Iterable[OutputSignal])(
+
+  def createComponent[CompShape <: ComponentShape]
+  (shape0: CompShape)
+  (f: SignalOnContacts[shape0.InputShape] => Iterable[SignalOnContacts[shape0.OutputShape]])
+//  (
 //    implicit
 //    evInputContacts: EachElementIsSubtype[Contact, InputContacts],
 //    evInputs: InputContacts ⊂ CompShape#InputShape,
 //    evOutputs: OutputSignal#Contact ∊ CompShape#OutputShape
-//  ): Component = ???
+//  )
+  : Component {
+    type Shape = shape0.type
+    type Handler = SignalOnContacts[shape0.InputShape] => Iterable[SignalOnContacts[shape0.OutputShape]]
+  } = new Component {
+    override type Shape = shape0.type
+    override val shape = shape0
+    override type Handler = SignalOnContacts[shape0.InputShape] => Iterable[SignalOnContacts[shape0.OutputShape]]
+    override val handler: Handler = f
+  }
 
 //
 //  type Plus[Shape1 <: ComponentShape, Shape2 <: ComponentShape] = ComponentShape{

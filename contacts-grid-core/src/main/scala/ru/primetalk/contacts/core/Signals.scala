@@ -212,6 +212,15 @@ trait MySignals extends Signals {
     signalOnContactIn =>
       signalOnContactsOps.getIterable(signalOnContactIn, in)
         .map(f.andThen(signalOnContactsOps.wrap(out, _)))
+  def liftIterable[In <: Contact, Out <: Contact]
+  (in: In, out: Out)(f: In#Data => Iterable[Out#Data])
+  (implicit
+   signalOnContactsOps: SignalOnContactsOps[MySignalOnContacts]
+  ): signalOnContactsOps.Set[In +: ∅] => Iterable[signalOnContactsOps.Set[Out +: ∅]]
+  =
+    signalOnContactIn =>
+      signalOnContactsOps.getIterable(signalOnContactIn, in)
+        .flatMap(f).map(signalOnContactsOps.wrap(out, _))
 
   // wraps a single contact to be both input and output.
   def trivialLift[C <: Contact](c: C)(
