@@ -226,7 +226,9 @@ sealed trait TypeSets0 extends TypeSets1 {
     type Out <: TypeSet
     def apply(a: A, b: B): Out
     def unwrap(o: Out): (A, B)
+//    def belongs[E](e: E)(implicit ba: BelongsTo[E, A]):
   }
+  implicit def belongsToB[A <: TypeSet, B <: TypeSet, U <: UnionHelper[A, B], C](implicit u: U, cInB: BelongsTo[C, B]): BelongsTo[C, u.Out] = ???
   implicit def UnionHelperEmpty[B <: TypeSet]: UnionHelper[∅, B] =
     new UnionHelper[∅, B] {
       type Out = B
@@ -278,6 +280,8 @@ sealed trait TypeSets0 extends TypeSets1 {
 }
 
 trait UnionTypeSets extends TypeSets0 {
+  // see also belongsToB above
+//  implicit def belongsToA[A <: TypeSet, B <: TypeSet, C](implicit u: UnionHelper[A, B], cInA: BelongsTo[C, A]): BelongsTo[C, u.Out] = ???
 
   implicit def UnionHelperConsEInB[E, S<: TypeSet, B <: TypeSet](implicit unionSB: S UnionHelper B, eInB: E BelongsTo B)
   : UnionHelper[E ConsTypeSet S, B] =

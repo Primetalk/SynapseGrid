@@ -170,11 +170,20 @@ trait MySignals extends Signals {
     override def toString: String = s"MySignal($c, $d)"
   }
 
-  implicit class MyContactOps[Cont <: Contact](c: Cont) {
+  implicit class MyContactOps[Cont <: Contact](val c: Cont) {
     def wrap[Contacts <: TypeSet]
-    (data: Cont#Data)
-    (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts], ev: Cont BelongsTo Contacts): SignalOnContacts[Contacts] { type C = Cont} =
-      signalOnContactsOps.wrap[Cont, Contacts](c, data)
+    (data: c.type#Data)
+    (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts], ev: c.type BelongsTo Contacts): SignalOnContacts[Contacts] { type C = c.type } =
+      signalOnContactsOps.wrap[c.type, Contacts](c, data)
+    def wrapper[Contacts <: TypeSet]
+    (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts], ev: c.type BelongsTo Contacts): (c.type#Data) => SignalOnContacts[Contacts] { type C = c.type } =
+      signalOnContactsOps.wrap[c.type, Contacts](c, _)
+  }
+  implicit class MyContactSetOps[Contacts <: TypeSet](a: Contacts)(implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]) {
+    def wrap[Cont <: Contact]
+    (c: Cont)(data: c.type#Data)
+    (implicit ev: c.type BelongsTo Contacts): SignalOnContacts[Contacts] { type C = c.type } =
+      signalOnContactsOps.wrap[c.type, Contacts](c, data)
   }
   implicit object MySignalOps extends SignalOnContactsOps[SignalOnContacts] {
     override def wrap[
@@ -205,40 +214,44 @@ trait MySignals extends Signals {
 
   // wraps a function into a component with a single input and single output.
   def lift[In <: Contact, Out <: Contact]
-  (in: In, out: Out)(f: In#Data => Out#Data)
-  (implicit
-   signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
-  ): signalOnContactsOps.Set[In +: ∅] => Iterable[signalOnContactsOps.Set[Out +: ∅]]
-  =
+    (in: In, out: Out)
+    (f: In#Data => Out#Data)
+    (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts])
+    : signalOnContactsOps.Set[In +: ∅] => Iterable[signalOnContactsOps.Set[Out +: ∅]] =
+  {
     signalOnContactIn =>
       signalOnContactsOps.getIterable(signalOnContactIn, in)
         .map(f.andThen(signalOnContactsOps.wrap(out, _)))
+  }
+
   def liftIterable[In <: Contact, Out <: Contact]
-  (in: In, out: Out)(f: in.Data => Iterable[out.Data])
-  (implicit
-   signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
-  ): SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]]
-  =
+    (in: In, out: Out)
+    (f: in.Data => Iterable[out.Data])
+    (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts])
+    : SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]] =
+  {
     signalOnContactIn =>
       signalOnContactsOps.getIterable(signalOnContactIn, in)
         .flatMap(f).map(signalOnContactsOps.wrap(out, _))
+  }
 
   // wraps a single contact to be both input and output.
-  def trivialLift[C <: Contact](c: C)(
-    implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
-  ): SignalOnContacts[C +: ∅] => Iterable[SignalOnContacts[C +: ∅]]
-  =
+  def trivialLift[C <: Contact]
+    (c: C)
+    (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts])
+    : SignalOnContacts[C +: ∅] => Iterable[SignalOnContacts[C +: ∅]] =
     Iterable.single
 
   // identity function to simply pass signal
   def identity[In <: Contact, Out <: Contact]
-  (in: In, out: Out)
-  (implicit
-    ev: In#Data <:< Out#Data,
-    signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
-  ): SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]]
+    (in: In, out: Out)
+    (implicit
+      ev: In#Data <:< out.Data,
+      signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
+    )
+    : SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]]
   =
     signalOnContactIn =>
       signalOnContactsOps.getIterable(signalOnContactIn, in)
-        .map(ev.andThen(out.wrap(_)))
+        .map(ev.andThen(signalOnContactsOps.wrap(out, _)))
 }

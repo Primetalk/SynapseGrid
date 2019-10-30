@@ -111,14 +111,18 @@ trait ComponentShapeBuilderAPI extends Signals {
    outputShapesUnion: UnionHelper[comp1.shape.OutputShape, comp2.shape.OutputShape],
    signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
   ): Component {
+    type In1 = inputShapesUnion.Out
+    type Out1 = outputShapesUnion.Out
     type Shape = ComponentShape {
-      type InputShape = inputShapesUnion.Out
-      type OutputShape = outputShapesUnion.Out
+      type InputShape = In1
+      type OutputShape = Out1
     }
   } = new Component {
+    type In1 = inputShapesUnion.Out
+    type Out1 = outputShapesUnion.Out
     override type Shape = ComponentShape {
-      type InputShape = inputShapesUnion.Out
-      type OutputShape = outputShapesUnion.Out
+      type InputShape = In1
+      type OutputShape = Out1
     }
     override val shape: Shape = new ComponentShape {
       type InputShape = inputShapesUnion.Out
