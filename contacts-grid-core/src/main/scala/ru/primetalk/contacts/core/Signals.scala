@@ -4,6 +4,7 @@ import scala.annotation.implicitNotFound
 import TypeSets._
 import ru.primetalk.contacts
 import ru.primetalk.contacts.core
+import UniSets._
 
 trait Signals {
 
@@ -55,21 +56,21 @@ trait Signals {
       case _ => Iterable.empty
     }
 //      if(scEqC == null) None else Some(sctEqCT(unwrap(s)._2))
-    def wrap[Cont<:Contact, Contacts<:TypeSet](c: Cont, data: Cont#Data)(implicit cInContacts: Cont BelongsTo Contacts): S[Contacts] { type C = Cont }
+  //  def wrap[Cont<:Contact, Contacts](c: Cont, data: Cont#Data)(implicit cInContacts: Cont BelongsTo Contacts): S[Contacts] { type C = Cont }
 
     def projection[Cont <: Contact, Contacts<:TypeSet, B<:TypeSet]
     (s: S[Contacts]{ type C = Cont }, b: B)(implicit ev: Cont BelongsTo B)
     : S[B] { type C = Cont }
 
-    def projection0[A <: TypeSet, B <: TypeSet, Signal <: S[A]]
-    (s: Signal, b: B): Iterable[S[B] { type C = s.C }] =
-      belongsTo0(s.contact, b).map{ sb => wrap[s.C, B](s.contact, s.data)(sb) }
+//    def projection0[A <: TypeSet, Signal <: S[A]]
+//    (s: Signal, b: Predef.Set[Contact]): Iterable[S[Predef.Set[Contact]] { type C = s.C }] =
+//      runtimeBelongsTo(s.contact, b).map{ sb => wrap[s.C, Predef.Set[Contact]](s.contact, s.data)(sb) }
 
-    def projection00Contact[A <: TypeSet, B <: TypeSet]
-    (b: B)(s: S[A]): Iterable[S[B] { type C = Contact }] = {
-      val contact = s.contact.asInstanceOf[Contact]
-      belongsTo0(contact, b).map{ sb => wrap[Contact, B](contact, s.data)(sb) }
-    }
+//    def projection00Contact[A <: TypeSet, B <: TypeSet]
+//    (b: B)(s: S[A]): Iterable[S[B] { type C = Contact }] = {
+//      val contact = s.contact.asInstanceOf[Contact]
+//      belongsTo0(contact, b).map{ sb => wrap[Contact, B](contact, s.data)(sb) }
+//    }
   }
 
 
@@ -116,8 +117,8 @@ trait Signals {
     } = new {
       def apply(signalOnContacts: SignalOnContacts[unionHelper.Out])(implicit ops: SignalOnContactsOps[SignalOnContacts]): (Iterable[SignalOnContacts[A]], Iterable[SignalOnContacts[B]]) = {
         (
-          ops.projection0[unionHelper.Out, A, SignalOnContacts[unionHelper.Out]](signalOnContacts, a),
-          ops.projection0[unionHelper.Out, B, SignalOnContacts[unionHelper.Out]](signalOnContacts, b)
+        ???, //  ops.projection0[unionHelper.Out, A, SignalOnContacts[unionHelper.Out]](signalOnContacts, a),
+        ??? //  ops.projection0[unionHelper.Out, B, SignalOnContacts[unionHelper.Out]](signalOnContacts, b)
         )
       }
     }
@@ -174,26 +175,26 @@ trait MySignals extends Signals {
     def wrap[Contacts <: TypeSet]
     (data: c.type#Data)
     (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts], ev: c.type BelongsTo Contacts): SignalOnContacts[Contacts] { type C = c.type } =
-      signalOnContactsOps.wrap[c.type, Contacts](c, data)
+    ??? //  signalOnContactsOps.wrap[c.type, Contacts](c, data)
     def wrapper[Contacts <: TypeSet]
     (implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts], ev: c.type BelongsTo Contacts): (c.type#Data) => SignalOnContacts[Contacts] { type C = c.type } =
-      signalOnContactsOps.wrap[c.type, Contacts](c, _)
+      ??? // signalOnContactsOps.wrap[c.type, Contacts](c, _)
   }
   implicit class MyContactSetOps[Contacts <: TypeSet](a: Contacts)(implicit signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]) {
     def wrap[Cont <: Contact]
     (c: Cont)(data: c.type#Data)
     (implicit ev: c.type BelongsTo Contacts): SignalOnContacts[Contacts] { type C = c.type } =
-      signalOnContactsOps.wrap[c.type, Contacts](c, data)
+      ??? // signalOnContactsOps.wrap[c.type, Contacts](c, data)
   }
   implicit object MySignalOps extends SignalOnContactsOps[SignalOnContacts] {
-    override def wrap[
-      Cont <: Contact,
-      Contacts <: TypeSet
-    ](c: Cont, data: Cont#Data)
-     (implicit cInContacts: BelongsTo[Cont, Contacts])
-    : MySignalOnContacts[Contacts] {
-      type C = Cont
-    } = new MySignal[Cont, Contacts](c, data, cInContacts)
+//    override def wrap[
+//      Cont <: Contact,
+//      Contacts <: TypeSet
+//    ](c: Cont, data: Cont#Data)
+//     (implicit cInContacts: BelongsTo[Cont, Contacts])
+//    : MySignalOnContacts[Contacts] {
+//      type C = Cont
+//    } = new MySignal[Cont, Contacts](c, data, cInContacts)
 
     def projection[Cont <: Contact, Contacts<:TypeSet, B<:TypeSet]
     (s: SignalOnContacts[Contacts]{ type C = Cont }, b: B)(implicit ev: Cont BelongsTo B): MySignalOnContacts[B]  { type C = Cont } = new MySignalOnContacts[B]{
@@ -210,7 +211,7 @@ trait MySignals extends Signals {
 
   // Check if signals are compatible
   implicit def eqContactsEqSignals[A<:TypeSet, B<:TypeSet](implicit aIsSubsetOfB: A ⊂ B): SignalContactsAreCompatibleOneWay[SignalOnContacts[A], SignalOnContacts[B]] =
-    (s: SignalOnContacts[A]) => new MySignal[s.C, B](s.contact, s.data, inferEBelongsToBIfEBelongsToASubset[s.C, A, B](s.contactIsInContacts, aIsSubsetOfB))
+    (s: SignalOnContacts[A]) => ??? // new MySignal[s.C, B](s.contact, s.data, inferEBelongsToBIfEBelongsToASubset[s.C, A, B](s.contactIsInContacts, aIsSubsetOfB))
 
   // wraps a function into a component with a single input and single output.
   def lift[In <: Contact, Out <: Contact]
@@ -220,8 +221,8 @@ trait MySignals extends Signals {
     : signalOnContactsOps.Set[In +: ∅] => Iterable[signalOnContactsOps.Set[Out +: ∅]] =
   {
     signalOnContactIn =>
-      signalOnContactsOps.getIterable(signalOnContactIn, in)
-        .map(f.andThen(signalOnContactsOps.wrap(out, _)))
+      ??? //  signalOnContactsOps.getIterable(signalOnContactIn, in)
+        //.map(f.andThen(signalOnContactsOps.wrap(out, _)))
   }
 
   def liftIterable[In <: Contact, Out <: Contact]
@@ -231,8 +232,8 @@ trait MySignals extends Signals {
     : SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]] =
   {
     signalOnContactIn =>
-      signalOnContactsOps.getIterable(signalOnContactIn, in)
-        .flatMap(f).map(signalOnContactsOps.wrap(out, _))
+      ??? //signalOnContactsOps.getIterable(signalOnContactIn, in)
+       // .flatMap(f).map(signalOnContactsOps.wrap(out, _))
   }
 
   // wraps a single contact to be both input and output.
@@ -252,6 +253,6 @@ trait MySignals extends Signals {
     : SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]]
   =
     signalOnContactIn =>
-      signalOnContactsOps.getIterable(signalOnContactIn, in)
-        .map(ev.andThen(signalOnContactsOps.wrap(out, _)))
+      ??? //signalOnContactsOps.getIterable(signalOnContactIn, in)
+     //   .map(ev.andThen(signalOnContactsOps.wrap(out, _)))
 }

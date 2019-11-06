@@ -137,8 +137,8 @@ trait ComponentShapeBuilderAPI extends Signals {
       val out1: Iterable[SignalOnContacts[comp1.shape.OutputShape]] = s1.flatMap(a => comp1.handler(a))
       val out2: Iterable[SignalOnContacts[comp2.shape.OutputShape]] = s2.flatMap(a => comp2.handler(a))
       val res =
-        out1.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_)) ++
-        out2.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_))
+       ??? // out1.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_)) ++
+        // out2.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_))
       res
     }
   }
@@ -221,7 +221,7 @@ trait ComponentShapeBuilderAPI extends Signals {
       override val sinks: bbUnionSinks.Out = bbUnionSinks.apply(breadboard.shape.sinks, component.shape.inputs)
     }
     override def projectSignals: SignalOnContacts[bbUnionSources.Out] => Iterable[SignalOnContacts[bbUnionSinks.Out]] = s =>
-      signalOnContactsOps.projection0[bbUnionSources.Out, bbUnionSinks.Out, SignalOnContacts[bbUnionSources.Out]](s, shape.sinks)
+    ??? //  signalOnContactsOps.projection0[bbUnionSources.Out, bbUnionSinks.Out, SignalOnContacts[bbUnionSources.Out]](s, shape.sinks)
 
     override def implementation: Implementation = ???
 //      parallelAddComponent[breadboard.Implementation, C](

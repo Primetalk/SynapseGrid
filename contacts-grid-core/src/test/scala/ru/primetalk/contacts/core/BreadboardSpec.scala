@@ -1,12 +1,8 @@
 package ru.primetalk.contacts.core
 
 import org.specs2.Specification
-import org.specs2.matcher.MatchResult
-import ru.primetalk
-import ru.primetalk.contacts
-import ru.primetalk.contacts.core
-import ru.primetalk.contacts.core.TypeSets._
-
+//import TypeSets._
+import UniSets._
 import scala.util.Try
 
 class BreadboardSpec extends Specification with ComponentShapeBuilderAPI with MySignals { def is = s2"""
@@ -37,28 +33,28 @@ class BreadboardSpec extends Specification with ComponentShapeBuilderAPI with My
   // : SignalOnContacts[In2.type +: ∅] => Iterable[SignalOnContacts[Out2.type +: ∅]]
   val Parse = liftIterable(In1, Out1)(parse)
   val Show  = lift(In2, Out2)(show)
-  val shape1: ComponentShape {
-    type InputShape = In1.type +: Empty
-    type OutputShape = Out1.type +: Empty
-  } = InOutShape(In1, Out1)
-  val shape2: ComponentShape {
-    type InputShape = In2.type +: Empty
-    type OutputShape = Out2.type +: Empty
-  } = InOutShape(In2, Out2)
-  val Parser = createComponent(shape1)(Parse)
-  val Shower = createComponent(shape2)(Show)
-  val shape = addOutput(Out2, addInput(In2, shape1))
-  val inputShapesUnion = implicitly[UnionHelper[Parser.shape.InputShape, Shower.shape.InputShape]]
-  val outputShapesUnion = implicitly[UnionHelper[Parser.shape.OutputShape, Shower.shape.OutputShape]]
-  val signalOnContactsOps = implicitly[SignalOnContactsOps[SignalOnContacts]]
-  val both: Component {
-    type Shape = ComponentShape {
-      type InputShape = inputShapesUnion.Out
-      type OutputShape = outputShapesUnion.Out
-    }
-  } = parallelAddComponent(Parser, Shower)(inputShapesUnion, outputShapesUnion, signalOnContactsOps)
-
-  val belongsToInputs1 = implicitly[BelongsTo[In1.type, In1.type +: Empty]]
+//  val shape1: ComponentShape {
+//    type InputShape = In1.type +: Empty
+//    type OutputShape = Out1.type +: Empty
+//  } = InOutShape(In1, Out1)
+//  val shape2: ComponentShape {
+//    type InputShape = In2.type +: Empty
+//    type OutputShape = Out2.type +: Empty
+//  } = InOutShape(In2, Out2)
+//  val Parser = createComponent(shape1)(Parse)
+//  val Shower = createComponent(shape2)(Show)
+//  val shape = addOutput(Out2, addInput(In2, shape1))
+//  val inputShapesUnion = implicitly[UnionHelper[Parser.shape.InputShape, Shower.shape.InputShape]]
+//  val outputShapesUnion = implicitly[UnionHelper[Parser.shape.OutputShape, Shower.shape.OutputShape]]
+//  val signalOnContactsOps = implicitly[SignalOnContactsOps[SignalOnContacts]]
+//  val both: Component {
+//    type Shape = ComponentShape {
+//      type InputShape = inputShapesUnion.Out
+//      type OutputShape = outputShapesUnion.Out
+//    }
+//  } = parallelAddComponent(Parser, Shower)(inputShapesUnion, outputShapesUnion, signalOnContactsOps)
+//
+//  val belongsToInputs1 = implicitly[BelongsTo[In1.type, In1.type +: Empty]]
 //  val belongs1: BelongsTo[In1.type, inputShapesUnion.Out] =
 //    belongsToA[Parser.shape.InputShape, Shower.shape.InputShape, inputShapesUnion.type, In1.type](inputShapesUnion, belongsToInputs1)
 

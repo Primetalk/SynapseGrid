@@ -2,8 +2,9 @@ package ru.primetalk.contacts.core
 
 import scala.annotation.implicitNotFound
 import scala.language.reflectiveCalls
+import UniSets.BelongsTo
 
-sealed trait TypeSets1 {
+sealed trait TypeSets1  {
 
   sealed trait TypeSet extends Serializable with Product {
     private[core] def elements: Set[Any]
@@ -69,42 +70,44 @@ sealed trait TypeSets1 {
       new EachElementIsSubtype[Up, ConsTypeSet[E, S]] {}
   }
 
+//  implicit def InnerBelongsToToBelongsTo[Element, S <: TypeSet](implicit innerBelongsTo: InnerBelongsTo[Element, S]): BelongsTo[Element, S] = new BelongsTo[Element, S] {}
+
   @implicitNotFound("Couldn't prove that element belongs to set")
-  sealed trait BelongsTo[Element, S <: TypeSet] {
+  sealed trait InnerBelongsTo[Element, S <: TypeSet] {
     def extract(s: S): Element
   }
 
-  sealed trait BelongsToHead[Element, H, S <: TypeSet] extends BelongsTo[Element, H ConsTypeSet S] {
+  sealed trait InnerBelongsToHead[Element, H, S <: TypeSet] extends InnerBelongsTo[Element, H ConsTypeSet S] {
     def elementIsHead: H =:= Element
   }
 
-  sealed trait BelongsToTail[Element, H, S <: TypeSet] extends BelongsTo[Element, H ConsTypeSet S] {
+  sealed trait InnerBelongsToTail[Element, H, S <: TypeSet] extends InnerBelongsTo[Element, H ConsTypeSet S] {
     def belongsToTail: Element ∊ S
   }
 
   // ∊ - \u220A
-  type ∊[Element, S <: TypeSet] = BelongsTo[Element, S]
+  type ∊[Element, S <: TypeSet] = InnerBelongsTo[Element, S]
 
-  object BelongsTo {
+  object InnerBelongsTo {
     implicit def elementIsHeadOfTypeSet0[E, H, S <: TypeSet](implicit ev: H =:= E): E ∊ (H ConsTypeSet S) =
-      new BelongsToHead[E, H, S] {
+      new InnerBelongsToHead[E, H, S] {
         def extract(s: H ConsTypeSet S): E = ev(s.e)
         override def elementIsHead: H =:= E = ev
       }
 
-    implicit def elementBelongsToTailOfTypeSet0[E, H, S <: TypeSet](implicit b: E ∊ S): E ∊ (H ConsTypeSet S) =
-      new BelongsToTail[E, H, S] {
+    implicit def elementInnerBelongsToTailOfTypeSet0[E, H, S <: TypeSet](implicit b: E ∊ S): E ∊ (H ConsTypeSet S) =
+      new InnerBelongsToTail[E, H, S] {
         def extract(s: H ConsTypeSet S): E = b.extract(s.s)
 
         override def belongsToTail: E ∊ S = b
       }
   }
-  sealed trait RuntimeBelongsTo[Element, S <: TypeSet] extends BelongsTo[Element, S]
+  sealed trait RuntimeInnerBelongsTo[Element, S <: TypeSet] extends InnerBelongsTo[Element, S]
 
-  def belongsTo0[E, S <: TypeSet](e: E, s: S): Option[BelongsTo[E, S]] =
+  def belongsTo0[E, S <: TypeSet](e: E, s: S): Option[InnerBelongsTo[E, S]] =
     if(s.elements.contains(e)) {
       val index = s.elements.toIndexedSeq.indexOf(e)
-      Some(new RuntimeBelongsTo[E, S] {
+      Some(new RuntimeInnerBelongsTo[E, S] {
         override def extract(s2: S): E = s2.elements.toIndexedSeq(index).asInstanceOf[E]
       })
     } else
@@ -153,8 +156,8 @@ sealed trait TypeSets1 {
   sealed trait IsSubsetOf[Subset <: TypeSet, SuperSet <: TypeSet] { self =>
     def extract[E](b: SuperSet)(implicit eInA: E ∊ Subset): E
     // It's not implicit, because it's a bit heavyweight. Also it should be placed in the low priority trait
-    // So that normal processing of BelongsTo is not broken
-    def inferEBelongsToSuperset[E](implicit eInA: E ∊ Subset): E ∊ SuperSet = new BelongsTo[E, SuperSet] {
+    // So that normal processing of InnerBelongsTo is not broken
+    def inferEInnerBelongsToSuperset[E](implicit eInA: E ∊ Subset): E ∊ SuperSet = new InnerBelongsTo[E, SuperSet] {
       override def extract(s: SuperSet): E = self.extract[E](s)
     }
   }
@@ -171,22 +174,22 @@ sealed trait TypeSets1 {
     implicit def cons[E, S <: TypeSet, SuperSet<:TypeSet](implicit headBelongs: E ∊ SuperSet, tailIsSubset: S ⊂ SuperSet)
     : IsSubsetOf[E ConsTypeSet S, SuperSet] = new IsSubsetOf[E ConsTypeSet S, SuperSet]{
       override def extract[E2](b: SuperSet)(implicit eInA: E2 ∊ ConsTypeSet[E, S]): E2 = eInA match {
-        case belongsToHead : BelongsToHead[E2, E, S] => // Basically this means that E2 == E
+        case belongsToHead : InnerBelongsToHead[E2, E, S] => // Basically this means that E2 == E
           belongsToHead.elementIsHead(headBelongs.extract(b))
-        case belongsToTail : BelongsToTail[E2, E, S] =>
+        case belongsToTail : InnerBelongsToTail[E2, E, S] =>
           tailIsSubset.extract(b)(belongsToTail.belongsToTail)
       }
     }
   }
 
   // It's not implicit, because it's a bit heavyweight. Also it should be placed in the low priority trait
-  // So that normal processing of BelongsTo is not broken
-  def inferEBelongsToBIfEBelongsToASubset[E, Subset <: TypeSet, SuperSet <: TypeSet]
+  // So that normal processing of InnerBelongsTo is not broken
+  def inferEInnerBelongsToBIfEInnerBelongsToASubset[E, Subset <: TypeSet, SuperSet <: TypeSet]
   (implicit eInA: E ∊ Subset, aIsSubsetOfB: Subset ⊂ SuperSet): E ∊ SuperSet =
-    aIsSubsetOfB.inferEBelongsToSuperset[E]
+    aIsSubsetOfB.inferEInnerBelongsToSuperset[E]
 
-  type IsSubset2[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[({type P[E] = BelongsTo[E, SuperSet]})#P, Subset]
-  //type IsSubset3[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[BelongsTo[?, SuperSet], Subset]
+  type IsSubset2[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[({type P[E] = InnerBelongsTo[E, SuperSet]})#P, Subset]
+  //type IsSubset3[Subset <: TypeSet, SuperSet <: TypeSet] = ForAll[InnerBelongsTo[?, SuperSet], Subset]
 
   @implicitNotFound("Couldn't find all elements as implicits")
   sealed trait RenderTypeSet[S <: TypeSet] {
@@ -226,9 +229,9 @@ sealed trait TypeSets0 extends TypeSets1 {
     type Out <: TypeSet
     def apply(a: A, b: B): Out
     def unwrap(o: Out): (A, B)
-//    def belongs[E](e: E)(implicit ba: BelongsTo[E, A]):
+//    def belongs[E](e: E)(implicit ba: InnerBelongsTo[E, A]):
   }
-  implicit def belongsToB[A <: TypeSet, B <: TypeSet, U <: UnionHelper[A, B], C](implicit u: U, cInB: BelongsTo[C, B]): BelongsTo[C, u.Out] = ???
+  implicit def belongsToB[A <: TypeSet, B <: TypeSet, U <: UnionHelper[A, B], C](implicit u: U, cInB: InnerBelongsTo[C, B]): InnerBelongsTo[C, u.Out] = ???
   implicit def UnionHelperEmpty[B <: TypeSet]: UnionHelper[∅, B] =
     new UnionHelper[∅, B] {
       type Out = B
@@ -281,9 +284,9 @@ sealed trait TypeSets0 extends TypeSets1 {
 
 trait UnionTypeSets extends TypeSets0 {
   // see also belongsToB above
-//  implicit def belongsToA[A <: TypeSet, B <: TypeSet, C](implicit u: UnionHelper[A, B], cInA: BelongsTo[C, A]): BelongsTo[C, u.Out] = ???
+//  implicit def belongsToA[A <: TypeSet, B <: TypeSet, C](implicit u: UnionHelper[A, B], cInA: InnerBelongsTo[C, A]): InnerBelongsTo[C, u.Out] = ???
 
-  implicit def UnionHelperConsEInB[E, S<: TypeSet, B <: TypeSet](implicit unionSB: S UnionHelper B, eInB: E BelongsTo B)
+  implicit def UnionHelperConsEInB[E, S<: TypeSet, B <: TypeSet](implicit unionSB: S UnionHelper B, eInB: E InnerBelongsTo B)
   : UnionHelper[E ConsTypeSet S, B] =
     new UnionHelper[E ConsTypeSet S, B] {
       override type Out = unionSB.Out
@@ -311,7 +314,7 @@ trait UnionTypeSets extends TypeSets0 {
 
 trait IntersectTypeSets extends UnionTypeSets {
   implicit def IntersectionHelperConsContains[E, S <: TypeSet, B <: TypeSet]
-  (implicit intersectSB: S IntersectionHelper B, ev: E BelongsTo B): IntersectionHelper[E ConsTypeSet S, B] =
+  (implicit intersectSB: S IntersectionHelper B, ev: E InnerBelongsTo B): IntersectionHelper[E ConsTypeSet S, B] =
     new IntersectionHelper[E ConsTypeSet S, B] {
       type Out = E ConsTypeSet intersectSB.Out
 
@@ -344,12 +347,12 @@ trait TypeSets extends IntersectTypeSets {
 //      case ConsTypeSet(h, t) => h == e || t.contains0(e)
 //      case _ => false
 //    }
-    def shouldContain[E](e: E)(implicit ev: E BelongsTo S): Unit = ()
+    def shouldContain[E](e: E)(implicit ev: E InnerBelongsTo S): Unit = ()
 
     // compile-time contains, O(1), could be inlined
-    def contains[E](e: E)(implicit ev: E BelongsTo S = null): Boolean = ev != null
+    def contains[E](e: E)(implicit ev: E InnerBelongsTo S = null): Boolean = ev != null
 
-    def toBelongsTo0[E](e: E): Option[BelongsTo[E, S]] = belongsTo0(e, s)
+    def toInnerBelongsTo0[E](e: E): Option[InnerBelongsTo[E, S]] = belongsTo0(e, s)
   }
 }
 

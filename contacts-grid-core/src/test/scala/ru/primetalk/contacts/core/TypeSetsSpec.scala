@@ -28,7 +28,7 @@ class TypeSetsSpec extends Specification with TypeSets { def is = s2"""
 
   val `{a}`: a ConsTypeSet ∅ = a +: Empty
 
-  val `a ∊ {a}`: a ∊ ConsTypeSet[a, ∅] = BelongsTo.elementIsHeadOfTypeSet0[a, a, ∅]
+  val `a ∊ {a}`: a ∊ ConsTypeSet[a, ∅] = InnerBelongsTo.elementIsHeadOfTypeSet0[a, a, ∅]
   val `a ∊ {a} (2)`: a ∊ ConsTypeSet[a, ∅] = implicitly[a ∊ ConsTypeSet[a, ∅] ](`a ∊ {a}`)
   val `{a, a}`: ConsTypeSet[a, ∅] = a +: `{a}`
 
