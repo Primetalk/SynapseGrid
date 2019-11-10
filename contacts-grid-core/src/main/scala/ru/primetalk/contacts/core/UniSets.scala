@@ -187,7 +187,7 @@ sealed trait EachElementIsSubtypeHighPriority extends EachElementIsSubtypeLowPri
 }
 
 sealed trait EqualSets extends UniSetsBase with IsSubSetOfHighPriority {
-  implicit def equalUnionAB[A<:UniSet, B<:UniSet]:Equal[Union[A, B], Union[B, A]] = new Equal[Union[A, B], Union[B, A]]
+  implicit def equalUnionAB[A<:UniSet, B<:UniSet]:Equal[Union[A, B], Union[B, A]] = new Equal[Union[A, B], Union[B, A]] {}
 //  {
 //    override def aToB(a: Union[A, B]): Union[B, A] = new Union[B, A]{}
 //

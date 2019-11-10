@@ -17,6 +17,12 @@ trait ComponentShapeBuilderAPI extends Signals {
     val outputs: Set[Contact]
   }
 
+  def componentShapeConverter[I1<:UniSet,O1<:UniSet,I2<:UniSet,O2<:UniSet]
+  (shape1: ComponentShape{type InputShape = I1; type OutputShape = O1})
+  (implicit ieq: Equal[I1, I2], oeq: Equal[O1, O2])
+  : ComponentShape{type InputShape = I2; type OutputShape = O2} =
+    shape1.asInstanceOf[ComponentShape{type InputShape = I2; type OutputShape = O2}]
+
   object EmptyComponentShape extends ComponentShape {
     override type InputShape = ∅
     override type OutputShape = ∅
@@ -54,12 +60,11 @@ trait ComponentShapeBuilderAPI extends Signals {
     override val outputs: Set[Contact] = OutputShapeAddC.elements
   }
 
-  def componentShapeConverter[A<:UniSet,B,C,D](shape1)(): shape2  = shape1.asInstanceOf[]
   def InOutShape[In<:Contact:ValueOf, Out<:Contact:ValueOf](in: In, out: Out)(
   ): ComponentShape{
     type InputShape = Singleton[In]
     type OutputShape =  Singleton[Out]
-  } = addOutput(out, addInput(in, EmptyComponentShape))
+  } = componentShapeConverter(addOutput(out, addInput(in, EmptyComponentShape)))
 //
 //  sealed trait Component {
 //    type Shape <: ComponentShape
