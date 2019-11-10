@@ -27,7 +27,7 @@ class SignalsSpec extends Specification with MySignals {
 
   def f(i: Int): String = i.toString
 
-  val liftedF: SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]] = lift(In, Out)(f)
+//  val liftedF: SignalOnContacts[In +: ∅] => Iterable[SignalOnContacts[Out +: ∅]] = lift(In, Out)(f)
 
   def testLift = {
 //    val inputData = 42

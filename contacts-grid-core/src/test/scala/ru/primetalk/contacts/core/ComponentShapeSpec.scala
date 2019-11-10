@@ -8,7 +8,7 @@ class ComponentShapeSpec extends Specification with ComponentShapeBuilderAPI { d
 
   This is specification of ComponentShape
 
-    - inputs of the component should be known set $inputsEq
+    - inputs of the component should be known set inputsEq
   """
 
   sealed trait MyContact extends Contact {
@@ -22,12 +22,12 @@ class ComponentShapeSpec extends Specification with ComponentShapeBuilderAPI { d
   case object In1 extends ContactImpl[String]("In1")
   case object Out1 extends ContactImpl[String]("Out1")
 
-  val myComponent: ComponentShape {
-    type InputShape = ConsTypeSet[In1.type, ∅]
-    type OutputShape = ∅
-  } = addInput[In1.type, EmptyComponentShape.type](In1, EmptyComponentShape)
-
-  val inputs: ConsTypeSet[In1.type, ∅] = addElement(In1, ∅)
-
-  def inputsEq: MatchResult[In1.type +: ∅] = inputs === myComponent.inputs
+//  val myComponent: ComponentShape {
+//    type InputShape = ConsTypeSet[In1.type, ∅]
+//    type OutputShape = ∅
+//  } = addInput[In1.type, EmptyComponentShape.type](In1, EmptyComponentShape)
+//
+//  val inputs: ConsTypeSet[In1.type, ∅] = addElement(In1, ∅)
+//
+//  def inputsEq: MatchResult[In1.type +: ∅] = inputs === myComponent.inputs
 }

@@ -29,4 +29,10 @@ class UniversumSetSpec extends Specification { def is = s2"""
 
 //  val `b ∊ {a,b} ^ {b,c}` = implicitly[BelongsTo[b, Xor[`{a,b}`, `{b,c}`]]]
 //  val `b ∊ {a,b} ^ {b,c}` = implicitly[BelongsTo[Int, Xor[`{a,b}`, `{b,c}`]]]
+//  val `{b} ⊂ {a,b,c} intersection {a,b}` = implicitly[`{b}` ⊂ (`{a,b,c}` Intersection `{a,b}`)]
+
+//  val `{b} ⊂ {b} + Empty` = implicitly[IsSubSetOf[`{b}`, Union[`{b}`, Empty]]]
+//  val `{b} + Empty  ⊂  {b}` = implicitly[IsSubSetOf[Union[`{b}`, Empty], `{b}`]]
+  val `{b} == {b} + Empty` = implicitly[Equal[`{b}`, Union[`{b}`, Empty]]]
+  val `{b} == Insert b, Empty` = implicitly[Equal[`{b}`, Insert[b, Empty]]]
 }
