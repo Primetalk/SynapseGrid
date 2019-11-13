@@ -163,81 +163,60 @@ trait ComponentShapeBuilderAPI extends Signals {
     type Implementation = Component[ImplementationShape[Shape]]
     def implementation: Implementation
     def tick: Shape#SinkShape >> Shape#SourceShape = implementation.handler
-    def toComponent[I <: UniSet, O <: UniSet](inputs: I, outputs: O)(implicit i: I IsSubSetOf Shape#SinkShape, o: O IsSubSetOf Shape#SourceShape)
-    : Component[ComponentShape {
-        type InputShape = I
-        type OutputShape = O
-      }]
+
+    def toComponent[I <: UniSet, O <: UniSet](inputs: I, outputs: O)(implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O], i: I IsSubSetOf Shape#SinkShape, o: O IsSubSetOf Shape#SourceShape)
+    : Component[ComponentShape {type InputShape = I; type OutputShape = O}]
   }
-//
-//  def addComponentToBreadboard[B<:Breadboard, C<:Component]
-//  (breadboard: B, component: C)
-//  (implicit
-//   bbUnionSinks: UnionHelper[breadboard.shape.SinkShape, component.shape.InputShape],
-//   bbUnionSources: UnionHelper[breadboard.shape.SourceShape, component.shape.OutputShape],
-//   implUnionII: UnionHelper[breadboard.Implementation#Shape#InputShape, component.Shape#InputShape],
-//   implUnionOO: UnionHelper[breadboard.Implementation#Shape#OutputShape, component.Shape#OutputShape],
-//   signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
-//  ): Breadboard {
-//    type Shape = BreadboardShape {
-//      type SourceShape = bbUnionSources.Out
-//      type SinkShape = bbUnionSinks.Out
-//    }
-//    type Implementation = Component {
-//      type Shape = ComponentShape {
-//        type InputShape = bbUnionSinks.Out
-//        type OutputShape = bbUnionSources.Out
-//      }
-//    }
-//  } = new Breadboard { newBreadboard =>
-//    type Shape = BreadboardShape {
-//      type SourceShape = bbUnionSources.Out
-//      type SinkShape = bbUnionSinks.Out
-//    }
-//    type Implementation = Component {
-//      type Shape = ComponentShape {
-//        type InputShape = newBreadboard.shape.SinkShape
-//        type OutputShape = newBreadboard.shape.SourceShape
-//      }
-//    }
-//    override val shape: Shape = new BreadboardShape {
-//      type SourceShape = bbUnionSources.Out
-//      type SinkShape = bbUnionSinks.Out
-//      override val sources: bbUnionSources.Out = bbUnionSources.apply(breadboard.shape.sources, component.shape.outputs)
-//      override val sinks: bbUnionSinks.Out = bbUnionSinks.apply(breadboard.shape.sinks, component.shape.inputs)
-//    }
-//    override def projectSignals: SignalOnContacts[bbUnionSources.Out] => Iterable[SignalOnContacts[bbUnionSinks.Out]] = s =>
-//    ??? //  signalOnContactsOps.projection0[bbUnionSources.Out, bbUnionSinks.Out, SignalOnContacts[bbUnionSources.Out]](s, shape.sinks)
-//
-//    override def implementation: Implementation = ???
-////      parallelAddComponent[breadboard.Implementation, C](
-////        breadboard.implementation, component)//(
-////        bbUnionSinks, bbUnionSources, signalOnContactsOps)
-//
-//    override def toComponent[I <: core.UniSets.UniSet, O <: core.UniSets.UniSet](inputs1: I, outputs1: O)(implicit i: core.UniSets.IsSubsetOf[I, bbUnionSinks.Out], o: core.UniSets.IsSubsetOf[O, bbUnionSources.Out]): Component {
-//      type Shape = ComponentShape {
-//        type InputShape = I
-//        type OutputShape = O
-//      }
-//    } = new Component {
-//      override type Shape = ComponentShape {
-//        type InputShape = I
-//        type OutputShape = O
-//      }
-//      override val shape: Shape = new ComponentShape {
-//        override type InputShape = I
-//        override type OutputShape = O
-//        override val inputs: InputShape = inputs1
-//        override val outputs: OutputShape = outputs1
-//      }
-//      override val handler: Handler = signalOnContacts => {
-////        val results = signalOnContactsOps.projection0(signalOnContacts, newBreadboard.shape.sinks).toIterable.flatMap{ signalOnInputs =>
-////          tick.apply(signalOnInputs)
-////        }
-////        results.flatMap(s => signalOnContactsOps.projection0(s, outputs1))
-//        ???
-//      }
-//    }
-//  }
+
+  def addComponentToBreadboard[BS<:BreadboardShape, CS<:ComponentShape]
+  (breadboard: Breadboard[BS], component: Component[CS])
+  (implicit
+   sinkContacts: Render[Contact, BS#SinkShape],
+   sourceContacts: Render[Contact, BS#SourceShape],
+   inputContacts: Render[Contact, CS#InputShape],
+   outputContacts: Render[Contact, CS#OutputShape]
+  )
+    : Breadboard[BreadboardShape {
+      type SourceShape = Union[BS#SourceShape, CS#OutputShape]
+      type SinkShape = Union[BS#SinkShape, CS#InputShape]
+    }] = new Breadboard[BreadboardShape {
+    type SourceShape = Union[BS#SourceShape, CS#OutputShape]
+    type SinkShape = Union[BS#SinkShape, CS#InputShape]
+  }] { newBreadboard =>
+    //    override def toComponent[I <: UniSet, O <: UniSet]
+    //    (implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O],
+    //     i: UniSets.IsSubSetOf[I, Union[BS#SinkShape, CS#InputShape]],
+    //     o: UniSets.IsSubSetOf[O, Union[BS#SourceShape, CS#OutputShape]])
+    //    : Component[ComponentShape {type InputShape = I;type OutputShape = O}]
+    override def toComponent[I <: UniSets.UniSet, O <: UniSets.UniSet]
+    (inputs: I, outputs: O)
+    (implicit inputs1: UniSets.Render[Contact, I], outputs1: UniSets.Render[Contact, O],
+     i: UniSets.IsSubSetOf[I, UniSets.Union[BS#SinkShape, CS#InputShape]], o: UniSets.IsSubSetOf[O, UniSets.Union[BS#SourceShape, CS#OutputShape]])
+    : Component[ComponentShape {type InputShape = I; type OutputShape = O}] = new Component[ComponentShape {type InputShape = I;type OutputShape = O}] {
+      override val shape: ComponentShape {type InputShape = I;type OutputShape = O} = new ComponentShape {
+        override type InputShape = I
+        override type OutputShape = O
+        override val inputs: Set[Contact] = inputs1.elements
+        override val outputs: Set[Contact] = outputs1.elements
+      }
+      override val handler: I >> O = signal => {
+        val in = signal.cProjection[Union[BS#SinkShape, CS#InputShape]]
+        val results = tick(in)
+        results.flatMap(s => s.projection0[O])
+      }
+    }
+    override val shape: BreadboardShape {
+      type SourceShape = Union[BS#SourceShape, CS#OutputShape]
+      type SinkShape = Union[BS#SinkShape, CS#InputShape]
+    } = new BreadboardShape{
+      type SourceShape = Union[BS#SourceShape, CS#OutputShape]
+      type SinkShape = Union[BS#SinkShape, CS#InputShape]
+      override val sources: Set[Contact] = breadboard.shape.sources ++ component.shape.outputs
+      override val sinks: Set[Contact] = breadboard.shape.sinks ++ component.shape.inputs
+    }
+
+    override def implementation: Implementation = parallelAddComponent(breadboard.implementation, component)
+
+  }
 
 }
