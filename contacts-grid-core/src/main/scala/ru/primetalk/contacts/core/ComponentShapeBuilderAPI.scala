@@ -2,7 +2,6 @@ package ru.primetalk.contacts.core
 
 import scala.language.reflectiveCalls
 import UniSets._
-import ru.primetalk.contacts.core
 
 trait ComponentShapeBuilderAPI extends Signals {
 
@@ -18,6 +17,7 @@ trait ComponentShapeBuilderAPI extends Signals {
 
   }
 
+
   object ComponentShape {
     def apply[I <: UniSet, O <: UniSet](implicit i: Render[Contact, I], o: Render[Contact, O])
     : ComponentShape {type InputShape = I; type OutputShape = O} =
@@ -27,8 +27,13 @@ trait ComponentShapeBuilderAPI extends Signals {
         val inputs = i.elements
         val outputs = o.elements
       }
+    type Plus[Shape1 <: ComponentShape, Shape2 <: ComponentShape] = ComponentShape{
+      type InputShape = Shape1#InputShape ∪ Shape2#InputShape
+      type OutputShape = Shape1#OutputShape ∪ Shape2#OutputShape
+    }
+
     def add[Shape1 <: ComponentShape, Shape2 <: ComponentShape](shape1: Shape1, shape2: Shape2)
-    : ComponentShape {type InputShape = Union[Shape1#InputShape, Shape2#InputShape]; type OutputShape = Union[Shape1#OutputShape, Shape2#OutputShape]} =
+    : Plus[Shape1, Shape2] =
       new ComponentShape {type InputShape = Union[Shape1#InputShape, Shape2#InputShape]; type OutputShape = Union[Shape1#OutputShape, Shape2#OutputShape]
         override val inputs: Set[Contact] = shape1.inputs ++ shape2.inputs
         override val outputs: Set[Contact] = shape1.outputs ++ shape2.outputs
@@ -102,12 +107,6 @@ trait ComponentShapeBuilderAPI extends Signals {
     override val handler = f
   }
 
-//
-//  type Plus[Shape1 <: ComponentShape, Shape2 <: ComponentShape] = ComponentShape{
-//    type InputShape = Shape1#InputShape ∪ Shape2#InputShape
-//    type OutputShape = Shape1#OutputShape ∪ Shape2#OutputShape
-//  }
-//
   // concatenates components so that they have concatenated inputs, outputs and handlers.
   def parallelAddComponent[Shape1 <: ComponentShape, Shape2 <: ComponentShape](comp1: Component[Shape1], comp2: Component[Shape2])(
      implicit
@@ -136,47 +135,40 @@ trait ComponentShapeBuilderAPI extends Signals {
       res
     }
   }
-//
-//  // set of contacts that belong to a system.
-//  // Outputs - are contacts of inner subsystems that can emit signals
-//  // Inputs - are contacts of inner subsystems that can consume signals.
-//  sealed trait BreadboardShape { self =>
-//    type SourceShape <: UniSet
-//    type SinkShape <: UniSet
-//    val sources: SourceShape
-//    val sinks: SinkShape
-//    type ImplementationShape = ComponentShape {
-//      type InputShape = self.SinkShape
-//      type OutputShape = self.SourceShape
-//    }
-//  }
-//  case object EmptyBreadboardShape extends BreadboardShape {
-//    type SourceShape = Empty
-//    type SinkShape = Empty
-//    val sources: SourceShape = Empty
-//    val sinks: SinkShape = Empty
-//  }
-//  // In Out
-//
-//  trait Breadboard { breadboard =>
-//    type Shape <: BreadboardShape
-//    val shape: Shape
+
+  // set of contacts that belong to a system.
+  // SourceShape - are contacts of inner subsystems that can emit signals
+  // SinkShape - are contacts of inner subsystems that can consume signals.
+  sealed trait BreadboardShape {
+    type SourceShape <: UniSet
+    type SinkShape <: UniSet
+    val sources: Set[Contact]
+    val sinks: Set[Contact]
+  }
+  type ImplementationShape[B<: BreadboardShape] = ComponentShape {
+    type InputShape = B#SinkShape
+    type OutputShape = B#SourceShape
+  }
+  case object EmptyBreadboardShape extends BreadboardShape {
+    type SourceShape = Empty
+    type SinkShape = Empty
+    val sources: Set[Contact] = Set()
+    val sinks: Set[Contact] = Set()
+  }
+  // In Out
+
+  trait Breadboard[Shape <: BreadboardShape] { breadboard =>
+    val shape: Shape
 //    def projectSignals: SignalOnContacts[Shape#SourceShape] => Iterable[SignalOnContacts[Shape#SinkShape]]
-//    type Implementation <: Component {
-//      type Shape = ComponentShape {
-//        type InputShape = breadboard.shape.SinkShape
-//        type OutputShape = breadboard.shape.SourceShape
-//      }
-//    }
-//    def implementation: Implementation
-//    def tick: SignalOnContacts[Shape#SinkShape] => Iterable[SignalOnContacts[Shape#SourceShape]] = ??? //implementation.handler
-//    def toComponent[I <: UniSet, O <: UniSet](inputs: I, outputs: O)(implicit i: I IsSubsetOf Shape#SinkShape, o: O IsSubsetOf Shape#SourceShape): Component {
-//      type Shape = ComponentShape {
-//        type InputShape = I
-//        type OutputShape = O
-//      }
-//    }
-//  }
+    type Implementation = Component[ImplementationShape[Shape]]
+    def implementation: Implementation
+    def tick: Shape#SinkShape >> Shape#SourceShape = implementation.handler
+    def toComponent[I <: UniSet, O <: UniSet](inputs: I, outputs: O)(implicit i: I IsSubSetOf Shape#SinkShape, o: O IsSubSetOf Shape#SourceShape)
+    : Component[ComponentShape {
+        type InputShape = I
+        type OutputShape = O
+      }]
+  }
 //
 //  def addComponentToBreadboard[B<:Breadboard, C<:Component]
 //  (breadboard: B, component: C)
