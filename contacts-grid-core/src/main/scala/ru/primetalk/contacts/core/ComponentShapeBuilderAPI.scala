@@ -10,13 +10,31 @@ trait ComponentShapeBuilderAPI extends Signals {
 //  case class ComponentShape2[InputShape <: UniSet, OutputShape <: UniSet](inputs: InputShape, outputs: OutputShape)
 
 
-  sealed trait ComponentShape {
+  sealed trait ComponentShape { self =>
     type InputShape <: UniSet
     type OutputShape <: UniSet
     val inputs: Set[Contact]
     val outputs: Set[Contact]
+
   }
 
+  object ComponentShape {
+    def apply[I <: UniSet, O <: UniSet](implicit i: Render[Contact, I], o: Render[Contact, O])
+    : ComponentShape {type InputShape = I; type OutputShape = O} =
+      new ComponentShape {
+        type InputShape = I;
+        type OutputShape = O
+        val inputs = i.elements
+        val outputs = o.elements
+      }
+    def add[Shape1 <: ComponentShape, Shape2 <: ComponentShape](shape1: Shape1, shape2: Shape2)
+    : ComponentShape {type InputShape = Union[Shape1#InputShape, Shape2#InputShape]; type OutputShape = Union[Shape1#OutputShape, Shape2#OutputShape]} =
+      new ComponentShape {type InputShape = Union[Shape1#InputShape, Shape2#InputShape]; type OutputShape = Union[Shape1#OutputShape, Shape2#OutputShape]
+        override val inputs: Set[Contact] = shape1.inputs ++ shape2.inputs
+        override val outputs: Set[Contact] = shape1.outputs ++ shape2.outputs
+      }
+
+  }
   // we can only cast component shape because InputShape and OutputShape are ephemeral type-level-only sets.
   // If we ever try to materialize the sets, we will need a conversion.
   def componentShapeConverter[I1<:UniSet,O1<:UniSet,I2<:UniSet,O2<:UniSet]
@@ -66,35 +84,23 @@ trait ComponentShapeBuilderAPI extends Signals {
   ): ComponentShape{
     type InputShape = Singleton[In]
     type OutputShape =  Singleton[Out]
-  } = componentShapeConverter(addOutput(out, addInput(in, EmptyComponentShape)))
+  } = ComponentShape[Singleton[In], Singleton[Out]]
 
-  sealed trait Component {
-    type Shape <: ComponentShape
-    type Handler = shape.InputShape >> shape.OutputShape
+  sealed trait Component[Shape <: ComponentShape] {
     val shape: Shape
-    val handler: Handler
+    val handler: Shape#InputShape >> Shape#OutputShape
   }
 //
 //  type ShapedComponent[S] = Component { type Shape = S}
 //
-//  def createComponent[CompShape <: ComponentShape]
-//  (shape0: CompShape)
-//  (f: SignalOnContacts[shape0.InputShape] => Iterable[SignalOnContacts[shape0.OutputShape]])
-////  (
-////    implicit
-////    evInputContacts: EachElementIsSubtype[Contact, InputContacts],
-////    evInputs: InputContacts ⊂ CompShape#InputShape,
-////    evOutputs: OutputSignal#Contact ∊ CompShape#OutputShape
-////  )
-//  : Component {
-//    type Shape = shape0.type
-//    type Handler = SignalOnContacts[shape0.InputShape] => Iterable[SignalOnContacts[shape0.OutputShape]]
-//  } = new Component {
-//    override type Shape = shape0.type
-//    override val shape = shape0
-//    override type Handler = SignalOnContacts[shape0.InputShape] => Iterable[SignalOnContacts[shape0.OutputShape]]
-//    override val handler: Handler = f
-//  }
+  def createComponent[CompShape <: ComponentShape]
+  (shape0: CompShape)
+  (f: CompShape#InputShape >> CompShape#OutputShape)
+  : Component[CompShape] = new Component[CompShape] {
+    type Shape = CompShape
+    override val shape: Shape = shape0
+    override val handler = f
+  }
 
 //
 //  type Plus[Shape1 <: ComponentShape, Shape2 <: ComponentShape] = ComponentShape{
@@ -102,47 +108,34 @@ trait ComponentShapeBuilderAPI extends Signals {
 //    type OutputShape = Shape1#OutputShape ∪ Shape2#OutputShape
 //  }
 //
-//  // concatenates components so that they have concatenated inputs, outputs and handlers.
-//  def parallelAddComponent[//Shape1 <: ComponentShape, Shape2 <: ComponentShape,
-//    Comp1 <: Component,//{ type Shape = Shape1 },
-//    Comp2 <: Component//{ type Shape = Shape2 }
-//  ](comp1: Comp1, comp2: Comp2)(
-//   implicit
-//   inputShapesUnion: UnionHelper[comp1.shape.InputShape, comp2.shape.InputShape],
-//   outputShapesUnion: UnionHelper[comp1.shape.OutputShape, comp2.shape.OutputShape],
-//   signalOnContactsOps: SignalOnContactsOps[SignalOnContacts]
-//  ): Component {
-//    type In1 = inputShapesUnion.Out
-//    type Out1 = outputShapesUnion.Out
-//    type Shape = ComponentShape {
-//      type InputShape = In1
-//      type OutputShape = Out1
-//    }
-//  } = new Component {
-//    type In1 = inputShapesUnion.Out
-//    type Out1 = outputShapesUnion.Out
-//    override type Shape = ComponentShape {
-//      type InputShape = In1
-//      type OutputShape = Out1
-//    }
-//    override val shape: Shape = new ComponentShape {
-//      type InputShape = inputShapesUnion.Out
-//      type OutputShape = outputShapesUnion.Out
-//      override val inputs: InputShape = inputShapesUnion.apply(comp1.shape.inputs, comp2.shape.inputs)
-//      override val outputs: OutputShape = outputShapesUnion.apply(comp1.shape.outputs, comp2.shape.outputs)
-//    }
-//    override type Handler = SignalOnContacts[inputShapesUnion.Out] => Iterable[SignalOnContacts[outputShapesUnion.Out]]
-//    def castContactAny[A<:UniSet](s: SignalOnContacts[A]): SignalOnContacts[A]{type C = Contact} = s.asInstanceOf[SignalOnContacts[A]{type C = Contact}]
-//    override val handler: Handler = signalOnContacts => {
-//      val (s1, s2) = (new unwrapSignal2(comp1.shape.inputs, comp2.shape.inputs)(inputShapesUnion)).apply(signalOnContacts)
-//      val out1: Iterable[SignalOnContacts[comp1.shape.OutputShape]] = s1.flatMap(a => comp1.handler(a))
-//      val out2: Iterable[SignalOnContacts[comp2.shape.OutputShape]] = s2.flatMap(a => comp2.handler(a))
-//      val res =
-//       ??? // out1.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_)) ++
-//        // out2.flatMap(signalOnContactsOps.projection00Contact(shape.outputs)(_))
-//      res
-//    }
-//  }
+  // concatenates components so that they have concatenated inputs, outputs and handlers.
+  def parallelAddComponent[Shape1 <: ComponentShape, Shape2 <: ComponentShape](comp1: Component[Shape1], comp2: Component[Shape2])(
+     implicit
+     i1: Render[Contact, Shape1#InputShape],
+     i2: Render[Contact, Shape2#InputShape],
+     o: Render[Contact, Union[Shape1#OutputShape, Shape2#OutputShape]]
+  ): Component[ComponentShape {
+      type InputShape = Union[Shape1#InputShape, Shape2#InputShape]
+      type OutputShape = Union[Shape1#OutputShape, Shape2#OutputShape]
+    }]
+   = new Component[ComponentShape {
+      type InputShape = Union[Shape1#InputShape, Shape2#InputShape]
+      type OutputShape = Union[Shape1#OutputShape, Shape2#OutputShape]
+    }] {
+    override val shape: ComponentShape {
+      type InputShape = Union[Shape1#InputShape, Shape2#InputShape]
+      type OutputShape = Union[Shape1#OutputShape, Shape2#OutputShape]
+    } = ComponentShape.add(comp1.shape, comp2.shape)
+    override val handler: Union[Shape1#InputShape, Shape2#InputShape] >> Union[Shape1#OutputShape, Shape2#OutputShape] = signal => {
+      val s1 = signal.projection0[Shape1#InputShape].toIterable
+      val s2 = signal.projection0[Shape2#InputShape].toIterable//      val (s1, s2) = (new unwrapSignal2(comp1.shape.inputs, comp2.shape.inputs)(inputShapesUnion)).apply(signalOnContacts)
+      val out1: Iterable[Signal[Shape1#OutputShape]] = s1.flatMap(a => comp1.handler(a))
+      val out2: Iterable[Signal[Shape2#OutputShape]] = s2.flatMap(a => comp2.handler(a))
+      val res = out1.map(_.cProjection[Union[Shape1#OutputShape, Shape2#OutputShape]]) ++
+        out2.map(_.cProjection[Union[Shape1#OutputShape, Shape2#OutputShape]])
+      res
+    }
+  }
 //
 //  // set of contacts that belong to a system.
 //  // Outputs - are contacts of inner subsystems that can emit signals
