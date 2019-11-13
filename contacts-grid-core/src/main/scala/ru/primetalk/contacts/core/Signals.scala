@@ -17,6 +17,12 @@ trait Signals {
     type C <: Contact
     val contact: C
     val data: C#Data
+
+    override def equals(o: Any): Boolean = o match {
+      case other: SignalOnContact => contact == other.contact && data == other.data
+      case _ => false
+    }
+    override def hashCode(): Int = contact.hashCode() + (if(data == null) 0 else data.hashCode())
   }
   object SignalOnContact {
     def unapply(s: SignalOnContact): (s.C, s.C#Data) = (s.contact, s.data)
@@ -66,6 +72,12 @@ trait Signals {
 
     def cProjection[Cs <: UniSet](implicit s: IsSubSetOf[Contacts, Cs]): Signal[Cs] =
       this.asInstanceOf[Signal[Cs]]
+    override def equals(o: Any): Boolean = o match {
+      case other: Signal[_] => signal1 == other.signal1
+      case _ => false
+    }
+    override def hashCode(): Int = signal1.hashCode()
+
   }
 
   type SignalProcessor[A<:UniSet,B<:UniSet] = Signal[A] => Iterable[Signal[B]]
