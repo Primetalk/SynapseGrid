@@ -61,7 +61,11 @@ sealed trait UniProperties extends UniSetsBase {
 //    def aToB(a: A): B
 //    def bToA(b: B): A
 //  }
-
+  @implicitNotFound("Couldn't prove that the set has only one element")
+  sealed trait Cardinality1[Up, S <: UniSet] {
+    // the type of the single element of the set
+    type Element <: Up
+  }
 }
 sealed trait BelongsToLowPriority extends UniProperties {
   // Here we define sets in a "non-constructive way". In particular, we
@@ -201,8 +205,15 @@ sealed trait EqualSets extends UniSetsBase with IsSubSetOfHighPriority {
   implicit def insertExistingElement2[E, S<:UniSet](implicit es: BelongsTo[E, S]): Equal[Union[Singleton[E], S], S] = new Equal[Union[Singleton[E], S], S] {}
 
 }
+
+sealed trait SingletonSets extends UniProperties {
+  implicit def singletonCardinality1[Up, E <: Up]: Cardinality1[Up, Singleton[E]]{type Element = E} = new Cardinality1[Up, Singleton[E]]{type Element = E}
+  implicit def insert1Cardinality1[Up, E <: Up]: Cardinality1[Up, Insert[E, Empty]]{type Element = E} = new Cardinality1[Up, Insert[E, Empty]]{type Element = E}
+}
+
 object UniSets extends BelongsToHighPriority
   with IsSubSetOfHighPriority
   with EachElementIsSubtypeHighPriority
   with RenderLowPriority
   with EqualSets
+  with SingletonSets

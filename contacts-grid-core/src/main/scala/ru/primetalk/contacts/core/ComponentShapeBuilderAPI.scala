@@ -17,6 +17,8 @@ trait ComponentShapeBuilderAPI extends Signals {
     val outputs: Set[Contact]
   }
 
+  // we can only cast component shape because InputShape and OutputShape are ephemeral type-level-only sets.
+  // If we ever try to materialize the sets, we will need a conversion.
   def componentShapeConverter[I1<:UniSet,O1<:UniSet,I2<:UniSet,O2<:UniSet]
   (shape1: ComponentShape{type InputShape = I1; type OutputShape = O1})
   (implicit ieq: Equal[I1, I2], oeq: Equal[O1, O2])
@@ -65,13 +67,13 @@ trait ComponentShapeBuilderAPI extends Signals {
     type InputShape = Singleton[In]
     type OutputShape =  Singleton[Out]
   } = componentShapeConverter(addOutput(out, addInput(in, EmptyComponentShape)))
-//
-//  sealed trait Component {
-//    type Shape <: ComponentShape
-//    type Handler = SignalOnContacts[shape.InputShape] => Iterable[SignalOnContacts[shape.OutputShape]]
-//    val shape: Shape
-//    val handler: Handler
-//  }
+
+  sealed trait Component {
+    type Shape <: ComponentShape
+    type Handler = shape.InputShape >> shape.OutputShape
+    val shape: Shape
+    val handler: Handler
+  }
 //
 //  type ShapedComponent[S] = Component { type Shape = S}
 //

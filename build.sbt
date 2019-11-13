@@ -8,7 +8,7 @@ lazy val commonSettings = Seq(
 //  libraryDependencies += "org.specs2" %% "specs2" % "3.7" % Test,
 //  scalaVersion := "2.12.9",
 //  libraryDependencies += "org.specs2" %% "specs2" % "2.4.17" % Test,
-  scalaVersion := "2.13.0",
+  scalaVersion := "2.13.1",
   scalacOptions ++= Seq(
     "-Ymacro-annotations",// required for simulacrum starting from Scala 2.13+
     "-deprecation",
