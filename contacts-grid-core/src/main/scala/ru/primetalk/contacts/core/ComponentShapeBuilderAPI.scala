@@ -22,10 +22,10 @@ trait ComponentShapeBuilderAPI extends Signals {
     def apply[I <: UniSet, O <: UniSet](implicit i: Render[Contact, I], o: Render[Contact, O])
     : ComponentShape {type InputShape = I; type OutputShape = O} =
       new ComponentShape {
-        type InputShape = I;
+        type InputShape = I
         type OutputShape = O
-        val inputs = i.elements
-        val outputs = o.elements
+        val inputs: Set[Contact] = i.elements
+        val outputs: Set[Contact] = o.elements
       }
     type Plus[Shape1 <: ComponentShape, Shape2 <: ComponentShape] = ComponentShape{
       type InputShape = Shape1#InputShape ∪ Shape2#InputShape
@@ -104,7 +104,7 @@ trait ComponentShapeBuilderAPI extends Signals {
   : Component[CompShape] = new Component[CompShape] {
     type Shape = CompShape
     override val shape: Shape = shape0
-    override val handler = f
+    override val handler: CompShape#InputShape >> CompShape#OutputShape = f
   }
 
   // concatenates components so that they have concatenated inputs, outputs and handlers.

@@ -35,7 +35,7 @@ sealed trait UniProperties extends UniSetsBase {
 
   type ∊[Element, Set] = BelongsTo[Element, Set]
 
-  @implicitNotFound("Couldn't prove that element belongs to set")
+  @implicitNotFound("Couldn't prove that set is subset of another one set")
   sealed trait IsSubSetOf[A <: UniSet,B <: UniSet]
   type ⊂[A <: UniSet,B <: UniSet] = IsSubSetOf[A,B]
   type <=[A <: UniSet,B <: UniSet] = IsSubSetOf[A,B]
@@ -101,14 +101,24 @@ sealed trait BelongsToLowPriority extends UniProperties {
 
 //  implicit def runtimeSingleton[E<: S]
 }
+// fallback to by-element check of subsets.
+sealed trait ElementwiseIsSubSetOf extends UniProperties {
+  implicit def singletonIsSubset[E, S <: UniSet](implicit es: BelongsTo[E, S]): IsSubSetOf[Singleton[E], S] = new IsSubSetOf[Singleton[E], S] {}
+  implicit def insertIsSubset[E, A <: UniSet, S <: UniSet](implicit es: BelongsTo[E, S], as: IsSubSetOf[A, S]): IsSubSetOf[Insert[E, A], S] = new IsSubSetOf[Insert[E, A], S] {}
+}
 
-sealed trait IsSubSetOfLowPriority extends UniProperties {
+
+sealed trait IsSubSetOfLowPriority extends ElementwiseIsSubSetOf  {
 
   // See also reflectivity below for Empty <= Empty
   implicit def EmptyIsSubSetOf[A<:UniSet]: IsSubSetOf[Empty, A] = new IsSubSetOf[Empty, A] {}
   //
   implicit def UnionABIsSubsetOfS[A <: UniSet, B <: UniSet, S <: UniSet](implicit as: IsSubSetOf[A, S], bs: IsSubSetOf[B, S]): IsSubSetOf[Union[A,B], S] = new IsSubSetOf[Union[A,B], S] {}
 
+  implicit def subtractFromSmallerIsEmpty[A <: UniSet, B <: UniSet](implicit ab: IsSubSetOf[A,B]): IsSubSetOf[Subtract[A,B], Empty] = new IsSubSetOf[Subtract[A,B], Empty] {}
+
+  implicit def intersectionOfSingletonsIsEmpty[E1, E2]: IsSubSetOf[Intersection[Singleton[E1], Singleton[E2]], Empty] = new IsSubSetOf[Intersection[Singleton[E1], Singleton[E2]], Empty] {}
+  implicit def subtractFromNonIntersectingIsTheSame[A <: UniSet, B <: UniSet](implicit ab: IsSubSetOf[Intersection[A,B], Empty]): IsSubSetOf[Subtract[A,B], A] = new IsSubSetOf[Subtract[A,B], A] {}
   implicit def SIsSubsetOfUnionAB_A[S <: UniSet, A <: UniSet, B <: UniSet](implicit smabb: IsSubSetOf[Subtract[S, A], B]): IsSubSetOf[S, Union[A,B]] = new IsSubSetOf[S, Union[A,B]] {}
 
   //TODO  implicit def SIsSubsetOfUnionAB[S <: UniSet, A <: UniSet, B <: UniSet](implicit as: IsSubSetOf[A, S], bs: IsSubSetOf[B, S]): IsSubSetOf[Union[A,B], S] = new BelongsTo[Element, Union[A,B]] {}
@@ -138,7 +148,17 @@ sealed trait IsSubSetOfHighPriority extends IsSubSetOfLowPriority {
   implicit def SIsSubsetOfUnionAB_B[S <: UniSet, A <: UniSet, B <: UniSet](implicit smbba: IsSubSetOf[Subtract[S, B], A]): IsSubSetOf[S, Union[A,B]] = new IsSubSetOf[S, Union[A,B]] {}
   implicit def SubIsSubsetOfNotB[A<:UniSet, B<:UniSet]: IsSubSetOf[Subtract[A,B], Not[B]] = new IsSubSetOf[Subtract[A,B], Not[B]] {}
 
+  // Universal properties of Intersection
+  implicit def intersectionOfTheSameSetIsTheSameSet[S <: UniSet]: IsSubSetOf[Intersection[S, S], S] = new IsSubSetOf[Intersection[S, S], S] {}
+  // Universal properties of Union
+  implicit def UnionOfTheSameSetIsTheSameSet[S <: UniSet]: IsSubSetOf[Union[S, S], S] = new IsSubSetOf[Union[S, S], S] {}
+
+  // Universal properties of Empty
+  implicit def subtractEmptyIsTheSame[A <: UniSet]: IsSubSetOf[Subtract[A,Empty], A] = new IsSubSetOf[Subtract[A,Empty], A] {}
+  implicit def intersectEmptyIsEmpty[A <: UniSet]: IsSubSetOf[Intersection[A,Empty], Empty] = new IsSubSetOf[Intersection[A,Empty], Empty] {}
+
 }
+
 sealed trait RenderLowPriority extends UniProperties {
   implicit def EmptyRender[Up]: Render[Up, Empty] = new Render[Up, Empty] {
     override def elements: Set[Up] = Set()
