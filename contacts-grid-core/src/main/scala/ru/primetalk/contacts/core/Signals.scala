@@ -70,12 +70,21 @@ trait Signals {
       else
         None
 
+    def projection0Either[Cs <: UniSet](implicit r: Render[Contact, Cs]): Either[Signal[Subtract[Contacts, Cs]], Signal[Cs]] =
+      if(r.elements.contains(signal1.contact))
+        Right(this.asInstanceOf[Signal[Cs]])
+      else
+        Left(this.asInstanceOf[Signal[Subtract[Contacts, Cs]]])
+
     def cProjection[Cs <: UniSet](implicit s: IsSubSetOf[Contacts, Cs]): Signal[Cs] =
       this.asInstanceOf[Signal[Cs]]
+
+
     override def equals(o: Any): Boolean = o match {
       case other: Signal[_] => signal1 == other.signal1
       case _ => false
     }
+
     override def hashCode(): Int = signal1.hashCode()
 
   }

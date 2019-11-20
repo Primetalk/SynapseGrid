@@ -3,6 +3,8 @@ package ru.primetalk.contacts.core
 import scala.language.reflectiveCalls
 import UniSets._
 
+import scala.annotation.tailrec
+
 trait ComponentShapeBuilderAPI extends Signals {
 
 
@@ -12,9 +14,11 @@ trait ComponentShapeBuilderAPI extends Signals {
   sealed trait ComponentShape { self =>
     type InputShape <: UniSet
     type OutputShape <: UniSet
+    // TODO: Set should depend on the types of input/output shapes
+    //    val inputs: Render[Contact, InputShape]
+    //    val outputs: Render[Contact, OutputShape]
     val inputs: Set[Contact]
     val outputs: Set[Contact]
-
   }
 
 
@@ -93,6 +97,7 @@ trait ComponentShapeBuilderAPI extends Signals {
 
   sealed trait Component[Shape <: ComponentShape] {
     val shape: Shape
+    // TODO: rename to `apply`
     val handler: Shape#InputShape >> Shape#OutputShape
   }
 //
@@ -130,7 +135,8 @@ trait ComponentShapeBuilderAPI extends Signals {
       val s2 = signal.projection0[Shape2#InputShape].toIterable//      val (s1, s2) = (new unwrapSignal2(comp1.shape.inputs, comp2.shape.inputs)(inputShapesUnion)).apply(signalOnContacts)
       val out1: Iterable[Signal[Shape1#OutputShape]] = s1.flatMap(a => comp1.handler(a))
       val out2: Iterable[Signal[Shape2#OutputShape]] = s2.flatMap(a => comp2.handler(a))
-      val res = out1.map(_.cProjection[Union[Shape1#OutputShape, Shape2#OutputShape]]) ++
+      val res =
+        out1.map(_.cProjection[Union[Shape1#OutputShape, Shape2#OutputShape]]) ++
         out2.map(_.cProjection[Union[Shape1#OutputShape, Shape2#OutputShape]])
       res
     }
@@ -139,6 +145,7 @@ trait ComponentShapeBuilderAPI extends Signals {
   // set of contacts that belong to a system.
   // SourceShape - are contacts of inner subsystems that can emit signals
   // SinkShape - are contacts of inner subsystems that can consume signals.
+  // TODO: Get rid of BreadboardShape. Just use ImplementationShape
   sealed trait BreadboardShape {
     type SourceShape <: UniSet
     type SinkShape <: UniSet
@@ -164,8 +171,47 @@ trait ComponentShapeBuilderAPI extends Signals {
     def implementation: Implementation
     def tick: Shape#SinkShape >> Shape#SourceShape = implementation.handler
 
-    def toComponent[I <: UniSet, O <: UniSet](inputs: I, outputs: O)(implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O], i: I IsSubSetOf Shape#SinkShape, o: O IsSubSetOf Shape#SourceShape)
-    : Component[ComponentShape {type InputShape = I; type OutputShape = O}]
+//    def toComponent[I <: UniSet, O <: UniSet](inputs: I, outputs: O/*, limit: Int = 1000 */)(implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O], i: I IsSubSetOf Shape#SinkShape, o: O IsSubSetOf Shape#SourceShape)
+//    : Component[ComponentShape {type InputShape = I; type OutputShape = O}]
+
+
+    //    override def toComponent[I <: UniSet, O <: UniSet]
+    //    (implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O],
+    //     i: UniSets.IsSubSetOf[I, Union[BS#SinkShape, CS#InputShape]],
+    //     o: UniSets.IsSubSetOf[O, Union[BS#SourceShape, CS#OutputShape]])
+    //    : Component[ComponentShape {type InputShape = I;type OutputShape = O}]
+    def toComponent[I <: UniSet, O <: UniSet]
+    (implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O],
+     i: IsSubSetOf[I, Shape#SinkShape], o: IsSubSetOf[O, Shape#SourceShape],
+     nonOutputsIsSubsetOfInputs: IsSubSetOf[Subtract[Shape#SourceShape, O], Shape#SinkShape]// ! Important protection from losing data.
+    )
+    : Component[ComponentShape {type InputShape = I; type OutputShape = O}] = new Component[ComponentShape {type InputShape = I;type OutputShape = O}] {
+      override val shape: ComponentShape {type InputShape = I;type OutputShape = O} = new ComponentShape {
+        override type InputShape = I
+        override type OutputShape = O
+        override val inputs: Set[Contact] = inputs1.elements
+        override val outputs: Set[Contact] = outputs1.elements
+      }
+      override val handler: I >> O = signal => {
+        @tailrec
+        def loop(innerInputSignals: Iterable[Signal[Shape#SinkShape]], tempOutput: Iterable[Signal[O]]): Iterable[Signal[O]] = {
+          if(innerInputSignals.isEmpty)
+            tempOutput
+          else {
+            val innerResults = innerInputSignals.flatMap(tick)
+            val renderer = implicitly[Render[Contact, O]]
+            val sortedResults = innerResults.map{s => s.projection0Either[O]}
+            val lefts = sortedResults.flatMap(_.left.toOption)
+            val rights = sortedResults.flatMap(_.toOption)
+            val leftsAsInputs = lefts.map(_.cProjection[Shape#SinkShape])
+            loop(leftsAsInputs, tempOutput ++ rights)
+          }
+        }
+        val inputSignal = signal.cProjection[Shape#SinkShape]
+        loop(Iterable.single(inputSignal), Iterable.empty)
+      }
+    }
+
   }
 
   def addComponentToBreadboard[BS<:BreadboardShape, CS<:ComponentShape]
@@ -183,28 +229,7 @@ trait ComponentShapeBuilderAPI extends Signals {
     type SourceShape = Union[BS#SourceShape, CS#OutputShape]
     type SinkShape = Union[BS#SinkShape, CS#InputShape]
   }] { newBreadboard =>
-    //    override def toComponent[I <: UniSet, O <: UniSet]
-    //    (implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O],
-    //     i: UniSets.IsSubSetOf[I, Union[BS#SinkShape, CS#InputShape]],
-    //     o: UniSets.IsSubSetOf[O, Union[BS#SourceShape, CS#OutputShape]])
-    //    : Component[ComponentShape {type InputShape = I;type OutputShape = O}]
-    override def toComponent[I <: UniSets.UniSet, O <: UniSets.UniSet]
-    (inputs: I, outputs: O)
-    (implicit inputs1: UniSets.Render[Contact, I], outputs1: UniSets.Render[Contact, O],
-     i: UniSets.IsSubSetOf[I, UniSets.Union[BS#SinkShape, CS#InputShape]], o: UniSets.IsSubSetOf[O, UniSets.Union[BS#SourceShape, CS#OutputShape]])
-    : Component[ComponentShape {type InputShape = I; type OutputShape = O}] = new Component[ComponentShape {type InputShape = I;type OutputShape = O}] {
-      override val shape: ComponentShape {type InputShape = I;type OutputShape = O} = new ComponentShape {
-        override type InputShape = I
-        override type OutputShape = O
-        override val inputs: Set[Contact] = inputs1.elements
-        override val outputs: Set[Contact] = outputs1.elements
-      }
-      override val handler: I >> O = signal => {
-        val in = signal.cProjection[Union[BS#SinkShape, CS#InputShape]]
-        val results = tick(in)
-        results.flatMap(s => s.projection0[O])
-      }
-    }
+
     override val shape: BreadboardShape {
       type SourceShape = Union[BS#SourceShape, CS#OutputShape]
       type SinkShape = Union[BS#SinkShape, CS#InputShape]
@@ -218,5 +243,9 @@ trait ComponentShapeBuilderAPI extends Signals {
     override def implementation: Implementation = parallelAddComponent(breadboard.implementation, component)
 
   }
+
+
+
+
 
 }
