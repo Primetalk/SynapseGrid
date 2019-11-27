@@ -89,6 +89,14 @@ trait Signals {
 
   }
 
+  def projection0EitherUnion[A <: UniSet, B <: UniSet, Contacts <: UniSet](s: Signal[Contacts])(implicit r: Render[Contact, B], ev: IsSubSetOf[Contacts, Union[A,B]]): Either[Signal[A], Signal[B]] =
+    if(r.elements.contains(s.signal1.contact))
+      Right(s.asInstanceOf[Signal[B]])
+    else
+      Left(s.asInstanceOf[Signal[A]])
+
+
+
   type SignalProcessor[A<:UniSet,B<:UniSet] = Signal[A] => Iterable[Signal[B]]
   type >>[A<:UniSet,B<:UniSet] = Signal[A] => Iterable[Signal[B]]
   type Si[A <: Contact] = Singleton[A]
@@ -326,4 +334,17 @@ trait MySignals extends Signals {
     )
     : Si[In] >> Si[Out]
     = lift(in,out)(ev)
+
+
+  // wraps a single contact to be both input and output.
+  def liftI1[C <: Contact]
+  (c: C)(f: C#Data => Unit)
+  : Si[C] >> Empty = {
+    signalOnContactIn =>
+      val d = signalOnContactIn.safeUnwrap2[C]
+      f(d)
+      Iterable.empty
+  }
+
+
 }

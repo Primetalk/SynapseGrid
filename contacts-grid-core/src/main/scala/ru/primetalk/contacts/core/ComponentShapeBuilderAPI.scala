@@ -183,7 +183,8 @@ trait ComponentShapeBuilderAPI extends Signals {
     def toComponent[I <: UniSet, O <: UniSet]
     (implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O],
      i: IsSubSetOf[I, Shape#SinkShape], o: IsSubSetOf[O, Shape#SourceShape],
-     nonOutputsIsSubsetOfInputs: IsSubSetOf[Subtract[Shape#SourceShape, O], Shape#SinkShape]// ! Important protection from losing data.
+     //nonOutputsIsSubsetOfInputs: IsSubSetOf[Subtract[Shape#SourceShape, O], Shape#SinkShape]// ! Important protection from losing data.
+     nonOutputsIsSubsetOfInputs: IsSubSetOf[Shape#SourceShape, Union[Shape#SinkShape, O]]
     )
     : Component[ComponentShape {type InputShape = I; type OutputShape = O}] = new Component[ComponentShape {type InputShape = I;type OutputShape = O}] {
       override val shape: ComponentShape {type InputShape = I;type OutputShape = O} = new ComponentShape {
@@ -200,14 +201,14 @@ trait ComponentShapeBuilderAPI extends Signals {
           else {
             val innerResults = innerInputSignals.flatMap(tick)
             val renderer = implicitly[Render[Contact, O]]
-            val sortedResults = innerResults.map{s => s.projection0Either[O]}
+            val sortedResults = innerResults.map{s => projection0EitherUnion[Shape#SinkShape, O, Shape#SourceShape](s)}
             val lefts = sortedResults.flatMap(_.left.toOption)
             val rights = sortedResults.flatMap(_.toOption)
             val leftsAsInputs = lefts.map(_.cProjection[Shape#SinkShape])
             loop(leftsAsInputs, tempOutput ++ rights)
           }
         }
-        val inputSignal = signal.cProjection[Shape#SinkShape]
+        val inputSignal = signal.cProjection[Shape#SinkShape](i)
         loop(Iterable.single(inputSignal), Iterable.empty)
       }
     }
@@ -244,8 +245,14 @@ trait ComponentShapeBuilderAPI extends Signals {
 
   }
 
+  def emptyBreadboard: Breadboard[EmptyBreadboardShape.type] = new Breadboard[EmptyBreadboardShape.type] {
+    override val shape: EmptyBreadboardShape.type = EmptyBreadboardShape
 
-
-
+    override def implementation: Implementation = new Component[ImplementationShape[EmptyBreadboardShape.type]] {
+      override val shape: ImplementationShape[EmptyBreadboardShape.type] = EmptyComponentShape
+      override val handler: Empty >> Empty =
+        in => throw new IllegalArgumentException("emptyBreadboard.implementation.handler got signal: " + in)
+    }
+  }
 
 }

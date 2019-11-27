@@ -126,6 +126,8 @@ sealed trait IsSubSetOfLowPriority extends ElementwiseIsSubSetOf  {
   //  sealed trait Union[A <: UniSet, B <: UniSet]
 //  sealed trait Intersection[A <: UniSet,B <: UniSet] <: UniSet
 
+  // A \ B ⊂ C <=  A ⊂ B + C
+//  implicit def aMinusBIsInC[A <: UniSet, B <: UniSet, C <: UniSet](implicit ev: IsSubSetOf[A, Union[B,C]]): IsSubSetOf[Subtract[A,B], C] = new IsSubSetOf[Subtract[A,B], C] {}
   implicit def SIsSubSetOfIntersectionAB[S <: UniSet, A <: UniSet, B <: UniSet](implicit sa: IsSubSetOf[S,A], sb: IsSubSetOf[S,B]): IsSubSetOf[S, Intersection[A,B]] = new IsSubSetOf[S, Intersection[A,B]] {}
   //
   implicit def SubIsSubsetOfA[A<:UniSet, B<:UniSet]: IsSubSetOf[Subtract[A,B], A] = new IsSubSetOf[Subtract[A,B], A] {}
