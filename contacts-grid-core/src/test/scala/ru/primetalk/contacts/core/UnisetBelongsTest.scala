@@ -12,7 +12,7 @@ class UnisetBelongsTest extends FlatSpec with Matchers{
   case object C
   type C = C.type
   case object D
-  type D = C.type
+  type D = D.type
 
   "BelongsTo" should "be order insensitive " in {
     type ab = Singleton[A] ∪ Singleton[B]
@@ -99,7 +99,7 @@ class UnisetBelongsTest extends FlatSpec with Matchers{
     type bc = Singleton[B] ∪ Singleton[C]
     type `abcd_diff_bc` = abcd Subtract bc
     implicitly[A ∊ `abcd_diff_bc`]
-    "implicitly[D ∊ `abcd_diff_bc`]" should compile
+    implicitly[D ∊ `abcd_diff_bc`]
     "implicitly[B ∊ `abcd_diff_bc`]" shouldNot compile
     "implicitly[C ∊ `abcd_diff_bc`]" shouldNot compile
   }
