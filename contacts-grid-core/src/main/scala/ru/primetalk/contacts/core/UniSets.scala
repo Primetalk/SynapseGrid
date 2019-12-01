@@ -8,12 +8,12 @@ sealed trait UniSetsBase {
   sealed trait UniSet
 
   sealed trait Empty extends UniSet
-  type ∅ = Empty
+  type ∅ = Empty // \u2205 - synonyms
   sealed trait Singleton[E] extends UniSet
   sealed trait Universum extends UniSet
 
   sealed trait Union[A <: UniSet, B <: UniSet] extends UniSet
-  type ∪[A <: UniSet, B <: UniSet] = Union[A, B]
+  type ∪[A <: UniSet, B <: UniSet] = Union[A, B] // \u222A
 
   sealed trait Intersection[A <: UniSet, B <: UniSet] extends UniSet
   type ∩[A <: UniSet, B <: UniSet] = Intersection[A, B]
@@ -33,7 +33,7 @@ sealed trait UniProperties extends UniSetsBase {
 //    def get(s: Set): Element
   }
 
-  type ∊[Element, Set] = BelongsTo[Element, Set]
+  type ∊[Element, Set] = BelongsTo[Element, Set] // \u220A
 
   @implicitNotFound("Couldn't prove that set is subset of another one set")
   sealed trait IsSubSetOf[A <: UniSet,B <: UniSet]
