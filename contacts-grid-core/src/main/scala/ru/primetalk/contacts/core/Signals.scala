@@ -3,13 +3,8 @@ package ru.primetalk.contacts.core
 import scala.annotation.implicitNotFound
 import UniSets._
 
-trait Signals {
+trait Signals extends Contacts {
 
-  // customizable contact. User might create specific contacts with different data inside.
-  // For instance, for remoting it might be convenient to have contacts identified by integers.
-  trait Contact {
-    type Data
-  }
 
   // typeless signal, it might be used sometimes
   // for instance when declaring type classes
@@ -26,6 +21,11 @@ trait Signals {
   }
   object SignalOnContact {
     def unapply(s: SignalOnContact): (s.C, s.C#Data) = (s.contact, s.data)
+    def create[Cont <: Contact: ValueOf](d: Cont#Data): SignalOnContact{ type C = Cont } = new SignalOnContact{
+      type C = Cont
+      val contact: C = implicitly[ValueOf[Cont]].value
+      val data: Cont#Data = d
+    }
     def apply[Cont <: Contact](c: Cont)(d: c.Data): SignalOnContact{ type C = c.type } = new SignalOnContact{
       type C = c.type
       val contact: c.type = c
