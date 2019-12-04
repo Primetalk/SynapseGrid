@@ -100,6 +100,7 @@ trait ComponentShapeBuilderAPI extends Signals {
     // TODO: rename to `apply`
     val handler: Shape#InputShape >> Shape#OutputShape
   }
+
 //
 //  type ShapedComponent[S] = Component { type Shape = S}
 //
@@ -112,6 +113,7 @@ trait ComponentShapeBuilderAPI extends Signals {
     override val handler: CompShape#InputShape >> CompShape#OutputShape = f
   }
 
+//  def parallelAddComponentHandler[A, B, C](implicit h1: HandlerOf[...], h2:): Handler[C]
   // concatenates components so that they have concatenated inputs, outputs and handlers.
   def parallelAddComponent[Shape1 <: ComponentShape, Shape2 <: ComponentShape](comp1: Component[Shape1], comp2: Component[Shape2])(
      implicit

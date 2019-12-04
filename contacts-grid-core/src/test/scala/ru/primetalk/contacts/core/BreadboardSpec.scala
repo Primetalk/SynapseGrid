@@ -33,6 +33,7 @@ class BreadboardSpec extends Specification with ComponentDSL with MySignals with
   def parse(s: String): Iterable[Int] = Try(s.toInt).toOption
   val Parser = liftIterableToComponent[In1, Out1.type](parse)
 
+//  In1.map(s => Try(s.toInt).toOption)
   def show(i: Int): String = i.toString
   val Show: Singleton[In2.type] >> Singleton[Out2.type] = lift(In2, Out2)(show)
   val shape2 = InOutShape[In2.type, Out2.type](In2, Out2)
@@ -104,4 +105,12 @@ class BreadboardSpec extends Specification with ComponentDSL with MySignals with
   res11.flatMap(_.unwrap(Out2)).foreach { str =>
     println("Incremented number: " + str)
   }
+
+  /*
+  val topLevelComponent: MyComponent[Shape] - no implementation
+  implement def handler = {
+    val b = createBreadboard
+    b.add(comp1)(implicit comp1Implementation)
+  }
+   */
 }
