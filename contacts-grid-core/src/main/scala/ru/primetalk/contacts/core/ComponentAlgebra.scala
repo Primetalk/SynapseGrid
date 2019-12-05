@@ -14,11 +14,11 @@ trait ComponentAlgebraBase {
 
   /** One of the mechanisms to create new components is to put them in parallel. */
   sealed trait ParallelAdd[I1 <: UniSet, O1 <: UniSet, I2 <: UniSet, O2 <: UniSet,
-    A <: Component[I1, O1], B<: Component[I2, O2]] extends Component[Union[I1, I2], Union[O1, O2]]
+    C1 <: Component[I1, O1], C2 <: Component[I2, O2]] extends Component[Union[I1, I2], Union[O1, O2]]
 
   def parallelAdd[I1 <: UniSet, O1 <: UniSet, I2 <: UniSet, O2 <: UniSet,
-    A <: Component[I1, O1], B<: Component[I2, O2]](a: A, b: B): ParallelAdd[I1, O1, I2, O2, A, B] =
-    new ParallelAdd[I1, O1, I2, O2, A, B]{}
+    C1 <: Component[I1, O1], C2 <: Component[I2, O2]](c1: C1, c2: C2): ParallelAdd[I1, O1, I2, O2, C1, C2] =
+    new ParallelAdd[I1, O1, I2, O2, C1, C2]{}
 
   /** A powerful mechanisms to compose components is to put them on the breadboard one by one.
     * and then at some moment produce a new component by projecting the breadboard on some inputs and outputs. */
@@ -30,16 +30,35 @@ trait ComponentAlgebraBase {
   }
 }
 
-trait ComponentAlgebraFeatures extends ComponentAlgebraBase {
-//
-//  trait HandlerOf[Shape <: ComponentShape, C <: Component[Shape]] {
-//    def handler: Shape#InputShape >> Shape#OutputShape
-//  }
-//
-//  def defineHandler[Shape <: ComponentShape, C <: Component[Shape]](f: Shape#InputShape >> Shape#OutputShape): HandlerOf[Shape, C] = new HandlerOf[Shape, C] {
-//    override def handler: Shape#InputShape >> Shape#OutputShape = f
-//  }
-}
-trait HandlerOfs extends ComponentAlgebraBase {
+trait ComponentAlgebraFeatures extends ComponentAlgebraBase with Signals {
 
+  sealed trait HandlerOf[I <: UniSet, O <: UniSet, C <: Component[I, O]] {
+    def handler: I >> O
+  }
+
+}
+trait HandlerOfs extends ComponentAlgebraFeatures {
+  def defineHandlerOf[I <: UniSet, O <: UniSet, C <: Component[I, O]](f: I >> O): HandlerOf[I, O, C] = new HandlerOf[I, O, C] {
+    override def handler: I >> O = f
+  }
+
+  implicit def parallelAddHandlerOf[I1 <: UniSet, O1 <: UniSet, I2 <: UniSet, O2 <: UniSet,
+    C1 <: Component[I1, O1], C2 <: Component[I2, O2]]
+  (implicit h1: HandlerOf[I1, O1, C1], h2: HandlerOf[I2, O2, C2],
+   i1: Render[Contact, I1],
+   i2: Render[Contact, I2],
+   o: Render[Contact, Union[O1, O2]]
+  ): HandlerOf[Union[I1, I2], Union[O1, O2], ParallelAdd[I1, O1, I2, O2, C1, C2]] =
+    new HandlerOf[Union[I1, I2], Union[O1, O2], ParallelAdd[I1, O1, I2, O2, C1, C2]] {
+      override def handler: Union[I1, I2] >> Union[O1, O2] = signal => {
+        val s1 = signal.projection0[I1].toIterable
+        val s2 = signal.projection0[I2].toIterable
+        val out1: Iterable[Signal[O1]] = s1.flatMap(a => h1.handler(a))
+        val out2: Iterable[Signal[O2]] = s2.flatMap(a => h2.handler(a))
+        val res =
+          out1.map(_.cProjection[Union[O1, O2]]) ++
+            out2.map(_.cProjection[Union[O1, O2]])
+        res
+      }
+    }
 }
