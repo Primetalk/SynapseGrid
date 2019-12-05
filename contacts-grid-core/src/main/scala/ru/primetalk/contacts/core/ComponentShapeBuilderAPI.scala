@@ -183,7 +183,9 @@ trait ComponentShapeBuilderAPI extends Signals {
     //     o: UniSets.IsSubSetOf[O, Union[BS#SourceShape, CS#OutputShape]])
     //    : Component[ComponentShape {type InputShape = I;type OutputShape = O}]
     def toComponent[I <: UniSet, O <: UniSet]
-    (implicit inputs1: Render[Contact, I], outputs1: Render[Contact, O],
+    (implicit
+     inputs1: Render[Contact, I],
+     outputs1: Render[Contact, O],
      i: IsSubSetOf[I, Shape#SinkShape], o: IsSubSetOf[O, Shape#SourceShape],
      //nonOutputsIsSubsetOfInputs: IsSubSetOf[Subtract[Shape#SourceShape, O], Shape#SinkShape]// ! Important protection from losing data.
      nonOutputsIsSubsetOfInputs: IsSubSetOf[Shape#SourceShape, Union[Shape#SinkShape, O]]
