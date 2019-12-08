@@ -25,6 +25,8 @@ trait ComponentAlgebraBase {
   /** A powerful mechanisms to compose components is to put them on the breadboard one by one.
     * and then at some moment produce a new component by projecting the breadboard on some inputs and outputs. */
   sealed trait Breadboard[Sinks <: UniSet, Sources <: UniSet] {
+    type Sinks0 = Sinks
+    type Sources0 = Sources
     sealed trait ImplementationComponent extends Component[Sinks, Sources]
     sealed trait ToComponent[I <: UniSet, O <: UniSet] extends Component[I, O]
     def toComponent[I <: UniSet, O <: UniSet]: ToComponent[I, O] =
@@ -33,6 +35,8 @@ trait ComponentAlgebraBase {
     def withAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O]]: WithAddedComponent[I, O, C] =
       new WithAddedComponent[I, O, C] {}
   }
+
+  object EmptyBreadboard extends Breadboard[Empty, Empty]
 }
 
 trait ComponentAlgebraFeatures extends ComponentAlgebraBase with Signals {
@@ -115,4 +119,21 @@ trait HandlerOfs extends ComponentAlgebraFeatures {
       loop(Iterable.single(inputSignal), Iterable.empty)
     }
   }
+}
+
+trait ComponentAlgebraDSL extends HandlerOfs with MySignals { self =>
+
+  class forComponentImpl[In <: Contact, Out <: Contact, C <: Component[Singleton[In], Singleton[Out]]](in: In, out: Out, c: C) {
+    def liftIterable[A >: In#Data, B <: Out#Data](f: A => Iterable[B]): HandlerOf[Singleton[In], Singleton[Out], C] =
+      defineHandlerOf[Singleton[In], Singleton[Out], C](self.liftIterable(in, out)(a => f(a)))
+    def lift[A >: In#Data, B <: Out#Data](f: A => B): HandlerOf[Singleton[In], Singleton[Out], C] =
+      defineHandlerOf[Singleton[In], Singleton[Out], C](self.lift(in, out)(a => f(a)))
+  }
+
+  def forComponent[In <: Contact, Out <: Contact, C <: Component[Singleton[In], Singleton[Out]]](in: In, out: Out, c: C): forComponentImpl[In, Out, C] =
+    new forComponentImpl[In, Out, C](in, out, c)
+}
+
+trait ComponentAlgebra extends ComponentAlgebraDSL {
+
 }
