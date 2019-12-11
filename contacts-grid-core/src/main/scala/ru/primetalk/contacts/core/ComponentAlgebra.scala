@@ -24,19 +24,25 @@ trait ComponentAlgebraBase {
 
   /** A powerful mechanisms to compose components is to put them on the breadboard one by one.
     * and then at some moment produce a new component by projecting the breadboard on some inputs and outputs. */
-  sealed trait Breadboard[Sinks <: UniSet, Sources <: UniSet] {
+  sealed trait Breadboard[Sinks <: UniSet, Sources <: UniSet] { self =>
     type Sinks0 = Sinks
     type Sources0 = Sources
-    sealed trait ImplementationComponent extends Component[Sinks, Sources]
+    type ImplementationComponent <: Component[Sinks, Sources]
     sealed trait ToComponent[I <: UniSet, O <: UniSet] extends Component[I, O]
     def toComponent[I <: UniSet, O <: UniSet]: ToComponent[I, O] =
       new ToComponent[I, O] {}
-    sealed trait WithAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O]] extends Breadboard[Union[I, Sinks], Union[O, Sources]]
+    sealed trait WithAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O]] extends Breadboard[Union[I, Sinks], Union[O, Sources]] {
+      case object ImplementationComponent0 extends ParallelAdd[I, O, C, Sinks, Sources, self.ImplementationComponent]
+      type ImplementationComponent = ImplementationComponent0.type
+    }
     def withAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O]]: WithAddedComponent[I, O, C] =
       new WithAddedComponent[I, O, C] {}
   }
 
-  object EmptyBreadboard extends Breadboard[Empty, Empty]
+  object EmptyBreadboard extends Breadboard[Empty, Empty] {
+    case object ImplementationComponent0 extends Component[Empty, Empty]
+    type ImplementationComponent = ImplementationComponent0.type
+  }
 }
 
 trait ComponentAlgebraFeatures extends ComponentAlgebraBase with Signals {
@@ -96,42 +102,50 @@ trait HandlerOfs extends ComponentAlgebraFeatures {
   bh: HandlerOf[Sinks, Sources, B#ImplementationComponent],
    inputs1: Render[Contact, I],
    outputs1: Render[Contact, O],
-   i: IsSubSetOf[I, Sinks], o: IsSubSetOf[O, Sources],
-   nonOutputsIsSubsetOfInputs: IsSubSetOf[Sources, Union[Sinks, O]]
+   i: IsSubSetOf[I, Sinks], o: IsSubSetOf[O, Sources]//,
+//   nonOutputsIsSubsetOfInputs: IsSubSetOf[Sources, Union[Sinks, O]]
   )
   : HandlerOf[I, O, B#ToComponent[I, O]] = new HandlerOf[I, O, B#ToComponent[I, O]] {
     override def handler: I >> O = signal => {
-      @tailrec
-      def loop(innerInputSignals: Iterable[Signal[Sinks]], tempOutput: Iterable[Signal[O]]): Iterable[Signal[O]] = {
-        if(innerInputSignals.isEmpty)
-          tempOutput
-        else {
-          val innerResults = innerInputSignals.flatMap(bh.handler)
-//          val renderer = implicitly[Render[Contact, O]]
-          val sortedResults = innerResults.map{s => projection0EitherUnion[Sinks, O, Sources](s)}
-          val lefts = sortedResults.flatMap(_.left.toOption)
-          val rights = sortedResults.flatMap(_.toOption)
-          val leftsAsInputs = lefts.map(_.cProjection[Sinks])
-          loop(leftsAsInputs, tempOutput ++ rights)
-        }
-      }
-      val inputSignal = signal.cProjection[Sinks](i)
-      loop(Iterable.single(inputSignal), Iterable.empty)
+//      @tailrec
+//      def loop(innerInputSignals: Iterable[Signal[Sinks]], tempOutput: Iterable[Signal[O]]): Iterable[Signal[O]] = {
+//        if(innerInputSignals.isEmpty)
+//          tempOutput
+//        else {
+//          val innerResults = innerInputSignals.flatMap(bh.handler)
+////          val renderer = implicitly[Render[Contact, O]]
+//          val sortedResults = innerResults.map{s => projection0EitherUnion[Sinks, O, Sources](s)}
+//          val lefts = sortedResults.flatMap(_.left.toOption)
+//          val rights = sortedResults.flatMap(_.toOption)
+//          val leftsAsInputs = lefts.map(_.cProjection[Sinks])
+//          loop(leftsAsInputs, tempOutput ++ rights)
+//        }
+//      }
+//      val inputSignal = signal.cProjection[Sinks](i)
+//      loop(Iterable.single(inputSignal), Iterable.empty)
+      ???
     }
   }
 }
 
 trait ComponentAlgebraDSL extends HandlerOfs with MySignals { self =>
 
-  class forComponentImpl[In <: Contact, Out <: Contact, C <: Component[Singleton[In], Singleton[Out]]](in: In, out: Out, c: C) {
+  class ForComponentImpl[In <: Contact, Out <: Contact, C <: Component[Singleton[In], Singleton[Out]]](in: In, out: Out, c: C) {
     def liftIterable[A >: In#Data, B <: Out#Data](f: A => Iterable[B]): HandlerOf[Singleton[In], Singleton[Out], C] =
       defineHandlerOf[Singleton[In], Singleton[Out], C](self.liftIterable(in, out)(a => f(a)))
     def lift[A >: In#Data, B <: Out#Data](f: A => B): HandlerOf[Singleton[In], Singleton[Out], C] =
       defineHandlerOf[Singleton[In], Singleton[Out], C](self.lift(in, out)(a => f(a)))
   }
 
-  def forComponent[In <: Contact, Out <: Contact, C <: Component[Singleton[In], Singleton[Out]]](in: In, out: Out, c: C): forComponentImpl[In, Out, C] =
-    new forComponentImpl[In, Out, C](in, out, c)
+  def forComponent[In <: Contact, Out <: Contact, C <: Component[Singleton[In], Singleton[Out]]](in: In, out: Out, c: C): ForComponentImpl[In, Out, C] =
+    new ForComponentImpl[In, Out, C](in, out, c)
+
+  implicit class ComponentOps[In <: Contact:ValueOf, Out <: Contact:ValueOf, C <: Component[Singleton[In], Singleton[Out]]]
+  (c: C) {
+    def lift[A >: In#Data, B <: Out#Data](f: A => B): HandlerOf[Singleton[In], Singleton[Out], C] =
+      defineHandlerOf[Singleton[In], Singleton[Out], C](self.lift(valueOf[In], valueOf[Out])(a => f(a)))
+
+  }
 }
 
 trait ComponentAlgebra extends ComponentAlgebraDSL {

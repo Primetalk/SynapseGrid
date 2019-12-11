@@ -31,48 +31,74 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
   case object In2 extends ContactImpl[Int]("In2")
   case object Out2 extends ContactImpl[String]("Out2")
 
+  val out2 = valueOf[Out2.type]
   object Parser extends Component[Si[In1], Si[Out1.type]]
   object Shower extends Component[Si[In2.type], Si[Out2.type]]
   object Incrementer extends Component[Si[Out1.type], Si[In2.type]]
 
+  // Sink   = In1, In2, Out1
+  // Source = Out1, Out2, In2
+  // I      = In1
+  // O      = Out2
+  // source in Union(O, Sink)
   val both: ParallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type] =
     parallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type](Parser, Shower)
 
 
-  val bbParser: EmptyBreadboard.
-    WithAddedComponent[Si[In1], Si[Out1.type], Parser.type] = EmptyBreadboard.withAddedComponent[Si[In1], Si[Out1.type], Parser.type]
+  val bbParser = EmptyBreadboard.withAddedComponent[Si[In1], Si[Out1.type], Parser.type]
   //  val bbParser = addComponentToBreadboard(emptyBreadboard, Parser)
-  val bbParser_Shower: EmptyBreadboard.
-    WithAddedComponent[Si[In1], Si[Out1.type], Parser.type]#
-    WithAddedComponent[Si[In2.type], Si[Out2.type], Shower.type] = bbParser.withAddedComponent[Si[In2.type], Si[Out2.type], Shower.type]
-  val bbParserIncrementerShower: (EmptyBreadboard.
-    WithAddedComponent[Si[In1], Si[Out1.type], Parser.type])#
-    WithAddedComponent[Si[In2.type], Si[Out2.type], Shower.type]#
-    WithAddedComponent[Si[Out1.type], Si[In2.type], Incrementer.type] = bbParser_Shower.withAddedComponent[Si[Out1.type], Si[In2.type], Incrementer.type]
+  val bbParser_Shower = bbParser.withAddedComponent[Si[In2.type], Si[Out2.type], Shower.type]
+  val bbParserIncrementerShower = bbParser_Shower.withAddedComponent[Si[Out1.type], Si[In2.type], Incrementer.type]
 
-  val stringStringComponent: EmptyBreadboard.
-    WithAddedComponent[Si[In1], Si[Out1.type], Parser.type]#
-    WithAddedComponent[Si[In2.type], Si[Out2.type], Shower.type]#
-    WithAddedComponent[Si[Out1.type], Si[In2.type], Incrementer.type]#
-    ToComponent[Si[In1], Si[Out2.type]] = bbParserIncrementerShower.toComponent[Si[In1], Si[Out2.type]]
+  val stringStringComponent = bbParserIncrementerShower.toComponent[Si[In1], Si[Out2.type]]
 
 
 
   def parse(s: String): Iterable[Int] = Try(s.toInt).toOption
   implicit val parserImpl = forComponent(In1, Out1, Parser).liftIterable(parse)
-
+//: HandlerOf[UniSets.Singleton[NamedContact["In1", String]], UniSets.Singleton[Out1.type], Parser.type]
   //  In1.map(s => Try(s.toInt).toOption)
   def show(i: Int): String = i.toString
   implicit val showerImpl = forComponent(In2, Out2, Shower).lift(show)
+//  implicit val showerImpl2 = //Shower.lift(show(_))
+//    new ComponentOps[In2.type, Out2.type, Shower.type](Shower).lift(show)
 
   def inc(i: Int): Int = i + 1
   implicit val incrementerImpl = forComponent(Out1, In2, Incrementer).lift(inc)
 
 
-  val bothImpl = implicitly[HandlerOf[Union[Si[In1], Si[In2.type]], Union[Si[Out1.type], Si[Out2.type]], ParallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type]]]
+  val bothImpl = implicitly[HandlerOf[Union[Si[In1], Si[In2.type]], Union[Si[Out1.type], Si[Out2.type]],
+    ParallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type]]]
 
-//TODO: The following line do not compile:
-//  val stringStringImpl = implicitly[HandlerOf[Si[In1], Si[Out2.type], stringStringComponent.type]](toComponentHandlerOf[bbParserIncrementerShower.Sinks0, bbParserIncrementerShower.Sources0 , bbParserIncrementerShower.type,  Si[In1], Si[Out2.type]])
+  val EmptyBreadboardHandler = implicitly[HandlerOf[Empty, Empty, EmptyBreadboard.ImplementationComponent]]
+//  val BBParserHandler =  implicitly[HandlerOf[
+//    Union[Si[In1], Empty], Union[Si[Out1.type],Empty], bbParser.ImplementationComponent]]//(addComponentHandlerOf)
+
+//  implicit def addComponentHandlerOf[Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources],
+//    I <: UniSet, O <: UniSet, C <: Component[I, O]]
+//  (implicit
+//   ph: HandlerOf[Union[I, Sinks], Union[O, Sources], ParallelAdd[I, O, C, Sinks, Sources, B#ImplementationComponent]]
+//  )
+//  : HandlerOf[Union[I, Sinks], Union[O, Sources], Breadboard[Union[I, Sinks], Union[O, Sources]]#ImplementationComponent] =
+//    convertHandlerOf[Union[I, Sinks], Union[O, Sources], ParallelAdd[I, O, C, Sinks, Sources, B#ImplementationComponent],
+//      Breadboard[Union[I, Sinks], Union[O, Sources]]#ImplementationComponent]
+
+  //  val bbHandler = implicitly[HandlerOf[
+//    Union[Si[Out1.type], Union[Si[In2.type],Union[Si[In1],Empty]]],
+//    Union[Si[In2.type], Union[Si[Out2.type],Union[Si[Out1.type],Empty]]],
+//    bbParserIncrementerShower.ImplementationComponent]]
+//  val tco = toComponentHandlerOf[
+//        Union[Si[Out1.type], Union[Si[In2.type],Union[Si[In1],Empty]]],
+//        Union[Si[In2.type], Union[Si[Out2.type],Union[Si[Out1.type],Empty]]],
+//        bbParserIncrementerShower.type,  Si[In1], Si[Out2.type]]
+////TODO: The following line do not compile:
+//  val stringStringImpl = implicitly[HandlerOf[Si[In1], Si[Out2.type], stringStringComponent.type]](tco)
+
+//  (
+//    toComponentHandlerOf[
+//      bbParserIncrementerShower.Sinks0,
+//      bbParserIncrementerShower.Sources0 ,
+//      bbParserIncrementerShower.type,  Si[In1], Si[Out2.type]])
 
 //  val both = parallelAddComponent(Parser, Shower)
 //
