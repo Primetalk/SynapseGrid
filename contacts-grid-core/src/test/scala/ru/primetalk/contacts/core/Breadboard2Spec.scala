@@ -71,8 +71,24 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
     ParallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type]]]
 
   val EmptyBreadboardHandler = implicitly[HandlerOf[Empty, Empty, EmptyBreadboard.ImplementationComponent]]
-//  val BBParserHandler =  implicitly[HandlerOf[
-//    Union[Si[In1], Empty], Union[Si[Out1.type],Empty], bbParser.ImplementationComponent]]//(addComponentHandlerOf)
+  val parAddH = parallelAddHandlerOf[
+    Si[In1], Si[Out1.type], Parser.type,
+    Empty, Empty, EmptyBreadboard.ImplementationComponent]
+  val BBParserHandler =  implicitly[HandlerOf[
+    Union[Si[In1], Empty], Union[Si[Out1.type],Empty], bbParser.ImplementationComponent]](
+    addComponentHandlerOf[Empty, Empty, EmptyBreadboard.type,
+    Si[In1], Si[Out1.type], Parser.type, bbParser.type]//(EmptyBreadboard, bbParser)(
+    //parAddH))//(addComponentHandlerOf)
+  )
+  //
+  //[info] Compiling 1 Scala source to /home/zhizhelev/Primetalk/SynapseGrid/contacts-grid-core/target/scala-2.13/test-classes ...
+  //[error] /home/zhizhelev/Primetalk/SynapseGrid/contacts-grid-core/src/test/scala/ru/primetalk/contacts/core/Breadboard2Spec.scala:80:41: type mismatch;
+  //[error]  found   :  (which expands to)  Breadboard2Spec.this.HandlerOf[ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.NamedContact["In1",String]],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty],Breadboard2Spec.this.Breadboard[ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.NamedContact["In1",String]],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty]]#ImplementationComponent]
+  //[error]  required:  (which expands to)  Breadboard2Spec.this.HandlerOf[ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.NamedContact["In1",String]],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty],Breadboard2Spec.this.bbParser.ImplementationComponent0.type]
+  //[error] Note: Breadboard2Spec.this.Breadboard[ru.primetalk.contacts.core.UniSets.Union[Breadboard2Spec.this.Si[Breadboard2Spec.this.In1],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[Breadboard2Spec.this.Si[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty]]#ImplementationComponent >: Breadboard2Spec.this.bbParser.ImplementationComponent, but trait HandlerOf is invariant in type C.
+  //[error] You may wish to define C as -C instead. (SLS 4.5)
+  //[error]     Si[In1], Si[Out1.type], Parser.type](
+  //[error]     addComponentHandlerOf[Empty, Empty, EmptyBreadboard.ImplementationComponent,
 
 //  implicit def addComponentHandlerOf[Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources],
 //    I <: UniSet, O <: UniSet, C <: Component[I, O]]
