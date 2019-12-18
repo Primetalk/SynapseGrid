@@ -4,7 +4,7 @@ import UniSets._
 
 import scala.annotation.tailrec
 
-trait ComponentAlgebraBase {
+trait ComponentAlgebraBase { base =>
   type ComponentShape[A<: UniSet, B<: UniSet] = (A,B)
   /** This is for user to implement/define.
     * User should create a component type-level identifier that
@@ -28,15 +28,34 @@ trait ComponentAlgebraBase {
     self =>
     type Sinks0 = Sinks
     type Sources0 = Sources
-    def withAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O]]: WithAddedComponent[I, O, C, Sinks, Sources, self.type] =
-      new WithAddedComponent[I, O, C, Sinks, Sources, self.type] {}
-    def toComponent[I <: UniSet, O <: UniSet]: ToComponent[I, O, Sinks, Sources, self.type] =
-      new ToComponent[I, O, Sinks, Sources, self.type] {}
   }
+
   //    type ImplementationComponent <: Component[Sinks, Sources]
+  object EmptyBreadboard extends Breadboard[Empty, Empty] {
+    //    case object ImplementationComponent0 extends Component[Empty, Empty]
+    //    type ImplementationComponent = ImplementationComponent0.type
+    type Impl = base.ImplementationComponent[Empty, Empty, EmptyBreadboard]
+    def withAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O]]: WithAddedComponent[I, O, C, Empty, Empty, EmptyBreadboard] =
+      new WithAddedComponent[I, O, C, Empty, Empty, EmptyBreadboard] {}
+    def toComponent[I <: UniSet, O <: UniSet](implicit i: IsSubSetOf[I, Empty]): ToComponent[I, O, Empty, Empty, EmptyBreadboard] =
+      new ToComponent[I, O, Empty, Empty, EmptyBreadboard] {}
+
+  }
+  type EmptyBreadboard = EmptyBreadboard.type
+  sealed trait WithAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O], Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources]] extends Breadboard[Union[I, Sinks], Union[O, Sources]] {
+    type Self = WithAddedComponent[I, O, C, Sinks, Sources, B]
+    type Impl = base.ImplementationComponent[Union[I, Sinks], Union[O, Sources], Self]
+    def withAddedComponent[I1 <: UniSet, O1 <: UniSet, C1 <: Component[I1, O1]]: WithAddedComponent[I1, O1, C1, Union[I, Sinks], Union[O, Sources], Self] =
+      new WithAddedComponent[I1, O1, C1, Union[I, Sinks], Union[O, Sources], Self] {}
+    def toComponent[I1 <: UniSet, O1 <: UniSet](implicit i: IsSubSetOf[I1, Union[I, Sinks]]): ToComponent[I1, O1, Union[I, Sinks], Union[O, Sources], Self] =
+      new ToComponent[I1, O1, Union[I, Sinks], Union[O, Sources], Self] {}
+
+  }
+
   sealed trait ImplementationComponent[Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources]] extends Component[Sinks, Sources]
-  sealed trait ToComponent[I <: UniSet, O <: UniSet, Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources]] extends Component[I, O]
-  sealed trait WithAddedComponent[I <: UniSet, O <: UniSet, C <: Component[I, O], Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources]] extends Breadboard[Union[I, Sinks], Union[O, Sources]]
+  sealed trait ToComponent[I <: UniSet, O <: UniSet, Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources]] extends Component[I, O] {
+    type Self = ToComponent[I, O, Sinks, Sources, B]
+  }
 //      {
 //      case object ImplementationComponent0 extends ParallelAdd[I, O, C, Sinks, Sources, self.ImplementationComponent]
 //      type ImplementationComponent = ImplementationComponent0.type
@@ -44,12 +63,8 @@ trait ComponentAlgebraBase {
 //  }
 
   object Breadboard {
-    implicit def valueOfBreadboard[Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources]]
-    : ValueOf[B] = new ValueOf[B](new Breadboard[Sinks, Sources] {}.asInstanceOf[B])
-  }
-  object EmptyBreadboard extends Breadboard[Empty, Empty] {
-//    case object ImplementationComponent0 extends Component[Empty, Empty]
-//    type ImplementationComponent = ImplementationComponent0.type
+//    implicit def valueOfBreadboard[Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources]]
+//    : ValueOf[B] = new ValueOf[B](new Breadboard[Sinks, Sources] {}.asInstanceOf[B])
   }
 }
 
@@ -98,6 +113,8 @@ trait HandlerOfs extends ComponentAlgebraFeatures {
       override def handler: Empty >> Empty = s => throw new IllegalArgumentException(s"emptyComponentHandler.handler cannot get any input $s")
     }
 
+//  implicit def emptyBreadboardImplementationComponentHandlerOf[C<:ImplementationComponent[Empty, Empty, EmptyBreadboard.type]]: HandlerOf[Empty, Empty, C] = emptyComponentHandlerOf
+
 //  implicit class B0Ops[ Sinks <: UniSet, Sources <: UniSet, B0 <: Breadboard[Sinks, Sources] : ValueOf](val b0: B0) {
 ////    val implicits:
 //  }
@@ -113,23 +130,20 @@ trait HandlerOfs extends ComponentAlgebraFeatures {
 //  :    HandlerOf[Union[I, Sinks], Union[O, Sources], b1.value.ImplementationComponent] =
 //    convertHandlerOf[Union[I, Sinks], Union[O, Sources], ParallelAdd[I, O, C, Sinks, Sources, B0#ImplementationComponent],
 //      b1.value.ImplementationComponent]
-implicit def addComponentHandlerOf[
-  Sinks <: UniSet, Sources <: UniSet, B0 <: Breadboard[Sinks, Sources] : ValueOf,
-  I <: UniSet,     O <: UniSet,       C <: Component[I, O],
-  B1 <: Breadboard[Union[I, Sinks], Union[O, Sources]] : ValueOf
-]
-(implicit
- b0: ValueOf[B0],
- b1: ValueOf[B1],
- h1: HandlerOf[I, O, C],
- h2: HandlerOf[Sinks, Sources, C2],
- i1: Render[Contact, I],
- i2: Render[Contact, Sinks],
- o: Render[Contact, Union[O, Sources]]
 
-)
-:    HandlerOf[Union[I, Sinks], Union[O, Sources], b1.value.ImplementationComponent] =
-  new HandlerOf[Union[I, Sinks], Union[O, Sources], ParallelAdd[I, O, C, Sinks, Sources,  b0.value.ImplementationComponent]] {
+  implicit def addComponentHandlerOf[
+    Sinks <: UniSet, Sources <: UniSet, B0 <: Breadboard[Sinks, Sources],
+    I <: UniSet,     O <: UniSet,       C <: Component[I, O]
+  ]
+  (implicit
+   h1: HandlerOf[I, O, C],
+   h2: HandlerOf[Sinks, Sources, ImplementationComponent[Sinks, Sources, B0]],
+   i1: Render[Contact, I],
+   i2: Render[Contact, Sinks],
+   o: Render[Contact, Union[O, Sources]]
+  )
+  :    HandlerOf[Union[I, Sinks], Union[O, Sources], ImplementationComponent[Union[I, Sinks], Union[O, Sources], WithAddedComponent[I, O, C, Sinks, Sources, B0]]] =
+  new HandlerOf[Union[I, Sinks], Union[O, Sources], ImplementationComponent[Union[I, Sinks], Union[O, Sources], WithAddedComponent[I, O, C, Sinks, Sources, B0]]] {
           override def handler: Union[I, Sinks] >> Union[O, Sources] = signal => {
             val s1 = signal.projection0[I].toIterable
             val s2 = signal.projection0[Sinks].toIterable
@@ -156,31 +170,30 @@ implicit def addComponentHandlerOf[
   //    }
   implicit def toComponentHandlerOf[Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources],  I <: UniSet, O <: UniSet]
   (implicit
-  bh: HandlerOf[Sinks, Sources, B#ImplementationComponent],
-   inputs1: Render[Contact, I],
-   outputs1: Render[Contact, O],
-   i: IsSubSetOf[I, Sinks], o: IsSubSetOf[O, Sources]//,
-//   nonOutputsIsSubsetOfInputs: IsSubSetOf[Sources, Union[Sinks, O]]
+    bh: HandlerOf[Sinks, Sources, ImplementationComponent[Sinks, Sources, B]],
+     inputs1: Render[Contact, I],
+     outputs1: Render[Contact, O],
+     i: IsSubSetOf[I, Sinks], //o: IsSubSetOf[O, Sources],
+    nonOutputsIsSubsetOfInputs: IsSubSetOf[Sources, Union[Sinks, O]]
   )
-  : HandlerOf[I, O, B#ToComponent[I, O]] = new HandlerOf[I, O, B#ToComponent[I, O]] {
+  : HandlerOf[I, O, ToComponent[I, O, Sinks, Sources, B]] = new HandlerOf[I, O, ToComponent[I, O, Sinks, Sources, B]] {
     override def handler: I >> O = signal => {
-//      @tailrec
-//      def loop(innerInputSignals: Iterable[Signal[Sinks]], tempOutput: Iterable[Signal[O]]): Iterable[Signal[O]] = {
-//        if(innerInputSignals.isEmpty)
-//          tempOutput
-//        else {
-//          val innerResults = innerInputSignals.flatMap(bh.handler)
-////          val renderer = implicitly[Render[Contact, O]]
-//          val sortedResults = innerResults.map{s => projection0EitherUnion[Sinks, O, Sources](s)}
-//          val lefts = sortedResults.flatMap(_.left.toOption)
-//          val rights = sortedResults.flatMap(_.toOption)
-//          val leftsAsInputs = lefts.map(_.cProjection[Sinks])
-//          loop(leftsAsInputs, tempOutput ++ rights)
-//        }
-//      }
-//      val inputSignal = signal.cProjection[Sinks](i)
-//      loop(Iterable.single(inputSignal), Iterable.empty)
-      ???
+      @tailrec
+      def loop(innerInputSignals: Iterable[Signal[Sinks]], tempOutput: Iterable[Signal[O]]): Iterable[Signal[O]] = {
+        if(innerInputSignals.isEmpty)
+          tempOutput
+        else {
+          val innerResults: Iterable[Signal[Sources]] = innerInputSignals.flatMap(bh.handler)
+//          val renderer = implicitly[Render[Contact, O]]
+          val sortedResults = innerResults.map{s => projection0EitherUnion[Sinks, O, Sources](s)}
+          val lefts = sortedResults.flatMap(_.left.toOption)
+          val rights = sortedResults.flatMap(_.toOption)
+          val leftsAsInputs = lefts.map(_.cProjection[Sinks])
+          loop(leftsAsInputs, tempOutput ++ rights)
+        }
+      }
+      val inputSignal = signal.cProjection[Sinks](i)
+      loop(Iterable.single(inputSignal), Iterable.empty)
     }
   }
 }

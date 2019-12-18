@@ -32,6 +32,7 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
   case object Out2 extends ContactImpl[String]("Out2")
 
   val out2 = valueOf[Out2.type]
+  val out1 = valueOf[Out1.type]
   object Parser extends Component[Si[In1], Si[Out1.type]]
   object Shower extends Component[Si[In2.type], Si[Out2.type]]
   object Incrementer extends Component[Si[Out1.type], Si[In2.type]]
@@ -46,12 +47,15 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
 
 
   val bbParser = EmptyBreadboard.withAddedComponent[Si[In1], Si[Out1.type], Parser.type]
+  type bbParserImpl = bbParser.Impl
   //  val bbParser = addComponentToBreadboard(emptyBreadboard, Parser)
   val bbParser_Shower = bbParser.withAddedComponent[Si[In2.type], Si[Out2.type], Shower.type]
+  type bbParser_ShowerImpl = bbParser_Shower.Impl
   val bbParserIncrementerShower = bbParser_Shower.withAddedComponent[Si[Out1.type], Si[In2.type], Incrementer.type]
-
+  type bbParserIncrementerShowerImpl = bbParserIncrementerShower.Impl
   val stringStringComponent = bbParserIncrementerShower.toComponent[Si[In1], Si[Out2.type]]
 
+  type stringStringComponentType = stringStringComponent.Self
 
 
   def parse(s: String): Iterable[Int] = Try(s.toInt).toOption
@@ -70,45 +74,26 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
   val bothImpl = implicitly[HandlerOf[Union[Si[In1], Si[In2.type]], Union[Si[Out1.type], Si[Out2.type]],
     ParallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type]]]
 
-  val EmptyBreadboardHandler = implicitly[HandlerOf[Empty, Empty, EmptyBreadboard.ImplementationComponent]]
+  val EmptyBreadboardHandler = implicitly[HandlerOf[Empty, Empty, ImplementationComponent[Empty, Empty, EmptyBreadboard]]]
   val parAddH = parallelAddHandlerOf[
     Si[In1], Si[Out1.type], Parser.type,
-    Empty, Empty, EmptyBreadboard.ImplementationComponent]
+    Empty, Empty, ImplementationComponent[Empty, Empty, EmptyBreadboard]]
   val BBParserHandler =  implicitly[HandlerOf[
-    Union[Si[In1], Empty], Union[Si[Out1.type],Empty], bbParser.ImplementationComponent]](
-    addComponentHandlerOf[Empty, Empty, EmptyBreadboard.type,
-    Si[In1], Si[Out1.type], Parser.type, bbParser.type]//(EmptyBreadboard, bbParser)(
-    //parAddH))//(addComponentHandlerOf)
-  )
-  //
-  //[info] Compiling 1 Scala source to /home/zhizhelev/Primetalk/SynapseGrid/contacts-grid-core/target/scala-2.13/test-classes ...
-  //[error] /home/zhizhelev/Primetalk/SynapseGrid/contacts-grid-core/src/test/scala/ru/primetalk/contacts/core/Breadboard2Spec.scala:80:41: type mismatch;
-  //[error]  found   :  (which expands to)  Breadboard2Spec.this.HandlerOf[ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.NamedContact["In1",String]],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty],Breadboard2Spec.this.Breadboard[ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.NamedContact["In1",String]],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty]]#ImplementationComponent]
-  //[error]  required:  (which expands to)  Breadboard2Spec.this.HandlerOf[ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.NamedContact["In1",String]],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[ru.primetalk.contacts.core.UniSets.Singleton[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty],Breadboard2Spec.this.bbParser.ImplementationComponent0.type]
-  //[error] Note: Breadboard2Spec.this.Breadboard[ru.primetalk.contacts.core.UniSets.Union[Breadboard2Spec.this.Si[Breadboard2Spec.this.In1],ru.primetalk.contacts.core.UniSets.Empty],ru.primetalk.contacts.core.UniSets.Union[Breadboard2Spec.this.Si[Breadboard2Spec.this.Out1.type],ru.primetalk.contacts.core.UniSets.Empty]]#ImplementationComponent >: Breadboard2Spec.this.bbParser.ImplementationComponent, but trait HandlerOf is invariant in type C.
-  //[error] You may wish to define C as -C instead. (SLS 4.5)
-  //[error]     Si[In1], Si[Out1.type], Parser.type](
-  //[error]     addComponentHandlerOf[Empty, Empty, EmptyBreadboard.ImplementationComponent,
+    Union[Si[In1], Empty], Union[Si[Out1.type],Empty], bbParser.Impl]]
+  val BBParser_ShowerHandler =  implicitly[HandlerOf[
+    Union[Si[In2.type], Union[Si[In1], Empty]], Union[Si[Out2.type],Union[Si[Out1.type],Empty]], bbParser_Shower.Impl]]
 
-//  implicit def addComponentHandlerOf[Sinks <: UniSet, Sources <: UniSet, B <: Breadboard[Sinks, Sources],
-//    I <: UniSet, O <: UniSet, C <: Component[I, O]]
-//  (implicit
-//   ph: HandlerOf[Union[I, Sinks], Union[O, Sources], ParallelAdd[I, O, C, Sinks, Sources, B#ImplementationComponent]]
-//  )
-//  : HandlerOf[Union[I, Sinks], Union[O, Sources], Breadboard[Union[I, Sinks], Union[O, Sources]]#ImplementationComponent] =
-//    convertHandlerOf[Union[I, Sinks], Union[O, Sources], ParallelAdd[I, O, C, Sinks, Sources, B#ImplementationComponent],
-//      Breadboard[Union[I, Sinks], Union[O, Sources]]#ImplementationComponent]
+  val bbHandler = implicitly[HandlerOf[
+    Union[Si[Out1.type], Union[Si[In2.type],Union[Si[In1],Empty]]],
+    Union[Si[In2.type], Union[Si[Out2.type],Union[Si[Out1.type],Empty]]],
+    bbParserIncrementerShower.Impl]]
 
-  //  val bbHandler = implicitly[HandlerOf[
-//    Union[Si[Out1.type], Union[Si[In2.type],Union[Si[In1],Empty]]],
-//    Union[Si[In2.type], Union[Si[Out2.type],Union[Si[Out1.type],Empty]]],
-//    bbParserIncrementerShower.ImplementationComponent]]
-//  val tco = toComponentHandlerOf[
-//        Union[Si[Out1.type], Union[Si[In2.type],Union[Si[In1],Empty]]],
-//        Union[Si[In2.type], Union[Si[Out2.type],Union[Si[Out1.type],Empty]]],
-//        bbParserIncrementerShower.type,  Si[In1], Si[Out2.type]]
-////TODO: The following line do not compile:
-//  val stringStringImpl = implicitly[HandlerOf[Si[In1], Si[Out2.type], stringStringComponent.type]](tco)
+  val tco = toComponentHandlerOf[
+        Union[Si[Out1.type], Union[Si[In2.type],Union[Si[In1],Empty]]],
+        Union[Si[In2.type], Union[Si[Out2.type],Union[Si[Out1.type],Empty]]],
+        bbParserIncrementerShower.Self,  Si[In1], Si[Out2.type]]
+
+  val stringStringImpl = implicitly[HandlerOf[Si[In1], Si[Out2.type], stringStringComponentType]]//(tco)
 
 //  (
 //    toComponentHandlerOf[
@@ -119,22 +104,18 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
 //  val both = parallelAddComponent(Parser, Shower)
 //
 //  def printer(s: String): Unit = println("printer: " + s)
-//  val shapePrinter: ComponentShape {
-//    type InputShape = Singleton[In1]
-//    type OutputShape = ∅
-//  } = componentShapeConverter(addInput(In1, EmptyComponentShape))
 //  val liftedPrinter: Si[In1] >> Empty = liftI1(In1)(printer)
 //  val Printer = createComponent(shapePrinter)(liftedPrinter)
 //
-//  val inputSignal1: SignalOnContact {
-//    type C = In1
-//  } =  SignalOnContact.create[In1]("10")
-//  val inputSignal =  signal[both.shape.InputShape](inputSignal1)
-//  val res = both.handler(inputSignal)
-//
-//  res.flatMap(_.unwrap(Out1)).foreach { int =>
-//    println(int)
-//  }
+  val inputSignal1: SignalOnContact {
+    type C = In1
+  } =  SignalOnContact.create[In1]("10")
+  val inputSignal =  signal[Si[In1]](inputSignal1)
+  val res = stringStringImpl.handler(inputSignal)
+
+  res.flatMap(_.unwrap(Out2)).foreach { int =>
+    println(int)
+  }
 //
 //  val threeComponents = parallelAddComponent(both, Printer)
 //
