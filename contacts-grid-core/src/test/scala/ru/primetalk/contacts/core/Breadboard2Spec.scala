@@ -20,7 +20,7 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
   }
 
   type In1 = NamedContact["In1", String]
-  val In1 = NamedContact["In1", String]
+  val In1: In1 = NamedContact["In1", String]
 
   //  val in2 = contact["in2", Int]
 //  val ev = implicitly[NamedContact["in1", Int] =:= NamedContact["in1", Int] ]
@@ -31,8 +31,8 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
   case object In2 extends ContactImpl[Int]("In2")
   case object Out2 extends ContactImpl[String]("Out2")
 
-  val out2 = valueOf[Out2.type]
-  val out1 = valueOf[Out1.type]
+//  val out2 = valueOf[Out2.type]
+//  val out1 = valueOf[Out1.type]
   object Parser extends Component[Si[In1], Si[Out1.type]]
   object Shower extends Component[Si[In2.type], Si[Out2.type]]
   object Incrementer extends Component[Si[Out1.type], Si[In2.type]]
@@ -43,7 +43,7 @@ class Breadboard2Spec extends Specification with ComponentAlgebra with MySignals
   // O      = Out2
   // source in Union(O, Sink)
   val both: ParallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type] =
-    parallelAdd[Si[In1], Si[Out1.type], Parser.type, Si[In2.type], Si[Out2.type], Shower.type](Parser, Shower)
+    parallelAdd(Parser, Shower)
 
 
   val bbParser = EmptyBreadboard.withAddedComponent[Si[In1], Si[Out1.type], Parser.type]

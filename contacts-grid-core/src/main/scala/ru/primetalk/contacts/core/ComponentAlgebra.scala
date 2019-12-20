@@ -6,6 +6,7 @@ import scala.annotation.tailrec
 
 trait ComponentAlgebraBase { base =>
   type ComponentShape[A<: UniSet, B<: UniSet] = (A,B)
+
   /** This is for user to implement/define.
     * User should create a component type-level identifier that
     * extends this type.
@@ -16,7 +17,9 @@ trait ComponentAlgebraBase { base =>
 
   /** One of the mechanisms to create new components is to put them in parallel. */
   sealed trait ParallelAdd[I1 <: UniSet, O1 <: UniSet, C1 <: Component[I1, O1],
-    I2 <: UniSet, O2 <: UniSet, C2 <: Component[I2, O2]] extends Component[Union[I1, I2], Union[O1, O2]]
+    I2 <: UniSet, O2 <: UniSet, C2 <: Component[I2, O2]] extends Component[Union[I1, I2], Union[O1, O2]] {
+    type Self = ParallelAdd[I1, O1, C1, I2, O2, C2]
+  }
 
   def parallelAdd[I1 <: UniSet, O1 <: UniSet,  C1 <: Component[I1, O1],
     I2 <: UniSet, O2 <: UniSet, C2 <: Component[I2, O2]](c1: C1, c2: C2): ParallelAdd[I1, O1, c1.type, I2, O2, c2.type] =
