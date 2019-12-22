@@ -171,15 +171,52 @@ trait HandlerOfsDependent extends ComponentAlgebraDependentFeatures {
 
 trait ComponentAlgebraDependentDSL extends HandlerOfsDependent with MySignals { self =>
 
-  class ForComponentImpl[I <: Contact, O <: Contact, C <: Component{ type In = Singleton[I]; type Out = Singleton[O]}](in: I, out: O, c: C) {
-    def liftIterable[A >: I#Data, B <: O#Data](f: A => Iterable[B]): HandlerOf[C] =
-      defineHandlerOf[C](self.liftIterable(in, out)(a => f(a)))
-    def lift[A >: I#Data, B <: O#Data](f: A => B): HandlerOf[C] =
-      defineHandlerOf[C](self.lift(in, out)(a => f(a)))
+
+  sealed trait MyContact extends Contact
+
+  abstract class ContactImpl[A](val name: String) extends Product with Serializable with MyContact {
+    override type Data = A
   }
 
-  def forComponent[I <: Contact, O <: Contact, C <: Component{ type In = Singleton[I]; type Out = Singleton[O]}](in: I, out: O, c: C): ForComponentImpl[I, O, C] =
-    new ForComponentImpl[I, O, C](in, out, c)
+  sealed trait InOutComponent0  extends Component {
+    type InContact <: MyContact
+    type OutContact <: MyContact
+    val inContact: InContact
+    val outContact: OutContact
+    type In = Singleton[InContact]
+    type Out = Singleton[OutContact]
+  }
+  trait InOutComponent[DI, DO] extends InOutComponent0 {
+    case object In extends ContactImpl[DI]("In")
+    case object Out extends ContactImpl[DO]("Out")
+    type InContact = In.type
+    type OutContact = Out.type
+    val inContact: InContact = In
+    val outContact: OutContact = Out
+
+  }
+
+  trait LinkComponent[C1 <: InOutComponent0, C2 <: InOutComponent0] extends InOutComponent0 {
+    val c1: C1
+    val c2: C2
+    type InContact = C1#OutContact
+    type OutContact = C2#InContact
+    lazy val inContact: InContact = c1.outContact
+    lazy val outContact: OutContact = c2.inContact
+  }
+  def defineComponentIterable[C <: InOutComponent0](c: C)(f: c.InContact#Data => Iterable[c.OutContact#Data]): HandlerOf[c.type] =
+    defineHandlerOf[c.type](self.liftIterable(c.inContact, c.outContact)(a => f(a)))
+  def defineComponentImpl[C <: InOutComponent0](c: C)(f: c.InContact#Data => c.OutContact#Data): HandlerOf[c.type] =
+    defineHandlerOf[c.type](self.lift(c.inContact, c.outContact)(a => f(a)))
+//  class ForComponentImpl[C <: InOutComponent0](c: C) {
+//    def liftIterable[A >: c.InContact#Data, B <: c.OutContact#Data](f: c.InContact#Data => Iterable[c.OutContact#Data]): HandlerOf[C] =
+//      defineHandlerOf[c.type](self.liftIterable(c.inContact, c.outContact)(a => f(a)))
+//    def lift[A >: c.InContact#Data, B <: c.OutContact#Data](f: A => B): HandlerOf[C] =
+//      defineHandlerOf[C](self.lift(c.inContact, c.outContact)(a => f(a)))
+//  }
+
+//  def forComponent[C <: InOutComponent0](c: C): ForComponentImpl[C] =
+//    new ForComponentImpl[C](c)
 
 //  implicit class ComponentOps[C <: Component]
 //  (c: C) {
