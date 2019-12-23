@@ -178,6 +178,10 @@ trait ComponentAlgebraDependentDSL extends HandlerOfsDependent with MySignals { 
     override type Data = A
   }
 
+  /** It's a simple component that has one input and one output.
+    * The component provides contacts inside itself.
+    * This makes it easier to deal with.
+    */
   sealed trait InOutComponent0  extends Component {
     type InContact <: MyContact
     type OutContact <: MyContact
@@ -196,7 +200,27 @@ trait ComponentAlgebraDependentDSL extends HandlerOfsDependent with MySignals { 
 
   }
 
-  trait LinkComponent[C1 <: InOutComponent0, C2 <: InOutComponent0] extends InOutComponent0 {
+  case class LinkComponent[InC <: MyContact, OutC <: MyContact](inC: InC, outC: OutC) extends InOutComponent0 {
+    type InContact = InC
+    type OutContact = OutC
+    lazy val inContact: InContact = inC
+    lazy val outContact: OutContact = outC
+  }
+
+  object LinkComponent {
+    /**
+      * Handler is only available if the types of in/out are compatible.
+      */
+    implicit def handlerOfLinkComponent[InC <: MyContact:ValueOf, OutC <: MyContact:ValueOf](implicit ev: InC#Data <:< OutC#Data)
+    : HandlerOf[LinkComponent[InC, OutC]] =
+      new HandlerOf[LinkComponent[InC, OutC]] {
+        override def handler: Si[InC] >> Si[OutC] = identity(valueOf[InC], valueOf[OutC])
+      }
+  }
+  /**
+    * This component connects two other in-out components.
+    */
+  trait LinkTwoInOutComponents[C1 <: InOutComponent0, C2 <: InOutComponent0] extends InOutComponent0 {
     val c1: C1
     val c2: C2
     type InContact = C1#OutContact
@@ -204,26 +228,16 @@ trait ComponentAlgebraDependentDSL extends HandlerOfsDependent with MySignals { 
     lazy val inContact: InContact = c1.outContact
     lazy val outContact: OutContact = c2.inContact
   }
+  // NB! Extension methods do not work well with dependent types.
+  // When using `implicit class Ops[C](c: C)` there are two cases.
+  // if we return `c.type` - compiler would say that it's a leak of a private val,
+  // if instead we declare `val c: C`, that will create a new singleton-type.
+  // Simple functions work correctly:
   def defineComponentIterable[C <: InOutComponent0](c: C)(f: c.InContact#Data => Iterable[c.OutContact#Data]): HandlerOf[c.type] =
     defineHandlerOf[c.type](self.liftIterable(c.inContact, c.outContact)(a => f(a)))
   def defineComponentImpl[C <: InOutComponent0](c: C)(f: c.InContact#Data => c.OutContact#Data): HandlerOf[c.type] =
     defineHandlerOf[c.type](self.lift(c.inContact, c.outContact)(a => f(a)))
-//  class ForComponentImpl[C <: InOutComponent0](c: C) {
-//    def liftIterable[A >: c.InContact#Data, B <: c.OutContact#Data](f: c.InContact#Data => Iterable[c.OutContact#Data]): HandlerOf[C] =
-//      defineHandlerOf[c.type](self.liftIterable(c.inContact, c.outContact)(a => f(a)))
-//    def lift[A >: c.InContact#Data, B <: c.OutContact#Data](f: A => B): HandlerOf[C] =
-//      defineHandlerOf[C](self.lift(c.inContact, c.outContact)(a => f(a)))
-//  }
 
-//  def forComponent[C <: InOutComponent0](c: C): ForComponentImpl[C] =
-//    new ForComponentImpl[C](c)
-
-//  implicit class ComponentOps[C <: Component]
-//  (c: C) {
-//    def lift[A >: In#Data, B <: Out#Data](f: A => B): HandlerOf[Singleton[In], Singleton[Out], C] =
-//      defineHandlerOf[Singleton[In], Singleton[Out], C](self.lift(valueOf[In], valueOf[Out])(a => f(a)))
-//
-//  }
 }
 
 trait ComponentAlgebraDependent extends ComponentAlgebraDependentDSL {

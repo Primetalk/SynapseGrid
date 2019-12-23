@@ -30,9 +30,9 @@ class Breadboard3Spec extends Specification with ComponentAlgebraDependent with 
 //  val out1 = valueOf[Out1.type]
   object Parser extends InOutComponent[String, Int]
   object Shower extends InOutComponent[Int, String]
-  object Incrementer extends LinkComponent[Parser.type, Shower.type] {
-    val c1 = Parser
-    val c2 = Shower
+  object Incrementer extends LinkTwoInOutComponents[Parser.type, Shower.type] {
+    val c1: Parser.type = Parser
+    val c2: Shower.type = Shower
   }
 
   // Sink   = In1, In2, Out1
