@@ -36,6 +36,11 @@ lazy val contactsCore = (project in file("contacts-grid-core")).settings(
   libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.19.0"
 )
 
+lazy val contactsDot = (project in file("contacts-grid-dot")).settings(
+  commonSettings,
+  name := "contacts-grid-dot"
+)
+
 lazy val concurrent = (project in file("synapse-grid-concurrent")).settings(
   commonSettings,
   name := "synapse-grid-concurrent"
