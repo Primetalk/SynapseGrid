@@ -14,8 +14,10 @@ trait DotAST {
     case object graph extends graph_kind
     case object digraph extends graph_kind
   }
-  type ID = String
-  case class graph(strict: Boolean = false, kind: graph_kind = graph_kind.graph, id: ID = "graph", stmt_list: stmt_list)
+  sealed trait IDTag
+  type ID = String with IDTag
+  def ID(id: String): ID = id.asInstanceOf[ID]
+  case class graph(strict: Boolean = false, kind: graph_kind = graph_kind.graph, id: ID = ID("graph"), stmt_list: stmt_list)
 
   //stmt_list 	: 	[ stmt [ ';' ] stmt_list ]
   type stmt_list = List[stmt]
