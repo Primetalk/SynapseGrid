@@ -17,21 +17,26 @@ trait Signals extends Contacts {
       case other: SignalOnContact => contact == other.contact && data == other.data
       case _ => false
     }
+
     override def hashCode(): Int = contact.hashCode() + (if(data == null) 0 else data.hashCode())
   }
+
   object SignalOnContact {
     def unapply(s: SignalOnContact): (s.C, s.C#Data) = (s.contact, s.data)
+
     def create[Cont <: Contact: ValueOf](d: Cont#Data): SignalOnContact{ type C = Cont } = new SignalOnContact{
       type C = Cont
       val contact: C = implicitly[ValueOf[Cont]].value
       val data: Cont#Data = d
     }
+
     def apply[Cont <: Contact](c: Cont)(d: c.Data): SignalOnContact{ type C = c.type } = new SignalOnContact{
       type C = c.type
       val contact: c.type = c
       val data: contact.Data = d
     }
   }
+
 //  implicit class SignalOps[Cont <: Contact, A<:UniSet, S[_ <: UniSet]<: SignalOnContacts0](val s: S[A] {type C = Cont}) {
 //    def project[B <: UniSet](contacts: B)(implicit ev: s.C BelongsTo B, ops: SignalOnContactsOps[S]): S[B] { type C = Cont} =
 //      ops.projection[s.C, A, B](s, contacts)
@@ -59,22 +64,25 @@ trait Signals extends Contacts {
 //      signal1.data.asInstanceOf[Up#Data]
 
     def unwrap[C<:Contact](c: C): Option[C#Data] =
-      if(signal1.contact == c)
+      if(signal1.contact == c) {
         Option(signal1.data.asInstanceOf[C#Data])
-      else
+      } else {
         None
+      }
 
     def projection0[Cs <: UniSet](implicit r: Render[Contact, Cs]): Option[Signal[Cs]] =
-      if(r.elements.contains(signal1.contact))
+      if(r.elements.contains(signal1.contact)) {
         Some(this.asInstanceOf[Signal[Cs]])
-      else
+      } else {
         None
+      }
 
     def projection0Either[Cs <: UniSet](implicit r: Render[Contact, Cs]): Either[Signal[Subtract[Contacts, Cs]], Signal[Cs]] =
-      if(r.elements.contains(signal1.contact))
+      if(r.elements.contains(signal1.contact)) {
         Right(this.asInstanceOf[Signal[Cs]])
-      else
+      } else {
         Left(this.asInstanceOf[Signal[Subtract[Contacts, Cs]]])
+      }
 
     def cProjection[Cs <: UniSet](implicit s: IsSubSetOf[Contacts, Cs]): Signal[Cs] =
       this.asInstanceOf[Signal[Cs]]
@@ -86,19 +94,19 @@ trait Signals extends Contacts {
     }
 
     override def hashCode(): Int = signal1.hashCode()
-
   }
 
   def projection0EitherUnion[A <: UniSet, B <: UniSet, Contacts <: UniSet](s: Signal[Contacts])(implicit r: Render[Contact, B], ev: IsSubSetOf[Contacts, Union[A,B]]): Either[Signal[A], Signal[B]] =
-    if(r.elements.contains(s.signal1.contact))
+    if(r.elements.contains(s.signal1.contact)) {
       Right(s.asInstanceOf[Signal[B]])
-    else
+    } else {
       Left(s.asInstanceOf[Signal[A]])
-
-
+    }
 
   type SignalProcessor[A<:UniSet,B<:UniSet] = Signal[A] => Iterable[Signal[B]]
+
   type >>[A<:UniSet,B<:UniSet] = Signal[A] => Iterable[Signal[B]]
+
   type Si[A <: Contact] = Singleton[A]
 
   def signal[Cs <: UniSet](s: SignalOnContact)(implicit ccs: BelongsTo[s.C, Cs]): Signal[Cs] = new Signal[Cs] {
@@ -223,16 +231,15 @@ trait Signals extends Contacts {
 }
 
 trait MySignals extends Signals {
-
 //  abstract class MyContact[T](val name: String) extends Contact {
 //    override type Data = T
 //  }
 //
   final class MySignalOnContact[Cont <: Contact](c: Cont)(d: Cont#Data) extends SignalOnContact {
     override type C = Cont
-    val contact: C = c//Cont
+    val contact: C = c
     val data: C#Data = d
-}
+  }
 
 
 //  final class MySignal[Cont <: Contact, Contacts <: UniSet] private[MySignals] (val c: Cont, val d: Cont#Data, ev: Cont BelongsTo Contacts) extends MySignalOnContacts[Contacts] {
@@ -297,34 +304,21 @@ trait MySignals extends Signals {
 //    (s: SignalOnContacts[A]) => ??? // new MySignal[s.C, B](s.contact, s.data, inferEBelongsToBIfEBelongsToASubset[s.C, A, B](s.contactIsInContacts, aIsSubsetOfB))
 
   // wraps a function into a component with a single input and single output.
-  def lift[In <: Contact, Out <: Contact]
-    (in: In, out: Out)
-    (f: In#Data => Out#Data)
-    : Singleton[In] >> Singleton[Out] =
-  {
-    signalOnContactIn =>
-      val d = signalOnContactIn.safeUnwrap2[In]
-      val res = f(d)
-      val s1: MySignalOnContact[Out] = new MySignalOnContact(out)(res)
-      Iterable.single(signal[Singleton[Out]](s1))
+  def lift[In <: Contact, Out <: Contact](in: In, out: Out)(f: In#Data => Out#Data): Singleton[In] >> Singleton[Out] = signalOnContactIn => {
+    val inputData = signalOnContactIn.safeUnwrap2[In]
+    val result = f(inputData)
+    val outSignal = new MySignalOnContact(out)(result)
+    Iterable.single(signal[Singleton[Out]](outSignal))
   }
 
-  def liftIterable[In <: Contact, Out <: Contact]
-    (in: In, out: Out)
-    (f: In#Data => Iterable[Out#Data])
-    : Singleton[In] >> Singleton[Out] =
-  {
-    signalOnContactIn =>
-      val d = signalOnContactIn.safeUnwrap2[In]
-      val res = f(d)
-      res.map(d => signal[Singleton[Out]](new MySignalOnContact(out)(d)))
+  def liftIterable[In <: Contact, Out <: Contact](in: In, out: Out)(f: In#Data => Iterable[Out#Data]): Singleton[In] >> Singleton[Out] = signalOnContactIn => {
+    val input = signalOnContactIn.safeUnwrap2[In]
+    val results = f(input)
+    results.map(d => signal[Singleton[Out]](new MySignalOnContact(out)(d)))
   }
 
   // wraps a single contact to be both input and output.
-  def trivialLift[C <: Contact]
-    (c: C)
-    : Si[C] >> Si[C] =
-    Iterable.single
+  def trivialLift[C <: Contact](c: C): Si[C] >> Si[C] = Iterable.single
 
   // identity function to simply pass signal
   def identity[In <: Contact, Out <: Contact]
@@ -337,14 +331,9 @@ trait MySignals extends Signals {
 
 
   // wraps a single contact to be both input and output.
-  def liftI1[C <: Contact]
-  (c: C)(f: C#Data => Unit)
-  : Si[C] >> Empty = {
-    signalOnContactIn =>
-      val d = signalOnContactIn.safeUnwrap2[C]
-      f(d)
-      Iterable.empty
+  def liftI1[C <: Contact](c: C)(f: C#Data => Unit): Si[C] >> Empty = signalOnContactIn => {
+    val d = signalOnContactIn.safeUnwrap2[C]
+    f(d)
+    Iterable.empty
   }
-
-
 }

@@ -34,6 +34,4 @@ trait NamedContacts extends Contacts {
 
 }
 
-trait AutoContacts extends Contacts {
-
-}
+trait AutoContacts extends Contacts
