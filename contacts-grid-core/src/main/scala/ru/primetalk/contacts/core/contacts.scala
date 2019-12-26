@@ -34,4 +34,11 @@ trait NamedContacts extends Contacts {
 
 }
 
+/** These are needed for `map` and `flatMap` API/DSL.
+ {{{
+ val myContact = Contact[Int]
+ myContact.map( _ + 1) .flatMap( 0 until _) -
+ }}}
+  each map/flatMap will create a component (?) and a contact.
+*/
 trait AutoContacts extends Contacts

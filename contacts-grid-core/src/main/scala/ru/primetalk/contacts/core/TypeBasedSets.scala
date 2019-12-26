@@ -1,5 +1,6 @@
 package ru.primetalk.contacts.core
 
+@deprecated("Use UniSet", "26.12.2019")
 trait TypeBasedSets {
 
 //  type TypeBasedSet
@@ -11,4 +12,5 @@ trait TypeBasedSets {
 
 }
 
+@deprecated("Use UniSet", "26.12.2019")
 object TypeBasedSets extends TypeBasedSets

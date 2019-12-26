@@ -2,6 +2,7 @@ package ru.primetalk.contacts.core
 
 import UniSets._
 
+@deprecated("Use ComponentAlgebraDependent", "26.12.2019")
 trait ComponentDSL extends ComponentShapeBuilderAPI with MySignals {
 
   def liftIterableToComponent[A<:Contact:ValueOf, B<:Contact:ValueOf](f: A#Data => Iterable[B#Data]): Component[ComponentShape {

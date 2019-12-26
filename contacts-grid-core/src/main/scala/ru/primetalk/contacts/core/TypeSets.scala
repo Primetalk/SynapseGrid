@@ -4,6 +4,7 @@ import scala.annotation.implicitNotFound
 import scala.language.reflectiveCalls
 import UniSets.BelongsTo
 
+@deprecated("Use UniSet", "26.12.2019")
 sealed trait TypeSets1  {
 
   sealed trait TypeSet extends Serializable with Product {
@@ -206,6 +207,7 @@ sealed trait TypeSets1  {
   }
 }
 
+@deprecated("Use UniSet", "26.12.2019")
 sealed trait TypeSets0 extends TypeSets1 {
   implicit def consHead[P[_], E, S <: TypeSet](implicit p: P[E]): Exists[P, E +: S] = new Exists[P, E +: S] {}
 
@@ -282,6 +284,7 @@ sealed trait TypeSets0 extends TypeSets1 {
   def renderKnownTypeSet[A <: TypeSet](a: A): RenderTypeSet[A] = new RenderTypeSet[A] { def apply: A = a }
 }
 
+@deprecated("Use UniSet", "26.12.2019")
 trait UnionTypeSets extends TypeSets0 {
   // see also belongsToB above
 //  implicit def belongsToA[A <: TypeSet, B <: TypeSet, C](implicit u: UnionHelper[A, B], cInA: InnerBelongsTo[C, A]): InnerBelongsTo[C, u.Out] = ???
@@ -312,6 +315,7 @@ trait UnionTypeSets extends TypeSets0 {
 
 }
 
+@deprecated("Use UniSet", "26.12.2019")
 trait IntersectTypeSets extends UnionTypeSets {
   implicit def IntersectionHelperConsContains[E, S <: TypeSet, B <: TypeSet]
   (implicit intersectSB: S IntersectionHelper B, ev: E InnerBelongsTo B): IntersectionHelper[E ConsTypeSet S, B] =
@@ -335,6 +339,7 @@ trait IntersectTypeSets extends UnionTypeSets {
   def ∩[A <: TypeSet, B <: TypeSet](a: A, b: B)(implicit helper: IntersectionHelper[A,B]): helper.Out = helper.apply(a, b)
 }
 
+@deprecated("Use UniSet", "26.12.2019")
 trait TypeSets extends IntersectTypeSets {
 
   implicit class TypeSetOps[S<:TypeSet](val s: S)
@@ -356,4 +361,5 @@ trait TypeSets extends IntersectTypeSets {
   }
 }
 
+@deprecated("Use UniSet", "26.12.2019")
 object TypeSets extends TypeSets

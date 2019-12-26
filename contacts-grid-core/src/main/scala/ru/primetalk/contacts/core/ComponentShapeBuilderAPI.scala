@@ -5,6 +5,7 @@ import UniSets._
 
 import scala.annotation.tailrec
 
+@deprecated("Use ComponentAlgebraDependent", "26.12.2019")
 trait ComponentShapeBuilderAPI extends Signals {
 
 

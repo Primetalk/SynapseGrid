@@ -57,9 +57,7 @@ trait ComponentAlgebraDependentBase { base =>
     def withAddedComponent[C1 <: Component]: WithAddedComponent[C1, Self] =
       new WithAddedComponent[C1, Self] {}
 
-    //TODO: O1 should be subset of Sources? This function can create component with unexpected output.
-    //      implicit out: IsSubSetOf[O1, Union[Sources, Empty]]
-    def toComponent[I1 <: UniSet, O1 <: UniSet](implicit i: IsSubSetOf[I1, Sinks]): ToComponent[I1, O1, Self] =
+    def toComponent[I1 <: UniSet, O1 <: UniSet](implicit i: IsSubSetOf[I1, Sinks], o: IsSubSetOf[O1, Sources]): ToComponent[I1, O1, Self] =
       new ToComponent[I1, O1, Self] {}
   }
 

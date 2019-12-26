@@ -4,6 +4,7 @@ import UniSets._
 
 import scala.annotation.tailrec
 
+@deprecated("Use ComponentAlgebraDependent", "26.12.2019")
 trait ComponentAlgebraBase { base =>
   type ComponentShape[A<: UniSet, B<: UniSet] = (A,B)
 
@@ -86,6 +87,7 @@ trait ComponentAlgebraBase { base =>
   }
 }
 
+@deprecated("Use ComponentAlgebraDependent", "26.12.2019")
 trait ComponentAlgebraFeatures extends ComponentAlgebraBase with Signals {
 
   sealed trait HandlerOf[I <: UniSet, O <: UniSet, C <: Component[I, O]] {
@@ -93,6 +95,7 @@ trait ComponentAlgebraFeatures extends ComponentAlgebraBase with Signals {
   }
 }
 
+@deprecated("Use ComponentAlgebraDependent", "26.12.2019")
 trait HandlerOfs extends ComponentAlgebraFeatures {
   def defineHandlerOf[I <: UniSet, O <: UniSet, C <: Component[I, O]](f: I >> O): HandlerOf[I, O, C] = new HandlerOf[I, O, C] {
     override def handler: I >> O = f
@@ -215,6 +218,7 @@ trait HandlerOfs extends ComponentAlgebraFeatures {
   }
 }
 
+@deprecated("Use ComponentAlgebraDependent", "26.12.2019")
 trait ComponentAlgebraDSL extends HandlerOfs with MySignals { self =>
 
   class ForComponentImpl[In <: Contact, Out <: Contact, C <: Component[Singleton[In], Singleton[Out]]](in: In, out: Out, c: C) {
@@ -236,4 +240,5 @@ trait ComponentAlgebraDSL extends HandlerOfs with MySignals { self =>
   }
 }
 
+@deprecated("Use ComponentAlgebraDependent", "26.12.2019")
 trait ComponentAlgebra extends ComponentAlgebraDSL
