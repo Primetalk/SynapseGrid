@@ -1,29 +1,49 @@
 package ru.primetalk.contacts.dot
 
-trait DotToBlocks extends DotAST {
-  trait Show[T] {
-    def show(t: T): String
+import Show._
+
+trait DotToBlocks extends DotAST with BlocksAST with DotShow {
+  trait ToBlocks[T] {
+    def toBlocks(t: T): BlockElement
   }
-  implicit class ShowOps[T: Show](t: T) {
-    def show: String = implicitly[Show[T]].show(t)
+  implicit class ToBlocksOps[T: ToBlocks](t: T) {
+    def toBlocks: BlockElement = implicitly[ToBlocks[T]].toBlocks(t)
   }
-  implicit class BooleanOps(b: Boolean) {
-    def toOption: Option[Unit] = if(b) Some(()) else None
-    def toList: List[Unit] = if(b) List(()) else Nil
+
+  def arrowForGraphKind(graphKind: graph_kind): String = graphKind match {
+    case graph_kind.graph => " -- "
+    case graph_kind.digraph => " -> "
   }
-  implicit object ShowGraphKind extends Show[graph_kind] {
-    override def show(t: graph_kind): String = t match {
-      case graph_kind.digraph => "digraph"
-      case graph_kind.graph => "graph"
-    }
+
+  def edgeLHSToBlockElements(arrow: String)(edgeLHS: edgeLHS): BlockElements = edgeLHS match {
+    case n: node_id => List(Line(n.show))
+    case s: subgraph => stmtToBlockElements(arrow)(s)
   }
-  def wrapID(id: ID): String = {
-    "\"" + id.replaceAll("\"", "\\\"") + "\""
+  def stmtToBlockElements(arrow: String)(stmt: stmt): BlockElements = stmt match {
+    case attr_stmt(_, attr_list) => List(Line(attr_list.show))
+    case edge_stmt(n: node_id, List(n2: node_id)) => List(Line(n.show + arrow + n2.show))
+    case edge_stmt(edgeLHS, edgeRHS) =>
+      edgeRHS.foldLeft(edgeLHSToBlockElements(arrow)(edgeLHS)){
+        case (blockElements, item) =>
+          blockElements ::: Line(arrow) ::edgeLHSToBlockElements(arrow)(item)
+      }
+    case node_stmt(n: node_id, attr_list) => List(Line(n.show + attr_list.show))
+    case subgraph(id, stmt_list) => List(TitledBlock(
+      id.map(i => List("subgraph", wrapID(i))).getOrElse(Nil),
+      braceKind = CurlyBraces,
+      stmt_list.flatMap(stmtToBlockElements(arrow))
+    ))
   }
-  implicit object ShowGraph extends Show[graph] {
-    override def show(t: graph): String = t match {
+  implicit object ToBlocksGraph extends ToBlocks[graph] {
+    override def toBlocks(t: graph): BlockElement = t match {
       case graph(strict, kind, id, stmt_list) =>
-        (strict.toList.map(_ => "strict") :+ kind.show :+ wrapID(id)).mkString(" ")
+        val arrow = arrowForGraphKind(kind)
+        TitledBlock(
+          (Option.when(strict)("strict").toList :+ kind.show :+ wrapID(id)),
+          braceKind = CurlyBraces,
+          stmt_list.flatMap(stmtToBlockElements(arrow))
+        )
+
     }
   }
 }
