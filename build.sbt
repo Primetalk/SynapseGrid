@@ -30,16 +30,16 @@ lazy val core = (project in file("synapse-grid-core")).settings(
   scalacOptions += "-deprecation"
 )
 
-lazy val contactsCore = (project in file("contacts-grid-core")).settings(
-  commonSettings,
-  name := "contacts-grid-core",
-  libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.19.0"
-)
-
 lazy val contactsDot = (project in file("contacts-grid-dot")).settings(
   commonSettings,
   name := "contacts-grid-dot"
 )
+
+lazy val contactsCore = (project in file("contacts-grid-core")).settings(
+  commonSettings,
+  name := "contacts-grid-core",
+  libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.19.0"
+).dependsOn(contactsDot)
 
 lazy val concurrent = (project in file("synapse-grid-concurrent")).settings(
   commonSettings,
