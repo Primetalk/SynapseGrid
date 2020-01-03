@@ -26,7 +26,7 @@ trait SystemDiagram {
   case class LinkInfo(linkId: LinkId, name: Option[String] = None)
 
   // , inputs: List[Contact], outputs: List[Contact]
-  case class Component(id: String, name: String) extends Identity
+  case class ComponentNode(id: String, name: String) extends Identity
 
   case class Diagram(name: String, nodes: List[Identity], links: List[LinkInfo])
 }
@@ -41,7 +41,7 @@ trait SystemDiagramToDotGraph extends SystemDiagram with DotAST with DotNodeAttr
             (n match {
               case NamedContact(_, name) => List(NodeAttribute.shape(ShapeKind.ellipse), NodeAttribute.label(name))
               case AnonymousContact(_) => List(NodeAttribute.shape(ShapeKind.point))
-              case Component(_, name) => List(NodeAttribute.shape(ShapeKind.component), NodeAttribute.label(name))
+              case ComponentNode(_, name) => List(NodeAttribute.shape(ShapeKind.component), NodeAttribute.label(name))
             }).
               map(nodeAttributeToAttr))
         },
