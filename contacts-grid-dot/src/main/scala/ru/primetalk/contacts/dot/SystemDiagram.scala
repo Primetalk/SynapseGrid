@@ -14,21 +14,21 @@ package ru.primetalk.contacts.dot
   */
 trait SystemDiagram {
 
-  sealed trait Identity {
+  sealed trait DiagramNode {
     val id: String
   }
-  sealed trait Contact extends Identity
-  case class NamedContact(id: String, name: String) extends Contact
-  case class AnonymousContact(id: String) extends Contact
+  sealed trait ContactNode extends DiagramNode
+  case class NamedContactNode(id: String, name: String) extends ContactNode
+  case class AnonymousContactNode(id: String) extends ContactNode
 
   /** Identifier of a link between two nodes. */
-  case class LinkId(id1: Identity, id2: Identity)
+  case class LinkId(id1: DiagramNode, id2: DiagramNode)
   case class LinkInfo(linkId: LinkId, name: Option[String] = None)
 
   // , inputs: List[Contact], outputs: List[Contact]
-  case class ComponentNode(id: String, name: String) extends Identity
+  case class ComponentNode(id: String, name: String) extends DiagramNode
 
-  case class Diagram(name: String, nodes: List[Identity], links: List[LinkInfo])
+  case class Diagram(name: String, nodes: List[DiagramNode], links: List[LinkInfo])
 }
 
 trait SystemDiagramToDotGraph extends SystemDiagram with DotAST with DotNodeAttributes {
@@ -39,8 +39,8 @@ trait SystemDiagramToDotGraph extends SystemDiagram with DotAST with DotNodeAttr
         t.nodes.map{ n =>
           node_stmt(node_id(ID(n.id), port = None),
             (n match {
-              case NamedContact(_, name) => List(NodeAttribute.shape(ShapeKind.ellipse), NodeAttribute.label(name))
-              case AnonymousContact(_) => List(NodeAttribute.shape(ShapeKind.point))
+              case NamedContactNode(_, name) => List(NodeAttribute.shape(ShapeKind.ellipse), NodeAttribute.label(name))
+              case AnonymousContactNode(_) => List(NodeAttribute.shape(ShapeKind.point))
               case ComponentNode(_, name) => List(NodeAttribute.shape(ShapeKind.component), NodeAttribute.label(name))
             }).
               map(nodeAttributeToAttr))

@@ -9,10 +9,16 @@ trait BreadboardToDiagram extends ComponentAlgebraDependent { self =>
 
   import SystemDiagramToDotGraph1._
   trait DiagramNodeInfo[+C] { // we need covariance for Render[ DiagramNodeInfo [Contact
-    def asDiagramNode: ComponentNode
+    def asDiagramNode: DiagramNode
   }
-  class SimpleDiagramNodeInfo[+C](name: String) extends DiagramNodeInfo[C]{
+  class ComponentNodeInfo[+C](name: String) extends DiagramNodeInfo[C]{
     override def asDiagramNode: ComponentNode = ComponentNode(name, name)
+  }
+  class NamedContactNodeInfo[+C](name: String) extends DiagramNodeInfo[C]{
+    override def asDiagramNode: DiagramNode = NamedContactNode(name, name)
+  }
+  class AnonymousContactNodeInfo[+C](id: String) extends DiagramNodeInfo[C]{
+    override def asDiagramNode: DiagramNode = AnonymousContactNode(id)
   }
   sealed trait AsDiagram[B <: Breadboard] {
     def asDiagram: Diagram
@@ -21,12 +27,12 @@ trait BreadboardToDiagram extends ComponentAlgebraDependent { self =>
     def asDiagram(implicit asDiagram: AsDiagram[B]): Diagram = asDiagram.asDiagram
   }
   implicit def emptyBreadboardToAsDiagram: AsDiagram[EmptyBreadboard] = new AsDiagram[EmptyBreadboard] {
-    override def asDiagram: Diagram = Diagram("", Nil, Nil)
+    override def asDiagram: Diagram = Diagram("breadboard", Nil, Nil)
   }
   implicit def withAddedComponentBreadboardToAsDiagram[B0 <: Breadboard, C <: Component]
   (
     implicit
-    cInfo: DiagramNodeInfo[C],
+    cInfo: ComponentNodeInfo[C],
     d0: AsDiagram[B0],
     i1: Render[DiagramNodeInfo[Contact], Map[C#In,DiagramNodeInfo]],
     o1: Render[DiagramNodeInfo[Contact], Map[C#Out,DiagramNodeInfo]]

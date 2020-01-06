@@ -1,5 +1,7 @@
 package ru.primetalk.contacts.core
 
+import java.io.File
+
 import org.specs2.Specification
 import ru.primetalk.contacts.dot.ToIndentedLines
 //import TypeSets._
@@ -116,17 +118,17 @@ class Breadboard3Spec extends Specification
 
   val diagramForEmptyBreadboard =
     implicitly[AsDiagram[EmptyBreadboard]].asDiagram
-  implicit object ParserInfo extends SimpleDiagramNodeInfo[Parser.type]("Parser")
-  implicit object ShowerInfo extends SimpleDiagramNodeInfo[Shower.type]("Shower")
-  implicit object IncrementerInfo extends SimpleDiagramNodeInfo[Incrementer.type]("Incrementer")
+  implicit object ParserInfo extends ComponentNodeInfo[Parser.type]("Parser")
+  implicit object ShowerInfo extends ComponentNodeInfo[Shower.type]("Shower")
+  implicit object IncrementerInfo extends ComponentNodeInfo[Incrementer.type]("Incrementer")
 
 //  implicit object ParserInInfo extends SimpleDiagramNodeInfo[Parser.InContact]("ParserIn")
 //  implicit object ParserOutInfo extends SimpleDiagramNodeInfo[Parser.OutContact]("ParserOut")
 
   implicit def CompInInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): DiagramNodeInfo[C#InContact] =
-    new SimpleDiagramNodeInfo[C#InContact](cInfo.asDiagramNode.name+"In")
+    new NamedContactNodeInfo[C#InContact](cInfo.asDiagramNode.id+"_In")
   implicit def CompOutInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): DiagramNodeInfo[C#OutContact] =
-    new SimpleDiagramNodeInfo[C#OutContact](cInfo.asDiagramNode.name+"Out")
+    new NamedContactNodeInfo[C#OutContact](cInfo.asDiagramNode.id+"_Out")
   implicit def convertImplicitToValueOf[T](implicit t: T): ValueOf[T] = new ValueOf[T](t)
   val a1 = implicitly[Render[DiagramNodeInfo[Contact], Map[Parser.In,DiagramNodeInfo]]]
 //  (
@@ -146,5 +148,7 @@ class Breadboard3Spec extends Specification
   val blockElement: BlockElement = g1.toBlocks
   val lines = ToIndentedLines.ToIndentedLinesOps(blockElement).toIndentedLines
   val str = lines.show
-  str.saveTo("d1.dot")
+  str.saveTo("d2.dot")
+  scala.sys.process.Process("dot -Tpng d2.dot").#>(new File("d2.png")).!
+  //
 }
