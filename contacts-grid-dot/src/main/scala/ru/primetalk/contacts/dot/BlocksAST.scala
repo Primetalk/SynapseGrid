@@ -32,4 +32,10 @@ trait BlocksShow extends BlocksAST {
           IndentedLine(braces(t.braceKind)._2)
         )
   }
+  implicit object ToIndentedLinesBlockElement extends ToIndentedLines[BlockElement] {
+    override def toIndentedLines(t: BlockElement): List[IndentedLine] = t match {
+      case Line(line) => List(IndentedLine(line))
+      case tb@TitledBlock(_,_,_) => tb.toIndentedLines
+    }
+  }
 }

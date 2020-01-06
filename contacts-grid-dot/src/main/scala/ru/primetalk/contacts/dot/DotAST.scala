@@ -15,8 +15,14 @@ trait DotAST {
     case object digraph extends graph_kind
   }
   sealed trait IDTag
+  // An ID is one of the following:
+  // - Any string of alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits ([0-9]), not beginning with a digit;
+  // - a numeral [-]?(.[0-9]+ | [0-9]+(.[0-9]*)? );
+  // - any double-quoted string ("...") possibly containing escaped quotes (\")1;
+  // - an HTML string (<...>).
   type ID = String with IDTag
   def ID(id: String): ID = id.asInstanceOf[ID]
+
   case class graph(strict: Boolean = false, kind: graph_kind = graph_kind.graph, id: ID = ID("graph"), stmt_list: stmt_list)
 
   //stmt_list 	: 	[ stmt [ ';' ] stmt_list ]
@@ -41,7 +47,7 @@ trait DotAST {
   }
   case class attr_stmt(kind: attr_stmt_kind, attr_list: attr_list) extends stmt
   //edge_stmt 	: 	(node_id | subgraph) edgeRHS [ attr_list ]
-  case class edge_stmt(lhs: edgeLHS, edgeRHS: edgeRHS) extends stmt
+  case class edge_stmt(lhs: edgeLHS, edgeRHS: edgeRHS, attr_list: attr_list = Nil) extends stmt
   sealed trait edgeLHS
 
   //edgeRHS 	: 	edgeop (node_id | subgraph) [ edgeRHS ]
@@ -79,6 +85,9 @@ trait DotAST {
   trait ToDotGraph[T] {
     def toDotGraph(t: T): graph
   }
+  implicit class ToDotGraphOps[T: ToDotGraph](t: T){
+    def toDotGraph: graph = implicitly[ToDotGraph[T]].toDotGraph(t)
+  }
 }
 
 trait DotNodeAttributes extends DotAST {
@@ -91,6 +100,9 @@ trait DotNodeAttributes extends DotAST {
     case object tab extends ShapeKind
     case object octagon extends ShapeKind
     case object invhouse extends ShapeKind
+    val values: Seq[ShapeKind] = Seq(point, rectangle, ellipse, component, tab, octagon, invhouse)
+    val names: Seq[String] = Seq("point", "rectangle", "ellipse", "component", "tab", "octagon", "invhouse")
+    val valueToName: Map[ShapeKind, String] = values.zip(names).toMap
   }
 
   sealed trait NodeAttribute
@@ -116,29 +128,23 @@ trait DotNodeAttributes extends DotAST {
   object NodeStyle {
     case object rounded extends NodeStyle
     case object filled extends NodeStyle
+    val values: Seq[NodeStyle] = Seq(rounded, filled)
+    val names: Seq[String] = Seq("rounded", "filled")
+    val valueToName: Map[NodeStyle, String] = values.zip(names).toMap
   }
   def nodeAttributeToAttr(nodeAttribute: NodeAttribute): a_list_item = nodeAttribute match {
     case NodeAttribute.label(label) => a_list_item(ID("label"), ID(label))
-    case NodeAttribute.shape(shapeKind) => a_list_item(ID("shape"), ID(
-      shapeKind match {
-        case ShapeKind.point => "point"
-        case ShapeKind.rectangle => "rectangle"
-        case ShapeKind.ellipse => "ellipse"
-        case ShapeKind.component => "component"
-        case ShapeKind.tab => "tab"
-        case ShapeKind.octagon => "octagon"
-        case ShapeKind.invhouse => "invhouse"
-      }
-    ))
-    case NodeAttribute.color(c) =>  a_list_item(ID("color"), ID(c match {
+    case NodeAttribute.style(s) => a_list_item(ID("style"), ID(s.map(NodeStyle.valueToName).mkString(",")))
+    case NodeAttribute.shape(shapeKind) => a_list_item(ID("shape"), ID(ShapeKind.valueToName(shapeKind)))
+    case NodeAttribute.color(c) => a_list_item(ID("color"), ID(c match {
       case NamedColor(colorName) => colorName
     }
     ))
-    case NodeAttribute.fillcolor(c) =>  a_list_item(ID("fillcolor"), ID(c match {
+    case NodeAttribute.fillcolor(c) => a_list_item(ID("fillcolor"), ID(c match {
       case NamedColor(colorName) => colorName
     }
     ))
-    case NodeAttribute.fontcolor(c) =>  a_list_item(ID("fontcolor"), ID(c match {
+    case NodeAttribute.fontcolor(c) => a_list_item(ID("fontcolor"), ID(c match {
       case NamedColor(colorName) => colorName
     }
     ))

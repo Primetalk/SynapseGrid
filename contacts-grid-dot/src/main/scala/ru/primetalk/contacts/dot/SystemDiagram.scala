@@ -48,7 +48,8 @@ trait SystemDiagramToDotGraph extends SystemDiagram with DotAST with DotNodeAttr
         t.links.map{ link =>
           edge_stmt(
             node_id(ID(link.linkId.id1.id), port = Some(port(None, compass_pt.e))),
-            List(node_id(ID(link.linkId.id2.id), port = Some(port(None, compass_pt.w))))
+            List(node_id(ID(link.linkId.id2.id), port = Some(port(None, compass_pt.w)))),
+            link.name.toList.map(name => a_list_item(ID("label"), ID(name)))
           )
         }
       ).flatten

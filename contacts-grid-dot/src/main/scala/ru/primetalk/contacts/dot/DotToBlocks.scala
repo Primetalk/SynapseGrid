@@ -21,12 +21,13 @@ trait DotToBlocks extends DotAST with BlocksAST with DotShow {
   }
   def stmtToBlockElements(arrow: String)(stmt: stmt): BlockElements = stmt match {
     case attr_stmt(_, attr_list) => List(Line(attr_list.show))
-    case edge_stmt(n: node_id, List(n2: node_id)) => List(Line(n.show + arrow + n2.show))
-    case edge_stmt(edgeLHS, edgeRHS) =>
+    case edge_stmt(n: node_id, List(n2: node_id), attrs) => List(Line(n.show + arrow + n2.show + attrs.show))
+    case edge_stmt(edgeLHS, edgeRHS, attrs) =>
       edgeRHS.foldLeft(edgeLHSToBlockElements(arrow)(edgeLHS)){
         case (blockElements, item) =>
-          blockElements ::: Line(arrow) ::edgeLHSToBlockElements(arrow)(item)
-      }
+          blockElements ::: Line(arrow) :: edgeLHSToBlockElements(arrow)(item)
+      } :+
+        Line(attrs.show)
     case node_stmt(n: node_id, attr_list) => List(Line(n.show + attr_list.show))
     case subgraph(id, stmt_list) => List(TitledBlock(
       id.map(i => List("subgraph", wrapID(i))).getOrElse(Nil),
