@@ -1,16 +1,18 @@
 package ru.primetalk.contacts.core
 
-import ru.primetalk.contacts.dot.{SystemDiagram, SystemDiagramToDotGraph}
-
+import ru.primetalk.contacts.dot.{BlocksShow, DotToBlocks, SystemDiagram, SystemDiagramToDotGraph}
 import UniSets._
 
-object SystemDiagramToDotGraph1 extends SystemDiagramToDotGraph
+object SystemDiagramToDotGraph1 extends SystemDiagramToDotGraph with DotToBlocks with BlocksShow
 
 trait BreadboardToDiagram extends ComponentAlgebraDependent { self =>
 
   import SystemDiagramToDotGraph1._
-  sealed trait DiagramNodeInfo[+C] { // we need covariance for Render[ DiagramNodeInfo [Contact
+  trait DiagramNodeInfo[+C] { // we need covariance for Render[ DiagramNodeInfo [Contact
     def asDiagramNode: ComponentNode
+  }
+  class SimpleDiagramNodeInfo[+C](name: String) extends DiagramNodeInfo[C]{
+    override def asDiagramNode: ComponentNode = ComponentNode(name, name)
   }
   sealed trait AsDiagram[B <: Breadboard] {
     def asDiagram: Diagram

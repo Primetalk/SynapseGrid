@@ -1,10 +1,15 @@
 package ru.primetalk.contacts.core
 
 import org.specs2.Specification
+import ru.primetalk.contacts.dot.ToIndentedLines
 //import TypeSets._
 import ru.primetalk.contacts.core.UniSets._
 
 import scala.util.Try
+import SystemDiagramToDotGraph1._
+import ru.primetalk.contacts.dot.ToIndentedLines._
+import ru.primetalk.contacts.dot.Show._
+import ru.primetalk.contacts.dot.WritableStringDSL._
 
 class Breadboard3Spec extends Specification
   with ComponentAlgebraDependent
@@ -111,6 +116,35 @@ class Breadboard3Spec extends Specification
 
   val diagramForEmptyBreadboard =
     implicitly[AsDiagram[EmptyBreadboard]].asDiagram
-//  val diagramForBbParserIncrementerShower =
-//    implicitly[AsDiagram[bbParserIncrementerShower.type]].asDiagram
+  implicit object ParserInfo extends SimpleDiagramNodeInfo[Parser.type]("Parser")
+  implicit object ShowerInfo extends SimpleDiagramNodeInfo[Shower.type]("Shower")
+  implicit object IncrementerInfo extends SimpleDiagramNodeInfo[Incrementer.type]("Incrementer")
+
+//  implicit object ParserInInfo extends SimpleDiagramNodeInfo[Parser.InContact]("ParserIn")
+//  implicit object ParserOutInfo extends SimpleDiagramNodeInfo[Parser.OutContact]("ParserOut")
+
+  implicit def CompInInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): DiagramNodeInfo[C#InContact] =
+    new SimpleDiagramNodeInfo[C#InContact](cInfo.asDiagramNode.name+"In")
+  implicit def CompOutInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): DiagramNodeInfo[C#OutContact] =
+    new SimpleDiagramNodeInfo[C#OutContact](cInfo.asDiagramNode.name+"Out")
+  implicit def convertImplicitToValueOf[T](implicit t: T): ValueOf[T] = new ValueOf[T](t)
+  val a1 = implicitly[Render[DiagramNodeInfo[Contact], Map[Parser.In,DiagramNodeInfo]]]
+//  (
+//    MapSingletonRender(
+//      convertImplicitToValueOf(
+//        CompInInfo[Parser.type](ParserInfo)),
+//      ev = implicitly[<:<[DiagramNodeInfo[Parser.InContact], DiagramNodeInfo[Contact]]]
+//    )
+//  )
+
+
+  val diagramForBbParser: Diagram =
+    implicitly[AsDiagram[bbParser.Self]](withAddedComponentBreadboardToAsDiagram[EmptyBreadboard, Parser.type]).asDiagram
+  val bbParserIncrementerShowerDiagram: Diagram =
+    implicitly[AsDiagram[bbParserIncrementerShower.Self]].asDiagram
+  val g1: graph = bbParserIncrementerShowerDiagram.toDotGraph
+  val blockElement: BlockElement = g1.toBlocks
+  val lines = ToIndentedLines.ToIndentedLinesOps(blockElement).toIndentedLines
+  val str = lines.show
+  str.saveTo("d1.dot")
 }
