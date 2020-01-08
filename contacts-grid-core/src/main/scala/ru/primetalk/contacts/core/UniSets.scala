@@ -186,54 +186,27 @@ sealed trait IsSubSetOfHighPriority extends IsSubSetOfLowPriority {
 }
 
 sealed trait RenderLowPriority extends UniProperties {
-  implicit def EmptyRender[Up]: Render[Up, Empty] = new Render[Up, Empty] {
-    override def elements: Set[Up] = Set()
-  }
-  implicit def SingletonRender[Up, E<:Up:ValueOf]: Render[Up, Singleton[E]] = new Render[Up, Singleton[E]] {
-    override def elements: Set[Up] = Set(implicitly[scala.ValueOf[E]].value)
-  }
+  protected final case class RenderImpl[Up, S <: UniSet](elements: Set[Up]) extends Render[Up, S]
+  implicit def EmptyRender[Up]: Render[Up, Empty] = RenderImpl[Up, Empty](Set())
+  implicit def SingletonRender[Up, E<:Up:ValueOf]: Render[Up, Singleton[E]] = RenderImpl[Up, Singleton[E]](Set(valueOf[E]))
   // cannot render Universum
   // cannot render Not[A <: UniSet] = Subtract[Universum, A]
-  implicit def UnionRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Union[A,B]] = new Render[Up, Union[A,B]] {
-    override def elements: Set[Up] = ra.elements ++ rb.elements
-  }
-  implicit def IntersectionRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Intersection[A,B]] = new Render[Up, Intersection[A,B]] {
-    override def elements: Set[Up] = ra.elements.intersect(rb.elements)
-  }
-  implicit def SubtractRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Subtract[A,B]] = new Render[Up, Subtract[A,B]] {
-    override def elements: Set[Up] = ra.elements -- rb.elements
-  }
-  implicit def XorRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Xor[A,B]] = new Render[Up, Xor[A,B]] {
-    override def elements: Set[Up] = ra.elements ++ rb.elements -- ra.elements.intersect(rb.elements)
-  }
-  implicit def InsertRender[Up, E<:Up:ValueOf, S <: UniSet](implicit rs: Render[Up, S]): Render[Up, Insert[E, S]] = new Render[Up, Insert[E, S]] {
-    override def elements: Set[Up] = rs.elements + implicitly[ValueOf[E]].value
-  }
+  implicit def UnionRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Union[A,B]] = RenderImpl[Up, Union[A,B]](ra.elements ++ rb.elements)
+  implicit def IntersectionRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Intersection[A,B]] = RenderImpl[Up, Intersection[A,B]](ra.elements.intersect(rb.elements))
+  implicit def SubtractRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Subtract[A,B]] = RenderImpl[Up, Subtract[A,B]](ra.elements -- rb.elements)
+  implicit def XorRender[Up, A <: UniSet, B <: UniSet](implicit ra: Render[Up, A], rb: Render[Up, B]): Render[Up, Xor[A,B]] = RenderImpl[Up, Xor[A,B]](ra.elements ++ rb.elements -- ra.elements.intersect(rb.elements))
+  implicit def InsertRender[Up, E<:Up:ValueOf, S <: UniSet](implicit rs: Render[Up, S]): Render[Up, Insert[E, S]] = RenderImpl[Up, Insert[E, S]](rs.elements + valueOf[E])
 }
-sealed trait RenderMapLowPriority extends UniProperties {
-  implicit def MapEmptyRender[Up, F[_]]: Render[Up, UniMap[Empty, F]] = new Render[Up, UniMap[Empty, F]] {
-    override def elements: Set[Up] = Set()
-  }
-  implicit def MapSingletonRender[Up, E, F[_]](implicit me: ValueOf[F[E]], ev: F[E] <:< Up): Render[Up, UniMap[Singleton[E], F]] = new Render[Up, UniMap[Singleton[E], F]] {
-    override def elements: Set[Up] = Set(implicitly[scala.ValueOf[F[E]]].value)
-  }
+sealed trait RenderMapLowPriority extends RenderLowPriority {
+  implicit def MapEmptyRender[Up, F[_]]: Render[Up, UniMap[Empty, F]] = RenderImpl[Up, UniMap[Empty, F]](Set())
+  implicit def MapSingletonRender[Up, E, F[_]](implicit me: ValueOf[F[E]], ev: F[E] <:< Up): Render[Up, UniMap[Singleton[E], F]] = RenderImpl[Up, UniMap[Singleton[E], F]](Set(valueOf[F[E]]))
   // cannot render Universum
   // cannot render Not[A <: UniSet] = Subtract[Universum, A]
-  implicit def MapUnionRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Union[A,B], F]] = new Render[Up, UniMap[Union[A,B], F]] {
-    override def elements: Set[Up] = ra.elements ++ rb.elements
-  }
-  implicit def MapIntersectionRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Intersection[A,B], F]] = new Render[Up, UniMap[Intersection[A,B], F]] {
-    override def elements: Set[Up] = ra.elements.intersect(rb.elements)
-  }
-  implicit def MapSubtractRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Subtract[A,B], F]] = new Render[Up, UniMap[Subtract[A,B], F]] {
-    override def elements: Set[Up] = ra.elements -- rb.elements
-  }
-  implicit def MapXorRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Xor[A,B], F]] = new Render[Up, UniMap[Xor[A,B], F]] {
-    override def elements: Set[Up] = ra.elements ++ rb.elements -- ra.elements.intersect(rb.elements)
-  }
-  implicit def MapInsertRender[Up, E, S <: UniSet, F[_]](implicit rs: Render[Up, UniMap[S, F]], me: ValueOf[F[E]], ev: F[E] <:< Up): Render[Up, UniMap[Insert[E, S], F]] = new Render[Up, UniMap[Insert[E, S], F]] {
-    override def elements: Set[Up] = rs.elements + implicitly[ValueOf[F[E]]].value
-  }
+  implicit def MapUnionRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Union[A,B], F]] = RenderImpl[Up, UniMap[Union[A,B], F]](ra.elements ++ rb.elements)
+  implicit def MapIntersectionRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Intersection[A,B], F]] = RenderImpl[Up, UniMap[Intersection[A,B], F]](ra.elements.intersect(rb.elements))
+  implicit def MapSubtractRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Subtract[A,B], F]] = RenderImpl[Up, UniMap[Subtract[A,B], F]](ra.elements -- rb.elements)
+  implicit def MapXorRender[Up, A <: UniSet, B <: UniSet, F[_]](implicit ra: Render[Up, UniMap[A,F]], rb: Render[Up, UniMap[B,F]]): Render[Up, UniMap[Xor[A,B], F]] = RenderImpl[Up, UniMap[Xor[A,B], F]](ra.elements ++ rb.elements -- ra.elements.intersect(rb.elements))
+  implicit def MapInsertRender[Up, E, S <: UniSet, F[_]](implicit rs: Render[Up, UniMap[S, F]], me: ValueOf[F[E]], ev: F[E] <:< Up): Render[Up, UniMap[Insert[E, S], F]] = RenderImpl[Up, UniMap[Insert[E, S], F]](rs.elements + valueOf[F[E]])
 }
 sealed trait BelongsToHighPriority extends BelongsToLowPriority {
   implicit def UnionBelongsToA[Element, A <: UniSet,B <: UniSet](implicit ea: BelongsTo[Element, A]): BelongsTo[Element, Union[A,B]] = new BelongsTo[Element, Union[A,B]] {}
