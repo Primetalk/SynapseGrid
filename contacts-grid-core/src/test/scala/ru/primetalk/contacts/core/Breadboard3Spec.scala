@@ -3,7 +3,7 @@ package ru.primetalk.contacts.core
 import java.io.File
 
 import org.specs2.Specification
-import ru.primetalk.contacts.dot.ToIndentedLines
+import ru.primetalk.contacts.dot.{IndentedLine, ToIndentedLines}
 //import TypeSets._
 import ru.primetalk.contacts.core.UniSets._
 
@@ -13,11 +13,14 @@ import ru.primetalk.contacts.dot.ToIndentedLines._
 import ru.primetalk.contacts.dot.Show._
 import ru.primetalk.contacts.dot.WritableStringDSL._
 
+import scala.reflect.runtime.universe._
+
 class Breadboard3Spec extends Specification
   with ComponentAlgebraDependent
   with MySignals
   with NamedContacts
   with BreadboardToDiagram
+  with BreadboardToDiagramAutoNumberedContacts
 { def is = s2"""
 
   This is specification of Breadboard
@@ -118,19 +121,20 @@ class Breadboard3Spec extends Specification
 
   val diagramForEmptyBreadboard =
     implicitly[AsDiagram[EmptyBreadboard]].asDiagram
-  implicit object ParserInfo extends ComponentNodeInfo[Parser.type]("Parser")
-  implicit object ShowerInfo extends ComponentNodeInfo[Shower.type]("Shower")
-  implicit object IncrementerInfo extends ComponentNodeInfo[Incrementer.type]("Incrementer")
+  implicit case object ParserInfo extends ComponentNodeInfo[Parser.type]("Parser")
+  implicit case object ShowerInfo extends ComponentNodeInfo[Shower.type]("Shower")
+  implicit case object IncrementerInfo extends ComponentNodeInfo[Incrementer.type]("Incrementer")
 
 //  implicit object ParserInInfo extends SimpleDiagramNodeInfo[Parser.InContact]("ParserIn")
 //  implicit object ParserOutInfo extends SimpleDiagramNodeInfo[Parser.OutContact]("ParserOut")
 
-  implicit def CompInInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): DiagramNodeInfo[C#InContact] =
-    new NamedContactNodeInfo[C#InContact](cInfo.asDiagramNode.id+"_In")
-  implicit def CompOutInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): DiagramNodeInfo[C#OutContact] =
-    new NamedContactNodeInfo[C#OutContact](cInfo.asDiagramNode.id+"_Out")
-  implicit def convertImplicitToValueOf[T](implicit t: T): ValueOf[T] = new ValueOf[T](t)
-  val a1 = implicitly[Render[DiagramNodeInfo[Contact], Map[Parser.In,DiagramNodeInfo]]]
+
+  implicit def CompInInfo[C <: InOutComponent0](implicit cInfo: ComponentNodeInfo[C]): ValueOf[DiagramNodeInfo[C#InContact]] =
+    new ValueOf(new NamedContactNodeInfo[C#InContact](cInfo.asDiagramNode.id+"_In"))
+  implicit def CompOutInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): ValueOf[DiagramNodeInfo[C#OutContact]] =
+    new ValueOf(new NamedContactNodeInfo[C#OutContact](cInfo.asDiagramNode.id+"_Out"))
+//  implicit def convertImplicitToValueOf[T](implicit t: T): ValueOf[T] = new ValueOf[T](t)
+//  val a1 = implicitly[Render[DiagramNodeInfo[Contact], UniMap[Parser.In,DiagramNodeInfo]]]
 //  (
 //    MapSingletonRender(
 //      convertImplicitToValueOf(
@@ -139,15 +143,16 @@ class Breadboard3Spec extends Specification
 //    )
 //  )
 
+  val i1 = implicitly[Render[DiagramNodeInfoWithContact[Contact], UniMap[Parser.In, DiagramNodeInfoWithContact]]](MapSingletonRender)
 
-  val diagramForBbParser: Diagram =
+  val (diagramForBbParser: Diagram, _) =
     implicitly[AsDiagram[bbParser.Self]](withAddedComponentBreadboardToAsDiagram[EmptyBreadboard, Parser.type]).asDiagram
-  val bbParserIncrementerShowerDiagram: Diagram =
+  val (bbParserIncrementerShowerDiagram: Diagram, _) =
     implicitly[AsDiagram[bbParserIncrementerShower.Self]].asDiagram
   val g1: graph = bbParserIncrementerShowerDiagram.toDotGraph
   val blockElement: BlockElement = g1.toBlocks
-  val lines = ToIndentedLines.ToIndentedLinesOps(blockElement).toIndentedLines
-  val str = lines.show
+  val lines: List[IndentedLine] = blockElement.toIndentedLines
+  val str: String = lines.show
   str.saveTo("d2.dot")
   scala.sys.process.Process("dot -Tpng d2.dot").#>(new File("d2.png")).!
   //
