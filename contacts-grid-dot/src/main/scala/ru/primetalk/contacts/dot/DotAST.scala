@@ -113,6 +113,7 @@ trait DotNodeAttributes extends DotAST {
     case class fontcolor(c: Color) extends NodeAttribute
     case class fillcolor(c: Color) extends NodeAttribute
     case class style(styles: List[NodeStyle]) extends NodeAttribute
+    case class rankdir(rankdir: RankDir) extends NodeAttribute
   }
   sealed trait Color
   case class NamedColor(colorName: String) extends Color
@@ -124,6 +125,9 @@ trait DotNodeAttributes extends DotAST {
   val azure = NamedColor("azure")
   val lightpink = NamedColor("lightpink")
 
+  def colorToID(color: Color): ID = ID(color match {
+    case NamedColor(colorName) => colorName
+  })
   sealed trait NodeStyle
   object NodeStyle {
     case object rounded extends NodeStyle
@@ -132,21 +136,26 @@ trait DotNodeAttributes extends DotAST {
     val names: Seq[String] = Seq("rounded", "filled")
     val valueToName: Map[NodeStyle, String] = values.zip(names).toMap
   }
+
+  sealed trait RankDir
+  object RankDir {
+    case object LR extends RankDir
+    case object TD extends RankDir
+  }
   def nodeAttributeToAttr(nodeAttribute: NodeAttribute): a_list_item = nodeAttribute match {
     case NodeAttribute.label(label) => a_list_item(ID("label"), ID(label))
     case NodeAttribute.style(s) => a_list_item(ID("style"), ID(s.map(NodeStyle.valueToName).mkString(",")))
     case NodeAttribute.shape(shapeKind) => a_list_item(ID("shape"), ID(ShapeKind.valueToName(shapeKind)))
     case NodeAttribute.color(c) => a_list_item(ID("color"), ID(c match {
       case NamedColor(colorName) => colorName
-    }
-    ))
-    case NodeAttribute.fillcolor(c) => a_list_item(ID("fillcolor"), ID(c match {
-      case NamedColor(colorName) => colorName
-    }
-    ))
-    case NodeAttribute.fontcolor(c) => a_list_item(ID("fontcolor"), ID(c match {
-      case NamedColor(colorName) => colorName
-    }
-    ))
+    }))
+    case NodeAttribute.fillcolor(c) => a_list_item(ID("fillcolor"), colorToID(c))
+    case NodeAttribute.fontcolor(c) => a_list_item(ID("fontcolor"), colorToID(c))
+    case NodeAttribute.rankdir(rd) => a_list_item(ID("rankdir"), ID(rd match {
+      case RankDir.LR => "LR"
+      case RankDir.TD => "TD"
+    }))
   }
+  // rankdir = LR
+  // rank=same
 }

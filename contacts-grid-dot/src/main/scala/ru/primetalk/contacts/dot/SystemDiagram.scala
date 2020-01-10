@@ -36,6 +36,7 @@ trait SystemDiagramToDotGraph extends SystemDiagram with DotAST with DotNodeAttr
   implicit object SystemDiagramToDot extends ToDotGraph[Diagram] {
     override def toDotGraph(t: Diagram): graph = graph(id = ID(t.name), kind = graph_kind.digraph,
       stmt_list = List(
+        List(attr_stmt(attr_stmt_kind.graph, List(nodeAttributeToAttr(NodeAttribute.rankdir(RankDir.LR))))),
         t.nodes.map{ n =>
           node_stmt(node_id(ID(n.id), port = None),
             (n match {

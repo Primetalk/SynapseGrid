@@ -37,9 +37,16 @@ trait DotShow extends DotAST {
   implicit object ShowNodeId extends Show[node_id] {
     override def show(t: node_id): String = wrapID(t.id) + t.port.map(_.show).getOrElse("")
   }
+  implicit object ShowAttrListItem extends Show[a_list_item] {
+    override def show(t: a_list_item): String = t match {
+      case a_list_item(id1, id2) => wrapID(id1) + " = " + wrapID(id2)
+    }
+  }
+
   implicit object ShowAttrList extends Show[attr_list] {
-    override def show(t: attr_list): String = if(t.isEmpty) "" else t.map{
-      case a_list_item(id1, id2) => wrapID(id1) + " = " + wrapID(id2)}.mkString("[", "; ", "]")
+    override def show(t: attr_list): String =
+      if(t.isEmpty) ""
+      else t.map(_.show).mkString("[", "; ", "]")
   }
 
 }

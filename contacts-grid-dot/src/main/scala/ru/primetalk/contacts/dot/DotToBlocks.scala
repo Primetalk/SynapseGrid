@@ -20,7 +20,7 @@ trait DotToBlocks extends DotAST with BlocksAST with DotShow {
     case s: subgraph => stmtToBlockElements(arrow)(s)
   }
   def stmtToBlockElements(arrow: String)(stmt: stmt): BlockElements = stmt match {
-    case attr_stmt(_, attr_list) => List(Line(attr_list.show))
+    case attr_stmt(_, attr_list) => attr_list.map(a => Line(a.show))
     case edge_stmt(n: node_id, List(n2: node_id), attrs) => List(Line(n.show + arrow + n2.show + attrs.show))
     case edge_stmt(edgeLHS, edgeRHS, attrs) =>
       edgeRHS.foldLeft(edgeLHSToBlockElements(arrow)(edgeLHS)){
