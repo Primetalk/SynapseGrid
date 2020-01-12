@@ -82,7 +82,7 @@ trait ComponentAlgebraDependentFeatures extends ComponentAlgebraDependentBase wi
   }
 }
 
-trait HandlerOfsDependent extends ComponentAlgebraDependentFeatures {
+trait HandlerOfDependent extends ComponentAlgebraDependentFeatures {
   def defineHandlerOf[C <: Component](f: C#In >> C#Out): HandlerOf[C] = new HandlerOf[C] {
     override def handler: C#In >> C#Out = f
   }
@@ -175,7 +175,7 @@ trait HandlerOfsDependent extends ComponentAlgebraDependentFeatures {
     }
 }
 
-trait ComponentAlgebraDependentDSL extends HandlerOfsDependent with MySignals { self =>
+trait ComponentAlgebraDependentDSL extends HandlerOfDependent with MySignals { self =>
 
   sealed trait MyContact extends Contact
 
