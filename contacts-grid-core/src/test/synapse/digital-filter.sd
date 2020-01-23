@@ -1,0 +1,20 @@
+/**
+ * Constructor that creates buffer component with single input
+ * in: double, single buffered output  out: Array[Double].
+ * When this component receives a new element it decides whether to
+ * issue the frame or to accumulate.
+ */
+def CreateBuffer(length: Int):
+  component Buffer (in: Double) >> (out: Array[Double])
+    with (currentLength: Int = 0, currentBuffer: List[Double] = Nil) = {
+        val buf = in :: currentBuffer
+        if(currentLength == length - 1) {
+          out := buf
+          currentBuffer := Nil
+          currentLength := 0
+        } else {
+          currentBuffer := buf
+          currentLength := currentLength + 1
+        }
+}
+
