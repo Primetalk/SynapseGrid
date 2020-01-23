@@ -1,0 +1,23 @@
+package ru.primetalk.contacts.core
+
+import ru.primetalk.contacts.core.B1._
+
+breadboard B1 = {
+
+    component Parser: (in1: String) >> (out1: Option[Int])
+
+    component Shower Int >> String ...
+
+    component Incrementer  Int >> Int...
+
+    Parser.out1 -> Incrementer.in1
+
+    Incrementer.out1 -> Shower.in1
+
+    interface (Parser.in1) >> (Shower.out1)
+}
+
+breadboard B1impl implements B1 {
+    component Parser =
+        out1 := Try{in1.toInt}.toOption
+}
