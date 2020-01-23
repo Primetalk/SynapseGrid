@@ -4,7 +4,6 @@ import java.io.File
 
 import org.specs2.Specification
 import ru.primetalk.contacts.dot.{IndentedLine, ToIndentedLines}
-//import TypeSets._
 import ru.primetalk.contacts.core.UniSets._
 
 import scala.util.Try
@@ -13,9 +12,8 @@ import ru.primetalk.contacts.dot.ToIndentedLines._
 import ru.primetalk.contacts.dot.Show._
 import ru.primetalk.contacts.dot.WritableStringDSL._
 
-import scala.reflect.runtime.universe._
 
-class Breadboard3Spec extends Specification
+class SimpleBreadboardDiagramSpec extends Specification
   with ComponentAlgebraDependent
   with MySignals
   with NamedContacts
@@ -23,26 +21,11 @@ class Breadboard3Spec extends Specification
   with BreadboardToDiagramAutoNumberedContacts
 { def is = s2"""
 
-  This is specification of Breadboard
+  This is specification of a simple breadboard
 
     - inputs of the component should be known set inputsEq
   """
 
-
-//  type In1 = NamedContact["In1", String]
-//  val In1: In1 = NamedContact["In1", String]
-//
-//  //  val in2 = contact["in2", Int]
-////  val ev = implicitly[NamedContact["in1", Int] =:= NamedContact["in1", Int] ]
-////  val ev = implicitly[in1.type =:= in2.type]
-////  case object In1 extends ContactImpl[String]("In1")
-//  case object Out1 extends ContactImpl[Int]("Out1")
-//
-//  case object In2 extends ContactImpl[Int]("In2")
-//  case object Out2 extends ContactImpl[String]("Out2")
-
-//  val out2 = valueOf[Out2.type]
-//  val out1 = valueOf[Out1.type]
   object Parser extends InOutComponent[String, Int]
   object Shower extends InOutComponent[Int, String]
   object Incrementer extends LinkTwoInOutComponents[Parser.type, Shower.type] {
@@ -73,12 +56,8 @@ class Breadboard3Spec extends Specification
 
   def parse(s: String): Iterable[Int] = Try(s.toInt).toOption
   implicit val parserImpl: HandlerOf[Parser.type] = defineComponentIterable(Parser)(parse)
-//: HandlerOf[UniSets.Singleton[NamedContact["In1", String]], UniSets.Singleton[Out1.type], Parser.type]
-  //  In1.map(s => Try(s.toInt).toOption)
   def show(i: Int): String = i.toString
   implicit val showerImpl = defineComponentImpl(Shower)(show)
-//  implicit val showerImpl2 = //Shower.lift(show(_))
-//    new ComponentOps[In2.type, Out2.type, Shower.type](Shower).lift(show)
 
   def inc(i: Int): Int = i + 1
   implicit val incrementerImpl = defineComponentImpl(Incrementer)(inc)
@@ -97,18 +76,6 @@ class Breadboard3Spec extends Specification
 
   val stringStringImpl = implicitly[HandlerOf[stringStringComponentType]]//(tco)
 
-//  (
-//    toComponentHandlerOf[
-//      bbParserIncrementerShower.Sinks0,
-//      bbParserIncrementerShower.Sources0 ,
-//      bbParserIncrementerShower.type,  Si[In1], Si[Out2.type]])
-
-//  val both = parallelAddComponent(Parser, Shower)
-//
-//  def printer(s: String): Unit = println("printer: " + s)
-//  val liftedPrinter: Si[In1] >> Empty = liftI1(In1)(printer)
-//  val Printer = createComponent(shapePrinter)(liftedPrinter)
-//
   val inputSignal1: SignalOnContact {
     type C = Parser.InContact
   } =  SignalOnContact.create[Parser.InContact]("10")
@@ -124,24 +91,6 @@ class Breadboard3Spec extends Specification
   implicit case object ParserInfo extends ComponentNodeInfo[Parser.type]("Parser")
   implicit case object ShowerInfo extends ComponentNodeInfo[Shower.type]("Shower")
   implicit case object IncrementerInfo extends ComponentNodeInfo[Incrementer.type]("Incrementer")
-
-//  implicit object ParserInInfo extends SimpleDiagramNodeInfo[Parser.InContact]("ParserIn")
-//  implicit object ParserOutInfo extends SimpleDiagramNodeInfo[Parser.OutContact]("ParserOut")
-
-
-  implicit def CompInInfo[C <: InOutComponent0](implicit cInfo: ComponentNodeInfo[C]): ValueOf[DiagramNodeInfo[C#InContact]] =
-    new ValueOf(new NamedContactNodeInfo[C#InContact](cInfo.asDiagramNode.id+"_In"))
-  implicit def CompOutInfo[C <: InOutComponent0](implicit cInfo: DiagramNodeInfo[C]): ValueOf[DiagramNodeInfo[C#OutContact]] =
-    new ValueOf(new NamedContactNodeInfo[C#OutContact](cInfo.asDiagramNode.id+"_Out"))
-//  implicit def convertImplicitToValueOf[T](implicit t: T): ValueOf[T] = new ValueOf[T](t)
-//  val a1 = implicitly[Render[DiagramNodeInfo[Contact], UniMap[Parser.In,DiagramNodeInfo]]]
-//  (
-//    MapSingletonRender(
-//      convertImplicitToValueOf(
-//        CompInInfo[Parser.type](ParserInfo)),
-//      ev = implicitly[<:<[DiagramNodeInfo[Parser.InContact], DiagramNodeInfo[Contact]]]
-//    )
-//  )
 
   val i1 = implicitly[Render[DiagramNodeInfoWithContact[Contact], UniMap[Parser.In, DiagramNodeInfoWithContact]]](MapSingletonRender)
 
