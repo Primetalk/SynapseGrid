@@ -18,3 +18,29 @@ def CreateBuffer(length: Int):
         }
 }
 
+def CreateDigitalFilter(frameLength: Int):
+  component DigitalFilter (in: Array[Double]) >> (out: Array[Double])
+    with (prevOutput: Array[Double] = Array.fill(frameLength)(0.0)) = {
+      // implementation of digital filter (mathematical implementation)
+}
+
+component Unframer (in: Array[Double]) >> (out: Double) = {
+  out ::= in.toIterable
+  /*
+      for{ i <- in } {
+        out := i
+      }
+  */
+}
+
+// NB: there is a delay before first output appears on output.
+// in this case the delay is 160 ticks.
+component Filter (in: Double) >> (out: Double) = {
+  val frameLength = 160
+  val buf1 = CreateBuffer(frameLength)
+  val df1 = CreateDigitalFilter(frameLength)
+  in >> buf1.in
+  buf1.out >> df1.in
+  df1.out >> Unframer.in
+  Unframer.out >> out
+}
