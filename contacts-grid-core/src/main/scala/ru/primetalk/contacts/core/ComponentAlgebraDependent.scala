@@ -177,9 +177,11 @@ trait HandlerOfDependent extends ComponentAlgebraDependentFeatures {
 
 trait ComponentAlgebraDependentDSL extends HandlerOfDependent with MySignals { self =>
 
-  sealed trait MyContact extends Contact
+  sealed trait MyContact extends Contact {self =>
+    type AsUniSet = Si[self.type]
+  }
 
-  abstract class ContactImpl[A](val name: String) extends Product with Serializable with MyContact {
+  abstract class ContactImpl[A](val name: String) extends Product with Serializable with MyContact { self =>
     override type Data = A
   }
 

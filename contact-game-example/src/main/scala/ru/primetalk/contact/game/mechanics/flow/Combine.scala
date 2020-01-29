@@ -12,12 +12,12 @@ trait Combine
 
 
   class DelayedCombineComponent[T1, T2, R] extends Component{
-    override type In = Si[T1] ∪ Si[T2]
-    override type Out = Si[R]
     case object left extends ContactImpl[T1]("left")
     case object right extends ContactImpl[T2]("right")
     case object out extends ContactImpl[R]("out")
 
+    override type In = left.AsUniSet ∪ right.AsUniSet
+    override type Out = out.AsUniSet
   }
 
 
