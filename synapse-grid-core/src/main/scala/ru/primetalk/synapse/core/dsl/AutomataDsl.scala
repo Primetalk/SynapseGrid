@@ -36,7 +36,7 @@ trait AutomataDsl extends SystemBuilderDsl {
 		private val zippedFilteredCache = scala.collection.mutable.Map[(Contact[_], State), Contact[_]]()
 
 		private def zippedFiltered[T](c: Contact[T], s: State): Contact[T] = {
-			zippedFilteredCache.getOrElseUpdate((c, s), zipped(c) flatMap(p ⇒ {
+			zippedFilteredCache.getOrElseUpdate((c, s), zipped(c) flatMap(p => {
 				if (p._1 == s)
 					Seq(p._2)
 				else
@@ -50,13 +50,13 @@ trait AutomataDsl extends SystemBuilderDsl {
 
 		lazy val onTransition = {
 			val c1 = contact[(State, State)]("onTransition")
-			(saveToState -> c1).stateMap(automatonState) { (oldState, newState) ⇒ (newState, (oldState, newState)) }
+			(saveToState -> c1).stateMap(automatonState) { (oldState, newState) => (newState, (oldState, newState)) }
 			c1
 		}
 
 		lazy val onAutomatonStateChanged = {
 			val c2 = contact[(State, State)]("onStateChanged")
-			onTransition.labelNext("hasChanged?") -> c2 filter { case (oldState, newState) ⇒ newState != oldState }
+			onTransition.labelNext("hasChanged?") -> c2 filter { case (oldState, newState) => newState != oldState }
 			c2
 		}
 
@@ -65,7 +65,7 @@ trait AutomataDsl extends SystemBuilderDsl {
 		def switchToState(s: State): Contact[Any] =
 			switchToStateCache.getOrElseUpdate(s, {
 				val c = auxContact[Any](sb)
-				c -> saveToState map(t ⇒ s, nextLabel("", "" + s + "!"))
+				c -> saveToState map(t => s, nextLabel("", "" + s + "!"))
 				c
 			})
 
@@ -94,7 +94,7 @@ trait AutomataDsl extends SystemBuilderDsl {
 			 */
 			def toState(s: State, name: String = ""): Contact[T] = {
 				//			c.updateState(automatonState, nextLabel(name, ""+s+"!"))((s1,t) => s) //.updateState(automatonState, ""+s+"!")((old, t)=>s)
-				c -> saveToState map(t ⇒ s, nextLabel(name, "" + s + "!"))
+				c -> saveToState map(t => s, nextLabel(name, "" + s + "!"))
 				c
 			}
 
@@ -102,22 +102,22 @@ trait AutomataDsl extends SystemBuilderDsl {
 				toState(s, name)
 
 			/** Switches to state and do some work along the way */
-			def moveToState(s: State, name: String = "")(fun: T ⇒ Any) = {
-				c -> saveToState map(t ⇒ {
+			def moveToState(s: State, name: String = "")(fun: T => Any) = {
+				c -> saveToState map(t => {
 					fun(t)
 					s
 				}, nextLabel(name, "" + s + "!"))
 				c
 			}
 
-			def update(fun: (State, T) ⇒ State, name: String = "") = {
+			def update(fun: (State, T) => State, name: String = "") = {
 				c.updateState(automatonState, nextLabel(name, "update automaton"))(fun)
 				c
 			}
 
 			/** Updates state unconditionally (ignores input data). */
-			def updateUnconditionally(fun: State ⇒ State, name: String = "") {
-				c.updateState(automatonState, nextLabel(name, "update uncoditionally"))((s, t) ⇒ fun(s))
+			def updateUnconditionally(fun: State => State, name: String = ""): Unit = {
+				c.updateState(automatonState, nextLabel(name, "update uncoditionally"))((s, t) => fun(s))
 			}
 
 		}
@@ -130,7 +130,7 @@ trait AutomataDsl extends SystemBuilderDsl {
 			s
 		}
 
-		def inState(s: State)(body: ⇒ Unit) {
+		def inState(s: State)(body: => Unit): Unit = {
 			currentConstructingState = s
 			try {
 				body
@@ -147,11 +147,11 @@ trait AutomataDsl extends SystemBuilderDsl {
 			def on[T](c: Contact[T]): Contact[T] = new StateContact(c).when(s)
 
 			def onEntered =
-				onTransition.filter { case (oldState, newState) ⇒ newState == s && oldState != s }
+				onTransition.filter { case (oldState, newState) => newState == s && oldState != s }
 
 			/** a contact will */
 			def ofExited =
-				onTransition.filter { case (oldState, newState) ⇒ oldState == s && newState != s }
+				onTransition.filter { case (oldState, newState) => oldState == s && newState != s }
 		}
 
 		def when(s: State) = new WhenState(s)

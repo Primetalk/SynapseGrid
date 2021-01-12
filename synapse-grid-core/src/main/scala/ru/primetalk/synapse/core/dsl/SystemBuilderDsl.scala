@@ -1,8 +1,9 @@
 package ru.primetalk.synapse.core.dsl
 
 import ru.primetalk.synapse.core.components.StateUpdate
-import ru.primetalk.synapse.core.ext.{SystemBuilderApi, NextLabelExt, DevNullExt, AuxNumberingExt}
+import ru.primetalk.synapse.core.ext.{AuxNumberingExt, DevNullExt, NextLabelExt, SystemBuilderApi}
 
+import scala.annotation.tailrec
 import scala.collection.GenTraversableOnce
 import scala.reflect.ClassTag
 
@@ -19,10 +20,10 @@ import scala.reflect.ClassTag
 //    def directly(name: String = "Δt") =
 //      sb.addLink(p._1, p._2, new NopLink[T1, T2](name))
 //
-//    def filter(predicate: T1 ⇒ Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
+//    def filter(predicate: T1 => Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
 //      sb.addLink(p._1, p._2,
 //        new FlatMapLink[T1, T2]({
-//          x ⇒
+//          x =>
 //            if (predicate(x))
 //              Seq(x: T2)
 //            else
@@ -39,35 +40,35 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
    * DSL methods for creating links between the two given contacts.*/
   implicit class LinkBuilderOps[T1, T2](pair: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
 
-    def labelNext(label: String*) = {
+    def labelNext(label: String*): LinkBuilderOps[T1, T2] = {
       sb.labels(label: _*)
       this
     }
 
-    def map(f: T1 ⇒ T2, name: String = ""): Contact[T2] =
+    def map(f: T1 => T2, name: String = ""): Contact[T2] =
       sb.addLink(pair._1, pair._2, sb.nextLabel(name, "" + f),
         new FlatMapLink[T1, T2](x => Seq(f(x))))
 
     def const(value: T2, name: String = ""): Contact[T2] =
-      sb.addLink(pair._1, pair._2, sb.nextLabel(name, "⇒" + value),
+      sb.addLink(pair._1, pair._2, sb.nextLabel(name, "=>" + value),
         new FlatMapLink[T1, T2]((t: T1) => Seq(value)))
 
-    def flatMap[TSeq](f: T1 ⇒ GenTraversableOnce[T2], name: String = ""): Contact[T2] =
+    def flatMap[TSeq](f: T1 => GenTraversableOnce[T2], name: String = ""): Contact[T2] =
       sb.addLink(pair._1, pair._2, sb.nextLabel(name, "" + f),
         new FlatMapLink[T1, T2](f))
 
-    def flatMapOpt(f: T1 ⇒ Option[T2], name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
+    def flatMapOpt(f: T1 => Option[T2], name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
       flatMap(f(_).toSeq, name)
 
     @deprecated("use #flatMapOpt", "13.04.2015")
-    def optionalMap(f: T1 ⇒ Option[T2], name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
+    def optionalMap(f: T1 => Option[T2], name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
       flatMapOpt(f, name)
 
     //      sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
     //        new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
     //  // this variant of flatMap is conflicting with flatMap-GenTraversableOnce.
     //  // It seems converting Option to Traversable is better.
-    //  def flatMap(f: T1 ⇒ Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
+    //  def flatMap(f: T1 => Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
     //    sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
     //      new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
 
@@ -83,11 +84,11 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     /** Cast data to the given class if possible. If the data cannot be cast, then it is filtered out.
       * Prefer to use castFilter2
       */
-    def castFilter[T3 <: T2](t2Class: Class[T3], name: String = "") = {
+    def castFilter[T3 <: T2](t2Class: Class[T3], name: String = ""): Contact[T2] = {
       sb.addLink(pair._1, pair._2,
         sb.nextLabel(name, "cast[" + t2Class.getSimpleName + "]"),
         new FlatMapLink[T1, T2](
-          d ⇒ if (t2Class.isInstance(d))
+          d => if (t2Class.isInstance(d))
             Seq(d.asInstanceOf[T2])
           else
             Seq()))
@@ -97,7 +98,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
       * This method is preferred because it is less boilerplate. It is often enough to simply mention
       * the type parameter.
       */
-    def castFilter2[T3 <: T2](implicit t3Class: ClassTag[T3]) = {
+    def castFilter2[T3 <: T2](implicit t3Class: ClassTag[T3]): Contact[T2] = {
       sb.addLink(pair._1, pair._2,
         sb.nextLabel("", "cast2[" + t3Class.runtimeClass.getSimpleName + "]"),
         new FlatMapLink[T1, T2]({
@@ -106,12 +107,12 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
         }))
     }
 
-    def collect(f: PartialFunction[T1, T2], name: String = "") =
+    def collect(f: PartialFunction[T1, T2], name: String = ""): Contact[T2] =
       flatMap((t: T1) => {
         if (f.isDefinedAt(t)) Seq(f(t)) else Seq()
       }, name)
 
-    def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, T2)) =
+    def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) => (S, T2)): Contact[T2] =
       sb.addLink(pair._1, pair._2,
         sb.nextLabel(name, "sm"),
         new StatefulFlatMapLink[S, T1, T2](
@@ -120,7 +121,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
             (r._1, Seq(r._2))
           }, stateHandle))
 
-    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) ⇒ (S, GenTraversableOnce[T2])) =
+    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) => (S, GenTraversableOnce[T2])): Contact[T2] =
       sb.addLink(pair._1, pair._2, sb.nextLabel(name, "sfm"),
         new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
@@ -128,14 +129,14 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
 
   implicit class DirectLinkBuilderOps[T1, T2 >: T1](p: (Contact[T1], Contact[T2]))(implicit sb: SystemBuilder) {
-    def directly(name: String = "Δt") =
+    def directly(name: String = "Δt"): Contact[T2] =
       sb.addLink(p._1, p._2, sb.nextLabel(name, "Δt"), new NopLink[T1, T2]())
 
-    def filter(predicate: T1 ⇒ Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
+    def filter(predicate: T1 => Boolean, name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
       sb.addLink(p._1, p._2,
         sb.nextLabel(name, if (name endsWith "?") name else name + "?"),
         new FlatMapLink[T1, T2]({
-          x ⇒
+          x =>
             if (predicate(x))
               Seq(x: T2)
             else
@@ -143,11 +144,11 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
         }))
 
     //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
-    def filterNot(predicateInv: T1 ⇒ Boolean, name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
+    def filterNot(predicateInv: T1 => Boolean, name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
       sb.addLink(p._1, p._2,
         sb.nextLabel(name, if (name endsWith "?") name else name + "?"),
         new FlatMapLink[T1, T2]({
-          x ⇒
+          x =>
             if (!predicateInv(x))
               Seq(x: T2)
             else
@@ -157,7 +158,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
   class ContactWithState[T1, S](val c1: Contact[T1], val stateHandle: StateHandle[S])(implicit sb: SystemBuilder) {
 
-    def stateMap[T2](f: (S, T1) ⇒ (S, T2), name: String = "") =
+    def stateMap[T2](f: (S, T1) => (S, T2), name: String = ""): Contact[T2] =
       sb.addLink(c1, sb.auxContact[T2],
         sb.nextLabel(name, "sm"),
         new StatefulFlatMapLink[S, T1, T2](
@@ -166,12 +167,12 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
             (r._1, Seq(r._2))
           }, stateHandle))
 
-    def stateFlatMap[T2](f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name: String = "") =
+    def stateFlatMap[T2](f: (S, T1) => (S, GenTraversableOnce[T2]), name: String = ""): Contact[T2] =
       sb.addLink(c1, sb.auxContact[T2],
         sb.nextLabel(name, "sfm"),
         new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
-    def updateState(name: String = "")(fun: (S, T1) ⇒ S) {
+    def updateState(name: String = "")(fun: (S, T1) => S): Unit = {
       sb.addComponent(new StateUpdate[S, T1](c1, stateHandle, sb.nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
     }
 
@@ -189,7 +190,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     //
     /** Converts data to pair with current state value. */
     def unzipWithState(stateHandle: StateHandle[Key], name: String = ""): Contact[T] = {
-      (c -> sb.auxContact[T]).stateMap(stateHandle, sb.nextLabel(name, "unzip to " + stateHandle))((s, p: (Key, T)) ⇒ (p._1, p._2))
+      (c -> sb.auxContact[T]).stateMap(stateHandle, sb.nextLabel(name, "unzip to " + stateHandle))((s, p: (Key, T)) => (p._1, p._2))
     }
 
     /** Switches based on the first element of the pair. */
@@ -237,13 +238,13 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
       "This can usually happen when the contact is declared using val, " +
       "but it is placed further down the source code and thus has not been initialized yet.")
 
-    def labelNext(label: String*) = {
+    def labelNext(label: String*): Contact[T] = {
       sb.labels(label: _*)
       c
     }
 
 
-    def output() {
+    def output(): Unit = {
       sb.outputs(c)
     }
 
@@ -258,30 +259,30 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     //    implicit def implLinkBuilder[T1, T2](c: (Contact[T1], Contact[T2])): LinkBuilderOps[T1, T2] = new LinkBuilderOps(c)(sb)
     //
     /** Declares the first contact as input and creates link to the second */
-    def inputMappedTo[T2 >: T](c2: Contact[T2]) = {
+    def inputMappedTo[T2 >: T](c2: Contact[T2]): Contact[T2] = {
       sb.inputs(c)
       >>(c2)
       c2
     }
 
     /** Declares the second contact as output and creates link from the first */
-    def mapToOutput[T2 >: T](c2: Contact[T2]) {
+    def mapToOutput[T2 >: T](c2: Contact[T2]): Unit = {
       sb.outputs(c2)
       >>(c2)
     }
 
-    def >>[T2 >: T](c2: Contact[T2], name: String = "") =
+    def >>[T2 >: T](c2: Contact[T2], name: String = ""): Contact[T2] =
       (c, c2).directly(sb.nextLabel(name, ">>"))
 
     // stock, foreach and exec are similar in that these methods execute some arbitrary function.
     // The difference is only in the signature of the user function.
 
-    def stock(f: T ⇒ Any, name: String = "") = {
+    def stock(f: T => Any, name: String = ""): Contact[T] = {
       (c -> devNull).flatMap((x: T) => Seq(f(x)), sb.nextLabel(name, ">>null"))
       c
     }
 
-    def foreach(body: T ⇒ Any, name: String = "") = {
+    def foreach(body: T => Any, name: String = ""): Contact[T] = {
       sb.addLink(c, devNull, sb.nextLabel(name, "foreach"),
         new FlatMapLink[T, Any](x => {
           body(x)
@@ -291,7 +292,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     }
 
     /** Executes some code with side effects and passes the input data further. */
-    def exec(body: ⇒ Any, name: String = "") = {
+    def exec(body: => Any, name: String = ""): Contact[T] = {
       sb.addLink(c, sb.auxContact[T], sb.nextLabel(name, "exec"),
         new FlatMapLink[T, T]((t: T) => {
           body
@@ -303,46 +304,46 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     /**
      * Filters the data from this contact. Returns another contact that will contain filtered data
      */
-    def filter(predicate: T ⇒ Boolean, name: String = ""): Contact[T] =
+    def filter(predicate: T => Boolean, name: String = ""): Contact[T] =
       (c -> sb.auxContact[T]).filter(predicate, sb.nextLabel(name, "" + predicate + "?"))
 
-    def filterNot(predicateInv: T ⇒ Boolean, name: String = ""): Contact[T] =
+    def filterNot(predicateInv: T => Boolean, name: String = ""): Contact[T] =
       (c -> sb.auxContact[T]).filterNot(predicateInv, sb.nextLabel(name, "!" + predicateInv + "?"))
 
     /**
      * Filters the data from this contact. Returns another contact that will get filtered data.
      */
-    def withFilter(predicate: T ⇒ Boolean): Contact[T] =
+    def withFilter(predicate: T => Boolean): Contact[T] =
       filter(predicate)
 
-    def ifConst(const: T, name: String = "") =
+    def ifConst(const: T, name: String = ""): Contact[T] =
       filterEquals(const, name)
 
-    def filterEquals(const: T, name: String = "") =
+    def filterEquals(const: T, name: String = ""): Contact[T] =
       filter(_ == const, sb.nextLabel(name, "_ == " + const + "?"))
 
 
     /** Creates another contact and links it to this one with transformation f. */
-    def map[T2](f: T ⇒ T2, name: String = ""): Contact[T2] =
+    def map[T2](f: T => T2, name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).map(f, sb.nextLabel(name, "map(" + f + ")"))
 
-    def mapTo[T2](f: T ⇒ T2, auxContact1: Contact[T2] = sb.auxContact[T2]): Contact[T2] =
+    def mapTo[T2](f: T => T2, auxContact1: Contact[T2] = sb.auxContact[T2]): Contact[T2] =
       (c, auxContact1).map(f, sb.nextLabel("", "mapTo(" + f + ")"))
 
     /** Replaces every input item with the provided constant. */
     def const[T2](value: T2, name: String = ""): Contact[T2] =
-      (c, sb.auxContact[T2]).map(t => value, sb.nextLabel(name, "⇒" + value))
+      (c, sb.auxContact[T2]).map(t => value, sb.nextLabel(name, "=>" + value))
 
-    def castFilter2[T3 <: T](implicit t3Class: ClassTag[T3]) =
+    def castFilter2[T3 <: T](implicit t3Class: ClassTag[T3]): Contact[T3] =
       (c, sb.auxContact[T3]).castFilter2(t3Class)//.runtimeClass.asInstanceOf[Class[T3]])
 
-    def castFilter[T3](t3Class: Class[T3], name: String = "") =
+    def castFilter[T3](t3Class: Class[T3], name: String = ""): Contact[T3] =
       (c, sb.auxContact[T3]).castFilter(t3Class)
 
-    def collect[T2](f: PartialFunction[T, T2], name: String = "") =
+    def collect[T2](f: PartialFunction[T, T2], name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).collect(f, name)
 
-    def flatMap[T2](f: T ⇒ TraversableOnce[T2], name: String = ""): Contact[T2] =
+    def flatMap[T2](f: T => TraversableOnce[T2], name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).flatMap(f, sb.nextLabel(name, "fM(" + f + ")"))
 
     @deprecated("use #flatten", "13.04.2015")@inline
@@ -359,30 +360,30 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     /** Update state in state handle. */
 
-    def updateState[S](stateHandle: StateHandle[S], name: String = "")(fun: (S, T) ⇒ S) {
+    def updateState[S](stateHandle: StateHandle[S], name: String = "")(fun: (S, T) => S): Unit = {
       sb.addComponent(new StateUpdate[S, T](c, stateHandle, sb.nextLabel(name, "update(" + fun + "," + stateHandle + ")"), fun))
     }
 
     /** Fold incoming data with state.*/
-    def fold[S](stateHandle: StateHandle[S], name: String = "")(fun:(S,T)=>S) =
+    def fold[S](stateHandle: StateHandle[S], name: String = "")(fun:(S,T)=>S): Unit =
       updateState(stateHandle, sb.nextLabel(name, "fold(" + stateHandle + ")("+fun+")"))(fun)
 
     // Numeric state helpers inc, dec, addTo - these methods do appropriate math operations on Numeric states.
 
-    def inc[S: Numeric](stateHandle: StateHandle[S], name: String = "") {
+    def inc[S: Numeric](stateHandle: StateHandle[S], name: String = ""): Unit = {
       //(implicit ev: S <:< Numeric[S], n : Numeric[S])
       val n = implicitly[Numeric[S]]
       sb.addComponent(new StateUpdate[S, T](c, stateHandle,
         sb.nextLabel(name, "inc(" + stateHandle + ")"), (s, _) => n.plus(s, n.one)))
     }
 
-    def dec[S: Numeric](stateHandle: StateHandle[S], name: String = "") {
+    def dec[S: Numeric](stateHandle: StateHandle[S], name: String = ""): Unit = {
       val n = implicitly[Numeric[S]]
       sb.addComponent(new StateUpdate[S, T](c, stateHandle,
         sb.nextLabel(name, "dec(" + stateHandle + ")"), (s, _) => n.minus(s, n.one)))
     }
 
-    def addTo[S](stateHandle: StateHandle[S], name: String = "")(implicit n: Numeric[S], ev: T <:< S) {
+    def addTo[S](stateHandle: StateHandle[S], name: String = "")(implicit n: Numeric[S], ev: T <:< S): Unit = {
       sb.addComponent(new StateUpdate[S, T](c, stateHandle,
         sb.nextLabel(name, "" + stateHandle + " += _"),
         (s, a) => n.plus(s, a)
@@ -391,26 +392,26 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     def withState[S](stateHandle: StateHandle[S]) = new ContactWithState[T, S](c, stateHandle)(sb)
 
-    def saveTo[S >: T](stateHolder: StateHandle[S], name: String = "") {
-      sb.addComponent(new StateUpdate[S, T](c, stateHolder, sb.nextLabel(name, "saveTo(" + stateHolder + ")"), (s, t) ⇒ t))
+    def saveTo[S >: T](stateHolder: StateHandle[S], name: String = ""): Unit = {
+      sb.addComponent(new StateUpdate[S, T](c, stateHolder, sb.nextLabel(name, "saveTo(" + stateHolder + ")"), (s, t) => t))
     }
 
-    def prependList[S >: T](stateHolder: StateHandle[List[S]], name: String = "") {
-      updateState(stateHolder, sb.nextLabel(name, "addToList(" + stateHolder + ")"))((list, item) ⇒ item :: list)
+    def prependList[S >: T](stateHolder: StateHandle[List[S]], name: String = ""): Unit = {
+      updateState(stateHolder, sb.nextLabel(name, "addToList(" + stateHolder + ")"))((list, item) => item :: list)
     }
 
-    def clearList[S](stateHolder: StateHandle[List[S]], name: String = "") {
-      updateState(stateHolder, sb.nextLabel(name, "clearList(" + stateHolder + ")"))((list, item) ⇒ Nil)
+    def clearList[S](stateHolder: StateHandle[List[S]], name: String = ""): Unit = {
+      updateState(stateHolder, sb.nextLabel(name, "clearList(" + stateHolder + ")"))((list, item) => Nil)
     }
 
-    def setState[S](stateHandle: StateHandle[S], name: String = "")(fun: T ⇒ S) = {
+    def setState[S](stateHandle: StateHandle[S], name: String = "")(fun: T => S): Contact[Any] = {
       new LinkBuilderOps(c, devNull)(sb).stateFlatMap(
         stateHandle, sb.nextLabel(name, "" + stateHandle + " := setState(" + fun + ")")) {
-        (s: S, t: T) ⇒ (fun(t), Seq())
-      }
+          (_: S, t: T) => (fun(t), Seq())
+        }
     }
 
-    def resetState[S](stateHandle: StateHandle[S], name: String = "") =
+    def resetState[S](stateHandle: StateHandle[S], name: String = ""): Contact[Any] =
       setState(stateHandle, sb.nextLabel(name, "" + stateHandle + " := s0"))(_ => stateHandle.s0)
 
 
@@ -428,17 +429,17 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
       res
     }
 
-    def passIfEnabled(stateHandle: StateHandle[Boolean], name: String = "") =
+    def passIfEnabled(stateHandle: StateHandle[Boolean], name: String = ""): Contact[T] =
       passByStateCondition(stateHandle, sb.nextLabel(name, "pass if " + stateHandle.name + "?"))(identity)
 
-    def activate(stateHolder: StateHandle[Boolean], isActive: Boolean = true) = {
-      labelNext("⇒" + isActive)
-      val c2 = (c, sb.auxContact[Boolean]).map(_ ⇒ isActive)
+    def activate(stateHolder: StateHandle[Boolean], isActive: Boolean = true): Contact[T] = {
+      labelNext("=>" + isActive)
+      val c2 = (c, sb.auxContact[Boolean]).map(_ => isActive)
       new ContactOps(c2)(sb).saveTo(stateHolder)
       c
     }
 
-    def deactivate(stateHolder: StateHandle[Boolean]) = {
+    def deactivate(stateHolder: StateHandle[Boolean]): Contact[T] = {
       activate(stateHolder, isActive = false)
       c
     }
@@ -464,29 +465,29 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
      * Latch is a state of type Option[S]. It can be cleared to None by one signal,
      * and set to Some() by another signal. After setting it doesn't change until cleared.
      */
-    def clearLatch[S](stateHolder: StateHandle[Option[S]]) {
+    def clearLatch[S](stateHolder: StateHandle[Option[S]]): Unit = {
       val c2 = sb.auxContact[Option[S]]
-      (new ContactOps(c)(sb).labelNext("⇒None"), c2).map(any ⇒ None)
+      (new ContactOps(c)(sb).labelNext("=>None"), c2).map(_ => None)
       new ContactOps(c2)(sb).saveTo(stateHolder)
     }
 
     /** Sets latch value it it has not been set yet */
-    def latchValue[S >: T](stateHolder: StateHandle[Option[S]], f: T ⇒ S = locally[T](_)) = {
+    def latchValue[S >: T](stateHolder: StateHandle[Option[S]], f: T => S = locally[T](_)): Contact[Any] = {
       new LinkBuilderOps(c, devNull)(sb).stateFlatMap(stateHolder, sb.nextLabel("", "" + stateHolder + "<?=Some")) {
-        (s: Option[S], t: T) ⇒ (if (s.isEmpty) Some(f(t)) else s, Seq())
+        (s: Option[S], t: T) => (if (s.isEmpty) Some(f(t)) else s, Seq())
       }
 
     }
 
 
     /** fires fast execution until the given finishContacts. Be careful. */
-    def fireUntilSet[T2 <: T](start: Contact[T2], finishContacts: Set[Contact[_]], name: String = "") {
+    def fireUntilSet[T2 <: T](start: Contact[T2], finishContacts: Set[Contact[_]], name: String = ""): Unit = {
       sb.addLink[T, T2](c, start, sb.nextLabel(name, "fire"),
         RedMapLink[T, T2](finishContacts + start))
     }
 
     /** fires fast execution until the given finishContacts. Be careful. */
-    def fire[T2 <: T](start: Contact[T2], finishContacts: Contact[_]*) {
+    def fire[T2 <: T](start: Contact[T2], finishContacts: Contact[_]*): Unit = {
       sb.addLink[T, T2](c, start, sb.nextLabel("", "fire"),
         RedMapLink[T, T2](finishContacts.toSet + start))
     }
@@ -502,6 +503,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
      * See #delayN and #countDown and #isZeroCase
      */
     def delay(count: Int): Contact[T] = {
+      @tailrec
       def delay0(c: Contact[T], count: Int): Contact[T] = {
         if (count == 0)
           c
@@ -522,7 +524,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     /** Calculates trellis positions of the given contacts using available links
       * and creates a delayed contact that will get the data from this contact `c` simultaneously
       * with the contact `c2`.*/
-    def delayCorrelated(c2: Contact[_]) = {
+    def delayCorrelated(c2: Contact[_]): Contact[T] = {
       val distance = sb.minDistance(c, c2)
       if (distance == -1)
         throw new IllegalArgumentException(s"Contacts $c and $c2 are uncorrelated.")
@@ -531,7 +533,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     }
 
 
-    def directly[T2 >: T](c2: Contact[T2]) =
+    def directly[T2 >: T](c2: Contact[T2]): Contact[T2] =
       (c, c2).directly(sb.nextLabel("", ">>"))
 
 
@@ -544,7 +546,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
   implicit class StateLinkBuilder2Ops[T1, T2, S](p: (ContactWithState[T1, S], Contact[T2]))(implicit sb: SystemBuilder) {
 
-    def stateMap(f: (S, T1) ⇒ (S, T2), name: String = "") =
+    def stateMap(f: (S, T1) => (S, T2), name: String = ""): Contact[T2] =
       sb.addLink(p._1.c1, p._2,
         sb.nextLabel(name, "sm"),
         new StatefulFlatMapLink[S, T1, T2](
@@ -553,30 +555,30 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
             (r._1, Seq(r._2))
           }, p._1.stateHandle))
 
-    def stateFlatMap(f: (S, T1) ⇒ (S, GenTraversableOnce[T2]), name: String = "") =
+    def stateFlatMap(f: (S, T1) => (S, GenTraversableOnce[T2]), name: String = ""): Contact[T2] =
       sb.addLink(p._1.c1, p._2, sb.nextLabel(name, "sfm"),
         new StatefulFlatMapLink[S, T1, T2](f, p._1.stateHandle))
   }
 
   implicit class StateOps[S](s: StateHandle[S])(implicit sb: SystemBuilder) {
-    def >>:(c: Contact[S]) = {
+    def >>:(c: Contact[S]): Contact[S] = {
       new ContactOps(c)(sb).saveTo(s)
       c
     }
   }
 
   /** Declares the first contact as input and creates link to the second */
-  def mappedInput[T, T2 >: T](c1: Contact[T], c2: Contact[T2])(implicit sb:SystemBuilder) =
+  def mappedInput[T, T2 >: T](c1: Contact[T], c2: Contact[T2])(implicit sb:SystemBuilder): Contact[T2] =
     c1.inputMappedTo(c2)
 
   /** Declares the second contact as output and creates link from the first.
     * NB! Returns inner contact c1. */
-  def mappedOutput[T, T2 >: T](c1: Contact[T], c2: Contact[T2])(implicit sb:SystemBuilder) = {
+  def mappedOutput[T, T2 >: T](c1: Contact[T], c2: Contact[T2])(implicit sb:SystemBuilder): Contact[T] = {
     c1.mapToOutput(c2)
     c1
   }
 
-  def connect[T1, T2 >: T1](c1: Contact[T1], c2: Contact[T2], name: String = "")(implicit sb:SystemBuilder) =
+  def connect[T1, T2 >: T1](c1: Contact[T1], c2: Contact[T2], name: String = "")(implicit sb:SystemBuilder): Contact[T2] =
     c1 >> c2
 
 }

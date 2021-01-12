@@ -43,7 +43,7 @@ with ComponentWithInternalStructure {
 
   /** Initial state of the system.*/
   lazy val s0 = (for {
-    stateHandle ← privateStateHandles
+    stateHandle <- privateStateHandles
   } yield (stateHandle, stateHandle.s0)).toMap[Contact[_], Any]
 
   lazy val staticSubsystems =

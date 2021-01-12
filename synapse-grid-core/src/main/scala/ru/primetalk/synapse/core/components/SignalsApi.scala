@@ -28,9 +28,9 @@ trait SignalsApi extends ContactsDsl {
       }
     }
 
-    def filterFunction = (signals: SignalCollection[Signal[_]]) ⇒ signals.filter(_._1 == c).map(_.asInstanceOf[Signal[T]])
+    def filterFunction = (signals: SignalCollection[Signal[_]]) => signals.filter(_._1 == c).map(_.asInstanceOf[Signal[T]])
 
-    def filterNotFunction = (signals: SignalCollection[Signal[_]]) ⇒ signals.filterNot(_._1 == c)
+    def filterNotFunction = (signals: SignalCollection[Signal[_]]) => signals.filterNot(_._1 == c)
   }
 
   implicit class RichSignalList(signals: Seq[Signal[_]]) {

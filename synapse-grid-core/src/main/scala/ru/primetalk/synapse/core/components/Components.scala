@@ -91,7 +91,7 @@ case class StateUpdate[S, T2](
                                from: Contact[T2],
                                stateHandle: StateHandle[S],
                                override val name: String,
-                               f: (S, T2) ⇒ S) // = (s : S, t : T2) ⇒ t)
+                               f: (S, T2) => S) // = (s : S, t : T2) => t)
   extends Component {
   lazy val inputContacts = Set(from): Set[Contact[_]]
   lazy val outputContacts = Set[Contact[_]]() //stateHolder)

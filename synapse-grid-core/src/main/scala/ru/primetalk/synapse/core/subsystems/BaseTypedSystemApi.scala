@@ -28,20 +28,20 @@ trait BaseTypedSystemApi extends SystemBuilderApi with BaseTypedSystemDsl {
   abstract class BaseTypedSystem(val name: String = "") extends WithStaticSystem {
     protected implicit val sb: SystemBuilder = new SystemBuilderC(if (name == "") {val n = getClass.getSimpleName;if(n.endsWith("$")) n.substring(0, n.length-1)else n} else name)
 
-    protected def defineSystem(implicit sb: SystemBuilder) {}
+    protected def defineSystem(implicit sb: SystemBuilder): Unit = {}
 
     /**
      * Create contact and add it to the builder as an input
      */
     protected
-    def input[T](name: String) =
+    def input[T](name: String): Contact[T] =
       sb.input[T](name)
 
     /**
      * Create contact and add it to the builder as an output
      */
     protected
-    def output[T](name: String) =
+    def output[T](name: String): Contact[T] =
       sb.output[T](name)
 
     private lazy val system = {
@@ -49,7 +49,7 @@ trait BaseTypedSystemApi extends SystemBuilderApi with BaseTypedSystemDsl {
       sb.toStaticSystem
     }
 
-    def toStaticSystem =
+    def toStaticSystem: StaticSystem =
       system
 
     def toTypedSystem:TypedSystem[this.type] = TypedSystem[this.type](this, toStaticSystem)

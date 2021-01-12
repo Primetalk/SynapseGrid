@@ -40,7 +40,7 @@ class ActorForSystemOneLevel(override val systemPath: SystemPath,
     if (systemPath.isEmpty) // for the root system.
       None
     else {
-      implicit val timeout = Timeout(5.seconds)
+      implicit val timeout: Timeout = Timeout(5.seconds)
       val name = realm.getRouterPath(systemPath.take(systemPath.size - 1))
       val actorSelection = context.actorSelection(name)
       log.info(s"Name=$name, sel=$actorSelection")
@@ -62,7 +62,7 @@ class ActorForSystemOneLevel(override val systemPath: SystemPath,
   }
 
   override
-  def preStart() {
+  def preStart(): Unit = {
     selfRouter ! Register(self)
   }
 
@@ -101,6 +101,5 @@ class ActorForSystemOneLevel(override val systemPath: SystemPath,
       systemToRuntimeSystem(path, system, converter, system.outputContacts).
       toTotalTrellisProducer
   }
-
 
 }

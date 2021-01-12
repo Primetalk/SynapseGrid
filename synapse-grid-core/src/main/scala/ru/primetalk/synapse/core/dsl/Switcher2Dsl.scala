@@ -2,8 +2,6 @@ package ru.primetalk.synapse.core.dsl
 
 import ru.primetalk.synapse.core.components.BlackBoxStatelessComponent
 
-import scala.collection.mutable
-
 /**
   * A newer version of API for creating "switcher". A switcher is a component with one input with pair of
   * contact and data and a few outputs of the same data type. It is implemented
@@ -20,6 +18,8 @@ trait Switcher2Dsl extends SystemBuilderDsl{
         {
           case Signal(_, s@Signal(contact, _)) if outputContacts.contains(contact) =>
             Iterable.single(s)
+          case s =>
+            throw new IllegalArgumentException(s"Unexpected signal $s not in $outputContacts")
         }))
     }
 

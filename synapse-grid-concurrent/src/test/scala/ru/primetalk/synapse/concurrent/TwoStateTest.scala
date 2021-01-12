@@ -51,7 +51,7 @@ class TwoStateTest extends FunSuite{
     i1.delay(3).getState(integralSum) >> o1
   }
 
-  def performTest() {
+  def performTest(): Unit = {
     val d = new TwoStates
     val f = d.toStaticSystem.toParallelSimpleSignalProcessor.toMapTransducer(d.i1, d.o1)
     val n = 50

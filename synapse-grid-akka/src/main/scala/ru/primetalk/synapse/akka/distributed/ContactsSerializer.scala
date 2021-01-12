@@ -86,7 +86,7 @@ class ContactsMapExtensionImpl extends Extension {
   private
   var index: Option[ContactsIndexSer] = None
 
-  def setSystem(system: StaticSystem) {
+  def setSystem(system: StaticSystem): Unit = {
     index = Some(ContactsIndexSer(system))
   }
 

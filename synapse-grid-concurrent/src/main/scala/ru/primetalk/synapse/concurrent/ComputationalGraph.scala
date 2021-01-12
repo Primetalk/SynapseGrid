@@ -45,13 +45,14 @@ case class StateRequirement(stateHandles: List[Contact[_]], time: HTime)
  */
 case class UnitOfComputation(signalAtTime: AtTime[Signal[_]], // the signal that triggered the computation.
                              rc: RuntimeComponent) {
-  val stateRequirement = rc match {
+  val stateRequirement: StateRequirement = rc match {
     case RuntimeComponentFlatMap(name, _, _, f) =>
       StateRequirement(List(), signalAtTime.time)
     case RuntimeComponentStateFlatMap(name, _, _, sh, f) =>
       StateRequirement(List(sh), signalAtTime.time)
     case RuntimeComponentMultiState(name, stateHandles, f) =>
       StateRequirement(stateHandles, signalAtTime.time)
+    case _ => throw new IllegalArgumentException(s"Cannot match $rc")
   }
 }
 
@@ -90,7 +91,7 @@ class ComputationState(rs: RuntimeSystem,
   private var failure: Option[Throwable] = None
 
   private
-  def addComputations(units: List[UnitOfComputation]) {
+  def addComputations(units: List[UnitOfComputation]): Unit = {
     this.synchronized {
       computationQueueSorted = units ::: computationQueueSorted
       computationQueueSorted = computationQueueSorted.sortBy(_.signalAtTime.time)
@@ -98,7 +99,7 @@ class ComputationState(rs: RuntimeSystem,
   }
 
   private
-  def addRunningComputation(r: RunningUnitOfComputation) {
+  def addRunningComputation(r: RunningUnitOfComputation): Unit = {
     runningCalculationsSorted = r +: runningCalculationsSorted
     runningCalculationsSorted = runningCalculationsSorted.sortBy(_.u.signalAtTime.time)
   }
@@ -110,7 +111,7 @@ class ComputationState(rs: RuntimeSystem,
 
 
   /** Changes context to the given value */
-  def resetContext(context: Context) {
+  def resetContext(context: Context): Unit = {
     this.synchronized {
       for {sh <- state0.keys} {
         val v = variables(sh).asInstanceOf[SafeVariable[Any]]
@@ -133,7 +134,7 @@ class ComputationState(rs: RuntimeSystem,
     * Starts immediate computations if requirements are met.
     * Adds them to running. Those computations that cannot be started immediately
     * will be put to the computation plan. */
-  def addSignal(signalAtTime: AtTime[Signal[_]]) {
+  def addSignal(signalAtTime: AtTime[Signal[_]]): Unit = {
     val AtTime(time, Signal(contact, _)) = signalAtTime
     if (rs.stopContacts.contains(contact))
       this.synchronized {
@@ -152,12 +153,12 @@ class ComputationState(rs: RuntimeSystem,
     }
   }
 
-  def addSignals(signalsAtTime: SignalCollection[AtTime[Signal[_]]]) {
+  def addSignals(signalsAtTime: SignalCollection[AtTime[Signal[_]]]): Unit = {
     signalsAtTime.foreach(addSignal)
   }
 
   private
-  def start(t: UnitOfComputation) {
+  def start(t: UnitOfComputation): Unit = {
     this.synchronized {
       if (failure.isDefined)
         return
@@ -176,7 +177,7 @@ class ComputationState(rs: RuntimeSystem,
           }
         case RuntimeComponentStateFlatMap(name, _, _, sh, f) =>
           val v = variables(sh).asInstanceOf[SafeVariable[Any]]
-          val f2 = f.asInstanceOf[((Any, Signal[_]) => (Any, List[Signal[_]]))] //(state, signal)=>(state, signals)
+          val f2 = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])] //(state, signal)=>(state, signals)
           Future {
             val signals = v.update2 {
               oldValue => f2(oldValue, signal)
@@ -190,9 +191,10 @@ class ComputationState(rs: RuntimeSystem,
               (sh.asInstanceOf[Contact[Any]], variables(sh).get)).toMap.asInstanceOf[Context] //[Contact[_], _]
             val (newContext, signals) = f2(context, signal)
             for ((sh, v) <- newContext.asInstanceOf[Context])
-              variables(sh).asInstanceOf[SafeVariable[Any]].update(t => v)
+              variables(sh).asInstanceOf[SafeVariable[Any]].update(_ => v)
             ComputationCompleted(t, AtTime.placeAfter(time, signals), AtTime.placeAfter(time, stateHandles))
           }
+        case _ => throw new IllegalArgumentException(s"Cannot match $rc")
       }
       future.onComplete {
         case Success(cc) => computationCompleted(cc)
@@ -203,7 +205,7 @@ class ComputationState(rs: RuntimeSystem,
   }
 
   private
-  def computationCompleted(computationCompleted: ComputationCompleted) {
+  def computationCompleted(computationCompleted: ComputationCompleted): Unit = {
     import computationCompleted._
     addSignals(newSignals) // can be non blocking.
     this.synchronized {
@@ -216,7 +218,7 @@ class ComputationState(rs: RuntimeSystem,
   }
 
   private
-  def computationFailed(u: UnitOfComputation, e: Throwable) {
+  def computationFailed(u: UnitOfComputation, e: Throwable): Unit = {
     this.synchronized {
       val rt = new RuntimeException(s"Exception during $u processing.", e)
       rt.fillInStackTrace()
@@ -247,7 +249,7 @@ class ComputationState(rs: RuntimeSystem,
 
     */
   private
-  def checkPlan() {
+  def checkPlan(): Unit = {
     this.synchronized {
       val times = Int.MaxValue ::
         runningCalculationsSorted.headOption.toList.map(_.u.signalAtTime.time.trellisTime) :::
@@ -259,7 +261,7 @@ class ComputationState(rs: RuntimeSystem,
 
   /** Do not sort computations and update past time boundary. Just tries to find easy jobs. */
   private
-  def fastCheckPlan() {
+  def fastCheckPlan(): Unit = {
     this.synchronized {
       val delayed = mutable.ListBuffer[UnitOfComputation]()
       var alreadyRequiredStates = runningCalculationsSorted.flatMap(_.u.stateRequirement.stateHandles).toSet
@@ -291,7 +293,7 @@ class ComputationState(rs: RuntimeSystem,
 
 
   private
-  def waitUntilCompleted(atMostPerAwaitableFuture: Duration = Duration.Inf) {
+  def waitUntilCompleted(atMostPerAwaitableFuture: Duration = Duration.Inf): Unit = {
     @tailrec
     def waitUntilCompleted0(): Unit = {
       val (failureIsDefined, runningHeadOpt, computationQueueIsEmpty) = this.synchronized {
@@ -325,7 +327,7 @@ class ComputationState(rs: RuntimeSystem,
 
 
 object ComputationState {
-  def runtimeSystemToTotalTrellisProducer(implicit ec: ExecutionContext) =
+  def runtimeSystemToTotalTrellisProducer(implicit ec: ExecutionContext): RuntimeSystem => (Context, Signal[_]) => (Context, List[Signal[_]]) =
     (rs: RuntimeSystem) =>
       (context: Context, signal: Signal[_]) => {
         val cs = new ComputationState(rs, context)

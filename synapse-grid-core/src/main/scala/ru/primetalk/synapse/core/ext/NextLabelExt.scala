@@ -12,7 +12,7 @@ trait NextLabelExt extends SystemBuilderApi {
     private[synapse] var proposedLabels = List[String]()
 
     /** Adds a few labels for subsequent links. */
-    def labels(labels: String*) {
+    def labels(labels: String*): Unit = {
       sb.assertWritable()
       proposedLabels = labels.toList ::: proposedLabels
     }
@@ -25,8 +25,8 @@ trait NextLabelExt extends SystemBuilderApi {
     def nextLabel(userProvidedLabel: String, defaultLabel: => String): String = {
 
       (userProvidedLabel, proposedLabels) match {
-        case ("", List()) ⇒ defaultLabel
-        case ("", head :: tail) ⇒
+        case ("", List()) => defaultLabel
+        case ("", head :: tail) =>
           sb.assertWritable()
           proposedLabels = tail
           head
@@ -35,7 +35,7 @@ trait NextLabelExt extends SystemBuilderApi {
     }
   }
 
-  implicit val LabellingExtId = new SystemBuilderExtensionId[LabellingExt](new LabellingExt(_))
+  implicit val LabellingExtId: SystemBuilderExtensionId[LabellingExt] = new SystemBuilderExtensionId[LabellingExt](new LabellingExt(_))
 
   //(AuxContactNumberingExtId)
   implicit def sbToLabelling(sb: SystemBuilder): LabellingExt = sb.extend[LabellingExt](LabellingExtId)
@@ -43,8 +43,8 @@ trait NextLabelExt extends SystemBuilderApi {
   private[synapse] def nextLabel(userProvidedLabel: String, defaultLabel: => String)(implicit sb:SystemBuilder): String = {
     val lsb = sbToLabelling(sb)
     (userProvidedLabel, lsb.proposedLabels) match {
-      case ("", List()) ⇒ defaultLabel
-      case ("", head :: tail) ⇒
+      case ("", List()) => defaultLabel
+      case ("", head :: tail) =>
         sb.assertWritable()
         lsb.proposedLabels = tail
         head

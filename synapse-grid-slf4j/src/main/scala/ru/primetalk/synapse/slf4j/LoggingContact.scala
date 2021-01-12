@@ -26,19 +26,19 @@ class LoggingContact[T](val c: Contact[T], loggerNamePrefix:String)(implicit sb:
     lazy val loggerName = loggerNamePrefix + "." + c.name
     lazy val logger = LoggerFactory.getLogger(loggerName)
     /** Enables tracing on the contact. */
-    def info(f: Signal[T] ⇒ String = "" + _) = {
-      c.foreach(data ⇒ logger.info(f(Signal(c, data))), "INFO: " + loggerName)
+    def info(f: Signal[T] => String = "" + _) = {
+      c.foreach(data => logger.info(f(Signal(c, data))), "INFO: " + loggerName)
       c
     }
     /** Enables tracing on the contact. */
-    def trace(f: Signal[T] ⇒ String = "" + _) = {
-      c.foreach(data ⇒ logger.trace(f(Signal(c, data))), "TRACE: " + loggerName)
+    def trace(f: Signal[T] => String = "" + _) = {
+      c.foreach(data => logger.trace(f(Signal(c, data))), "TRACE: " + loggerName)
       c
     }
 
     /** Enables tracing on the contact. */
-    def debug(f: Signal[T] ⇒ String = "" + _) = {
-      c.foreach(data ⇒ logger.debug(f(Signal(c, data))), "DEBUG: " + loggerName)
+    def debug(f: Signal[T] => String = "" + _) = {
+      c.foreach(data => logger.debug(f(Signal(c, data))), "DEBUG: " + loggerName)
       c
     }
 

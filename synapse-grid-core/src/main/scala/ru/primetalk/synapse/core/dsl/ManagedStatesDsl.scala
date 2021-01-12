@@ -50,13 +50,13 @@ trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBu
     /** Filters out empty states. */
     def zipWithManagedState[S](ms: ManagedStateSnippet[S], name: String = ""): Contact[(S, T)] =
       c.zipWithState(ms.state, name).labelNext("Some(state)? (state, _)").
-        collect { case (Some(s), v) ⇒
+        collect { case (Some(s), v) =>
         (s:S, v)
       }
 
     def getManagedState[S](ms: ManagedStateSnippet[S], name: String = ""): Contact[S] =
       c.zipWithState(ms.state, name).labelNext("Some(state)? => state").
-        collect { case (Some(s), v) ⇒ s:S}
+        collect { case (Some(s), v) => s:S}
 
     def saveToManagedState[S >: T](ms: ManagedStateSnippet[S], name: String = "") = {
       c >> ms.update
@@ -84,7 +84,7 @@ trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBu
       ms
     }
 
-    def dependsOn[D1](ms1: ManagedStateSnippet[D1])(factory: (D1) ⇒ S) = {
+    def dependsOn[D1](ms1: ManagedStateSnippet[D1])(factory: (D1) => S) = {
       val deps = depsToString(ms1)
 
       ms1.onUpdated. //getManagedState(ms1).
@@ -93,21 +93,21 @@ trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBu
       ms
     }
 
-    def dependsOn[D1, D2](ms1: ManagedStateSnippet[D1], ms2: ManagedStateSnippet[D2])(factory: (D1, D2) ⇒ S) = {
+    def dependsOn[D1, D2](ms1: ManagedStateSnippet[D1], ms2: ManagedStateSnippet[D2])(factory: (D1, D2) => S) = {
       val deps = depsToString(ms1, ms2)
       val depContact = contact[Any](s"invalidateMS${ms.name}")
       ms1.onUpdated >> depContact
       ms2.onUpdated >> depContact
 
       depContact.getManagedState(ms1).zipWithManagedState(ms2).map {
-        case (s2, s1) ⇒
+        case (s2, s1) =>
           factory(s1, s2)
       } saveToManagedState(ms, s"update ${ms.name} from $deps")
 
       ms
     }
 
-    def dependsOn[D1, D2, D3](ms1: ManagedStateSnippet[D1], ms2: ManagedStateSnippet[D2], ms3: ManagedStateSnippet[D3])(factory: (D1, D2, D3) ⇒ S) = {
+    def dependsOn[D1, D2, D3](ms1: ManagedStateSnippet[D1], ms2: ManagedStateSnippet[D2], ms3: ManagedStateSnippet[D3])(factory: (D1, D2, D3) => S) = {
       val deps = depsToString(ms1, ms2, ms3)
       val depContact = contact[Any](s"invalidateMS${ms.name}")
       ms1.onUpdated >> depContact
@@ -115,14 +115,14 @@ trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBu
       ms3.onUpdated >> depContact
 
       depContact.getManagedState(ms1).zipWithManagedState(ms2).zipWithManagedState(ms3).map {
-        case (s3, (s2, s1)) ⇒
+        case (s3, (s2, s1)) =>
           factory(s1, s2, s3)
       } saveToManagedState(ms, s"update ${ms.name} from $deps")
 
       ms
     }
 
-    def dependsOn[D1, D2, D3, D4](ms1: ManagedStateSnippet[D1], ms2: ManagedStateSnippet[D2], ms3: ManagedStateSnippet[D3], ms4: ManagedStateSnippet[D4])(factory: (D1, D2, D3, D4) ⇒ S) = {
+    def dependsOn[D1, D2, D3, D4](ms1: ManagedStateSnippet[D1], ms2: ManagedStateSnippet[D2], ms3: ManagedStateSnippet[D3], ms4: ManagedStateSnippet[D4])(factory: (D1, D2, D3, D4) => S) = {
       val deps = depsToString(ms1, ms2, ms3, ms4)
       val depContact = contact[Any](s"invalidateMS${ms.name}")
       ms1.onUpdated >> depContact
@@ -131,7 +131,7 @@ trait ManagedStatesDsl extends BaseTypedSystemDsl with ContactsDsl with SystemBu
       ms4.onUpdated >> depContact
 
       depContact.getManagedState(ms1).zipWithManagedState(ms2).zipWithManagedState(ms3).zipWithManagedState(ms4).map {
-        case (s4, (s3, (s2, s1))) ⇒
+        case (s4, (s3, (s2, s1))) =>
           factory(s1, s2, s3, s4)
       } saveToManagedState(ms, s"update ${ms.name} from $deps")
 

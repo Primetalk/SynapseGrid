@@ -27,7 +27,7 @@ trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
   type TrellisProducer = TrellisElement => TrellisElement
   /** A function that takes a single signal on input and returns the last trellis element.
     * This producer does not store managed state in it.*/
-  type TotalTrellisProducer = ((Context, Signal[_]) => TrellisElement)
+  type TotalTrellisProducer = (Context, Signal[_]) => TrellisElement
 
   implicit class RichTotalTrellisProducer(ttp: TotalTrellisProducer) {
     /** Creates hidden state that will be maintained between different signals.
@@ -46,7 +46,7 @@ trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
   }
 
   implicit class RichSimpleSignalProcessor(sp: SimpleSignalProcessor) {
-    def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
+    def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]): TInput => SignalCollection[TOutput] = {
       data: TInput =>
         val inputSignal = Signal(input, data)
         val outputSignals = sp(inputSignal)
@@ -55,7 +55,7 @@ trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
         }
     }
 
-    def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) = {
+    def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]): TInput => TOutput = {
       data: TInput =>
         val inputSignal = Signal(input, data)
         val outputSignals = sp(inputSignal)

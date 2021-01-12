@@ -36,7 +36,7 @@ sealed trait LinkInfo[-T1, +T2]
 /**
  * The kind of link that does sequential transformation of data.
  */
-case class FlatMapLink[-T1, +T2](f: T1 ⇒ GenTraversableOnce[T2])
+case class FlatMapLink[-T1, +T2](f: T1 => GenTraversableOnce[T2])
   extends LinkInfo[T1, T2]
 
 /**
@@ -45,7 +45,7 @@ case class FlatMapLink[-T1, +T2](f: T1 ⇒ GenTraversableOnce[T2])
  * Prefer to use StateZipLink (?)
  */
 case class StatefulFlatMapLink[S, -T1, +T2](
-	f: (S, T1) ⇒ (S, GenTraversableOnce[T2]),
+	f: (S, T1) => (S, GenTraversableOnce[T2]),
   stateHolder: StateHandle[S])
   extends LinkInfo[T1, T2]
 

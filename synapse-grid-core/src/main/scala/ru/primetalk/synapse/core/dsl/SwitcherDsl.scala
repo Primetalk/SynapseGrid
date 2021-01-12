@@ -52,7 +52,7 @@ trait SwitcherDsl extends SystemBuilderDsl{
       res
     }
 
-    private def compileSelector() {
+    private def compileSelector(): Unit = {
       completed = true
       val conditionsList = conditions.toSeq
       (c -> fireSelector).map(value => {

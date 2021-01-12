@@ -43,20 +43,24 @@ class ManagedStateTest extends FunSuite {
 			val recalcAB: Contact[Int] = contact[Int]("recalcAB")
 			a >> recalcAB
 			b >> recalcAB
-			recalcAB.zipWithManagedState(a).zipWithManagedState(b).map { abp ⇒
+			recalcAB.zipWithManagedState(a).zipWithManagedState(b).map { abp =>
 				val (bv, (av, _)) = abp
 				av + bv
 			} saveToManagedState `a+b`
 
 			val recalcABC = contact[Int]("recalcABC")
+
 			c >> recalcABC
+
 			`a+b` >> recalcABC
-			recalcABC.zipWithManagedState(`a+b`).zipWithManagedState(c).map { scp ⇒
+
+			recalcABC.zipWithManagedState(`a+b`).zipWithManagedState(c).map { scp =>
 				val (cv, (sv, _)) = scp
 				sv * cv
 			} saveToManagedState `(a+b)*c`
 
 			`a+b` >> ABOutput
+
 			`(a+b)*c` >> ABCOutput
 		}
 	}
@@ -78,21 +82,23 @@ class ManagedStateTest extends FunSuite {
 			CInput >>: c
 
 			val `a+b` = managedState[Int]("a+b")
+
 			`a+b` >> ABOutput
+
 			val `(a+b)*c` = managedState[Int]("(a+b)*c")
+
 			`(a+b)*c` >> ABCOutput
 
 			`a+b`.dependsOn(a, b)(_ + _)
 
-			`(a+b)*c`.dependsOn(`a+b`, c) { (sv, cv) ⇒
-				sv * cv
-			}
+			`(a+b)*c`.dependsOn(`a+b`, c) (_ * _)
+
 		}
 	}
 	
 
-	val abcSystem = new ABCBuilder().toStaticSystem
-	val abcShortSystem = new ABCShortBuilder().toStaticSystem
+	val abcSystem: StaticSystem = new ABCBuilder().toStaticSystem
+	val abcShortSystem: StaticSystem = new ABCShortBuilder().toStaticSystem
 	
 	
 	

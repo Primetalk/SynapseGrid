@@ -26,7 +26,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
     type TrellisElement = (Context, TSignals)
     type TrellisElementTracking = (Context, TSignals)
     type TrellisProducerTracking = TotalTrellisBuilder => TSignals => TSignals
-    type TotalTrellisProducerTracking = ((Context, Signal[_]) => TrellisElementTracking)
+    type TotalTrellisProducerTracking = (Context, Signal[_]) => TrellisElementTracking
 
     implicit def tSignalToSignal(s: TSignal): Signal[_]
 
@@ -39,13 +39,13 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
     trait TotalTrellisBuilder {
       def currentState: Context
 
-      def currentState_=(ctx: Context)
+      def currentState_=(ctx: Context): Unit
 
       /** Saves the signal that is the last one in a trace. It didn't produce output. */
-      def saveTerminatedSignal(signal: TSignal)
+      def saveTerminatedSignal(signal: TSignal): Unit
 
       /** Save the signal that appeared on the stop-contact. */
-      def saveStopSignal(signal: TSignal)
+      def saveStopSignal(signal: TSignal): Unit
 
       /** Completes the previous step and starts a new time moment.
         *
@@ -58,7 +58,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
         * @param trace original signal that has lead to the exception
         * @param proc  signal processor
         */
-      def addException(trace: TSignal, proc: RuntimeComponent, exception: Throwable)
+      def addException(trace: TSignal, proc: RuntimeComponent, exception: Throwable): Unit
 
       /** The list of signals on stop contacts. */
       def stopSignals: TSignals
@@ -73,16 +73,16 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
     trait TrellisBuilder {
       def currentState: Context
 
-      def currentState_=(ctx: Context)
+      def currentState_=(ctx: Context): Unit
 
-      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]])
+      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]]): Unit
 
       /** Adds an exception to the trellis.
         * Usually calls runtimeSystem.unhandledExceptionHandler.
         * @param trace original signal that has lead to the exception
         * @param proc  signal processor
         */
-      def addException(trace: TSignal, proc: RuntimeComponent, exception: Throwable)
+      def addException(trace: TSignal, proc: RuntimeComponent, exception: Throwable): Unit
 
       def toTrellisElement: TSignals
     }
@@ -102,7 +102,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
       def processSignal(trace: TSignal, trellisBuilder: TrellisBuilder): Context = {
         val signal = trace: Signal[_]
         val c = signal.contact
-        for (proc ← signalProcessors(c)) {
+        for (proc <- signalProcessors(c)) {
           try {
             proc match {
               case r@RuntimeComponentMultiState(_, _, f) =>
@@ -119,6 +119,8 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
                 val (ns, signals) = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])](s, signal)
                 trellisBuilder.currentState = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]].updated(sh, ns).asInstanceOf[Context]
                 trellisBuilder.addSignals(trace, proc, signals)
+              case _ =>
+                throw new IllegalArgumentException(s"Cannot process $proc")
             }
           } catch {
             case e: Throwable =>
@@ -184,7 +186,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
         val totalTrellisBuilderTracking = newTotalTrellisBuilder(trellisProducer.runtimeSystemForTrellisProcessing.runtimeSystem, context)
         val trellisProducer1 = trellisProducer(totalTrellisBuilderTracking)(_)
         try {
-          def from(t0: TSignals): Stream[TSignals] =
+          def from(t0: TSignals): LazyList[TSignals] =
             t0 #:: from(trellisProducer1(t0))
 
           val finalTrellisElement = from(List(signalToTSignal(signal))).
@@ -217,7 +219,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
 
   implicit class RichRuntimeSystem(runtimeSystem: RuntimeSystem) {
     /** Converts the runtime system to a RuntimeComponentHeavy that does all inner processing in a single outer step. */
-    def toTotalTrellisProducer = //: TotalTrellisProducer
+    def toTotalTrellisProducer: signalProcessing.TotalTrellisProducerTracking = //: TotalTrellisProducer
       signalProcessing.rsToTrellisProducer(runtimeSystem)
 
     //runtimeSystemToTotalTrellisProducerConverter(runtimeSystem)

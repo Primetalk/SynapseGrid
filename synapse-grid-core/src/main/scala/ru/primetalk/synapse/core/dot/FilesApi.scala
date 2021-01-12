@@ -12,7 +12,7 @@ import scala.util.Try
 trait FilesApi {
 
   implicit class WritableString(s: String) {
-    def saveTo(filePath: String) {
+    def saveTo(filePath: String): Unit = {
       val wrt = new PrintWriter(new File(filePath), "UTF-8")
       try {
         wrt.print(s)

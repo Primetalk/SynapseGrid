@@ -12,12 +12,13 @@
  */
 package ru.primetalk.synapse.akka
 
-import akka.event.{LoggingReceive, Logging}
+import akka.event.{Logging, LoggingAdapter, LoggingReceive}
 import ru.primetalk.synapse.akka.SpecialActorContacts._
 import ru.primetalk.synapse.akka.impl.EscalatingActor
 import ru.primetalk.synapse.core._
 import ru.primetalk.synapse.akka.SpecialActorContacts.InitCompleted
 import org.slf4j.MDC
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -29,21 +30,21 @@ import scala.language.postfixOps
 class DynamicSystemActor(path: List[String], system: DynamicSystem) extends EscalatingActor {
 
   require(path.nonEmpty,"The system's path should  not be empty")
-  val log = Logging(context.system, this)
+  val log: LoggingAdapter = Logging(context.system, this)
 
-  private def innerProcessSignals(ls: List[Signal[_]]) {
+  private def innerProcessSignals(ls: List[Signal[_]]): Unit = {
     MDC.put("akkaSource", "" + self.path)
     val results = ls.flatMap(system.receive)
     if (results.nonEmpty)
       context.parent ! InternalSignalsDist(path, results.map(system.index.convertSignalToSignalDist))
   }
 
-  val processSignals =
+  val processSignals: List[Signal[_]] => Unit =
     if (system.inputContacts.contains(SenderInput)) // the check is done at the beginning.
-      (ls: List[Signal[_]]) ⇒
+      (ls: List[Signal[_]]) =>
         innerProcessSignals(Signal(SenderInput, sender()) :: ls)
     else
-      innerProcessSignals _
+      innerProcessSignals
 
   private object Tick
 
@@ -51,8 +52,8 @@ class DynamicSystemActor(path: List[String], system: DynamicSystem) extends Esca
     context.system.scheduler.schedule(0 milliseconds, 10 milliseconds, // scheduler has 100ms precision. Thus it will be called only once in 100 ms. (tick-interval)
       self, Tick)(context.dispatcher)
 
-  def receive = LoggingReceive {
-    case s@Signal(_, _) ⇒
+  def receive: Receive = LoggingReceive {
+    case s@Signal(_, _) =>
       processSignals(s :: Nil)
     case InternalSignalsDist(systemPath, signalsDist) =>
 
@@ -64,12 +65,12 @@ class DynamicSystemActor(path: List[String], system: DynamicSystem) extends Esca
             throw new NotImplementedError("Processing signals for innermost systems is not implemented " + systemPath)
         }
       )
-    case nonSignalMessage ⇒
+    case nonSignalMessage =>
       val s = Signal(NonSignalWithSenderInput, (sender(), nonSignalMessage))
       processSignals(s :: Nil)
   }
 
-  override def preStart() {
+  override def preStart(): Unit = {
     if (system.inputContacts.contains(ContextInput))
       processSignals(Signal(ContextInput, context) :: Nil)
     if (system.inputContacts.contains(PreStartInput))
@@ -77,7 +78,7 @@ class DynamicSystemActor(path: List[String], system: DynamicSystem) extends Esca
     context.parent ! InitCompleted(self)
   }
 
-  override def postStop() {
+  override def postStop(): Unit = {
     if (system.inputContacts.contains(PostStopInput))
       processSignals(Signal(PostStopInput, PostStop) :: Nil)
   }

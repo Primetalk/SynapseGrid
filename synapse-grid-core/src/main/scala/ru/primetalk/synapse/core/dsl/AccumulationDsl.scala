@@ -16,7 +16,7 @@ trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDsl {
     val seqOut = contact[List[T]](name + "List")
     val collection = sb.state[List[T]](name, Nil)
     new LinkBuilderOps(trigger -> seqOut)(sb).stateMap(collection, "trigger") {
-      (s: List[T], input: TTrigger) ⇒
+      (s: List[T], input: TTrigger) =>
         val s2 = Nil: List[T]
         (s2, s)
     }

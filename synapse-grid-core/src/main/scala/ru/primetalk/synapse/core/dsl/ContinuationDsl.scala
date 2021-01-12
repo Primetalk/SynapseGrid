@@ -22,7 +22,7 @@ package ru.primetalk.synapse.core.dsl
  *
  */
 trait ContinuationDsl extends SystemBuilderDsl {
-  type FCont[T1, T2] = T1 ⇒ Continuation[T1, T2]
+  type FCont[T1, T2] = T1 => Continuation[T1, T2]
 
   /**
    * Returns some piece of code to run next time the data is
@@ -63,10 +63,10 @@ trait ContinuationDsl extends SystemBuilderDsl {
     def expectingFlatMap(function: Continuation[T1, T2], name: String = "") = {
       val stateHolder = sb.state[Continuation[T1, T2]](name, function)
       new LinkBuilderOps(c)(sb).stateFlatMap[Continuation[T1, T2]](stateHolder, nextLabel(name, "expect")) {
-        (s0: Continuation[T1, T2], d: T1) ⇒
+        (s0: Continuation[T1, T2], d: T1) =>
           s0 match {
-            case Done(result) ⇒ (s0, result)
-            case ContinuationCalcWithResult(f, result) ⇒
+            case Done(result) => (s0, result)
+            case ContinuationCalcWithResult(f, result) =>
               val cont = f(d)
               (cont, cont.result)
             //						case ContinuationCalcNoResult(f) => (f(d), Seq())
@@ -75,7 +75,7 @@ trait ContinuationDsl extends SystemBuilderDsl {
 
     }
 
-    def expectingNext(f: T1 ⇒ Continuation[T1, T2],
+    def expectingNext(f: T1 => Continuation[T1, T2],
                       name: String = "") =
       expectingFlatMap(ContinuationCalcWithResult(f, Seq[T2]()), nextLabel(name, "expect"))
 
@@ -97,6 +97,6 @@ sealed trait Continuation[T1, T2] {
  * a continuation with calculations. Returns some result before
  * entering expectation state
  */
-case class ContinuationCalcWithResult[T1, T2](f: T1 ⇒ Continuation[T1, T2], result: Seq[T2]) extends Continuation[T1, T2]
+case class ContinuationCalcWithResult[T1, T2](f: T1 => Continuation[T1, T2], result: Seq[T2]) extends Continuation[T1, T2]
 
 case class Done[T1, T2](result: Seq[T2]) extends Continuation[T1, T2]

@@ -21,7 +21,7 @@ import scala.language.implicitConversions
 @deprecated("use Slf4jApi and extension", "01.04.2015")
 trait SystemBuilderWithLogging extends SystemBuilder {
 
-  val loggerNamePrefix = getClass.getName.replaceAllLiterally("$", "_") //"ru.primetalk.system2.contacts."
+  val loggerNamePrefix = getClass.getName.replace("$", "_") //"ru.primetalk.system2.contacts."
 
 
   implicit def contactToLoggingContact[T](c:Contact[T]): LoggingContact[T] =

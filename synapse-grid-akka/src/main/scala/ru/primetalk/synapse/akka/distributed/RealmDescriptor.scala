@@ -13,7 +13,7 @@
 package ru.primetalk.synapse.akka.distributed
 
 import ru.primetalk.synapse.core
-import akka.actor.{SupervisorStrategy, Props, ActorRefFactory, ActorPath}
+import akka.actor.{ActorPath, ActorRef, ActorRefFactory, Props, SupervisorStrategy}
 import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.akka.ActorComponent
 import ru.primetalk.synapse.core.components.{Component, ComponentWithInternalStructure}
@@ -44,7 +44,7 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
   }
 
   /** List paths of systems that should be created at this host. */
-  def pathsForHost(host: ActorPath) =
+  def pathsForHost(host: ActorPath): Set[_root_.ru.primetalk.synapse.core.SystemPath] =
     deployment.filter(_._2 == host).flatMap(_._1).toSet
 
   private
@@ -56,12 +56,12 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
    * @param s the system to create routers
    * @return collection of SystemPath -> ActorRef - routers for every InnerActorSubsystem.
    */
-  def createRouters(s: Component)(context: ActorRefFactory) =
+  def createRouters(s: Component)(context: ActorRefFactory): List[(_root_.ru.primetalk.synapse.core.SystemPath, ActorRef)] =
     actorInnerSubsystems2(s).map(_._1).map {
       path =>
         val actorName = systemPathToActorName(path)
         //        log.info("router " + actorName + " for " + path)
-        (path, context.actorOf(Props[RouterBecome], actorName))
+        (path, context.actorOf(Props[RouterBecome](), actorName))
     }
 
   /** Recursively finds all subsystems of the system. */
@@ -81,7 +81,7 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
                        pathsForThisHost: Set[core.SystemPath])(context: ActorRefFactory,
                                                                supervisorStrategy: SupervisorStrategy =
                                                                defaultSupervisorStrategy,
-                                                               outputFun: Option[InternalSignalsDist => Any] = None, realm: RealmDescriptor) = {
+                                                               outputFun: Option[InternalSignalsDist => Any] = None, realm: RealmDescriptor): List[ActorRef] = {
     for {
       (path, actorSubsystem) <- actorInnerSubsystems2(s)
       if pathsForThisHost.contains(path) // we construct only those subsystems that should be instantiated at this host
@@ -102,7 +102,7 @@ final case class HostId(host: String, port: Int, actorSystemName: String, hostAc
   override
   def toString = s"akka.tcp://$actorSystemName@$host:$port/user/$hostActorName"
 
-  def toActorPath =
+  def toActorPath: ActorPath =
     ActorPath.fromString(toString)
 }
 

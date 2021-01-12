@@ -26,7 +26,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     * Not only it create contact instances, but it usually transforms and collect them. */
   trait OuterInterfaceBuilder {
     /** Changes the name of the component. */
-    def setSystemName(name:String)
+    def setSystemName(name:String): Unit
 
     /** creates a contact that will be used as input contact. */
     def input[T](internalName: String): Contact[T]
@@ -54,17 +54,17 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
         ""
       else
         getClass.getSimpleName.
-          replaceAllLiterally("Builder", "").
-          replaceAllLiterally("BuilderC", "").
-          replaceAllLiterally("$", "")
+          replace("Builder", "").
+          replace("BuilderC", "").
+          replace("$", "")
 
-    def setSystemName(name: String) {
+    def setSystemName(name: String): Unit = {
       this.name = name
     }
 
-    def systemName = name
+    def systemName: String = name
 
-    def systemName_=(name: String) {
+    def systemName_=(name: String): Unit = {
       this.name = name
     }
 
@@ -80,7 +80,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     private[core] val extensions = mutable.Map[SystemBuilderExtensionId[_], SystemBuilderExtension]()
 
     /** Constructs the current version of static system. */
-    def toStaticSystem = {
+    def toStaticSystem: StaticSystem = {
       val s0 = StaticSystem(
         /** A subset of contacts */
         inputContacts.toList.distinct,
@@ -100,13 +100,13 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
      * Sets this builder to the read only mode. Subsequent modifications will lead to
      * exceptions.
      */
-    def readOnly() {
+    def readOnly(): Unit = {
       isReadOnly = true
     }
 
     private var isReadOnly = false
 
-    private[core] def assertWritable() {
+    private[core] def assertWritable(): Unit = {
       if (isReadOnly)
         throw new IllegalStateException(s"The system builder '$name' is in read only mode.")
     }
@@ -114,7 +114,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     /**
      * Makes the builder unmodifiable and returns completed static system.
      */
-    def complete() = {
+    def complete(): StaticSystem = {
       readOnly()
       toStaticSystem
     }
@@ -128,11 +128,11 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
       addStateHandle(StateHandle[S](name, initialValue))
     }
 
-    def inputs(lc: Contact[_]*) {
+    def inputs(lc: Contact[_]*): Unit = {
       inputContacts ++= lc
     }
 
-    def outputs(lc: Contact[_]*) {
+    def outputs(lc: Contact[_]*): Unit = {
       assertWritable()
       for (c <- lc) {
         if (links.exists(link => link.from == c))
@@ -147,7 +147,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     /**
      * Create contact and add it to the builder as an input
      */
-    def input[T](name: String) = {
+    def input[T](name: String): Contact[T] = {
       val c = contact[T](name)
       inputs(c)
       c
@@ -156,7 +156,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
     /**
      * Create contact and add it to the builder as an output
      */
-    def output[T](name: String) = {
+    def output[T](name: String): Contact[T] = {
       val c = contact[T](name)
       outputs(c)
       c
@@ -167,13 +167,13 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
      */
     def addStateHandle[S](sh: StateHandle[S]): StateHandle[S] = {
       assertWritable()
-      privateStateHandles.
-        find(sh0 => sh0.name == sh.name && sh0.s0 == sh.s0).
-        getOrElse {
-        privateStateHandles += sh
-        sh
-      }.
-        asInstanceOf[StateHandle[S]]
+      privateStateHandles
+        .find(sh0 => sh0.name == sh.name && sh0.s0 == sh.s0)
+        .getOrElse {
+          privateStateHandles += sh
+          sh
+        }
+        .asInstanceOf[StateHandle[S]]
       //    if(!privateStateHandles.contains(sh))
       //      privateStateHandles += sh
       //    sh
@@ -236,7 +236,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
       s
     }
     /** Adds a few subsystems at once. Useful for super systems construction. */
-    def addSubsystems(subsystems: StaticSystem*) {
+    def addSubsystems(subsystems: StaticSystem*): Unit = {
       subsystems.foreach(subsystem => addSubsystem(subsystem)(identity))
     }
 
@@ -259,7 +259,7 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
 
     /** Calculates the number of transitions from c1 to that contact. If the contact is not reachable
       * then the distance is equals = -1 */
-    def minDistance(c1: Contact[_], c2: Contact[_]) = {
+    def minDistance(c1: Contact[_], c2: Contact[_]): Int = {
       @tailrec
       def minDistance(toCheck: Set[Contact[_]], exclude: Set[Contact[_]], dist: Int = 0): Int = {
         if (toCheck.isEmpty)
@@ -313,9 +313,9 @@ trait SystemBuilderApi extends ContactsDsl with ExceptionHandlingExt {
       this.setSystemName(name)
   }
 
-  def state[T](name:String, s0:T)(implicit sb:SystemBuilder) = sb.state(name, s0)
+  def state[T](name:String, s0:T)(implicit sb:SystemBuilder): StateHandle[T] = sb.state(name, s0)
 
-  def setSystemName(name:String)(implicit sb:SystemBuilder) = sb.setSystemName(name)
+  def setSystemName(name:String)(implicit sb:SystemBuilder): Unit = sb.setSystemName(name)
 
   /** Usage:
     * extension[LabellingExt].methodInExtension*/

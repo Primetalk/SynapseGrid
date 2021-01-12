@@ -8,10 +8,11 @@ lazy val commonSettings = Seq(
 //  libraryDependencies += "org.specs2" %% "specs2" % "3.7" % Test,
 //  scalaVersion := "2.12.9",
 //  libraryDependencies += "org.specs2" %% "specs2" % "2.4.17" % Test,
-  scalaVersion := "2.13.0",
+  scalaVersion := "2.13.4",
   libraryDependencies += "org.specs2" %% "specs2-core" % "4.7.0" % Test,
   publishArtifact in Test := false,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test,
+  scalacOptions += "-deprecation",
 )
 
 
@@ -22,7 +23,6 @@ lazy val core = (project in file("synapse-grid-core")).settings(
   name := "synapse-grid-core",
   libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.19.0",
   scalacOptions += "-Ymacro-annotations",// required for simulacrum starting from Scala 2.13+
-  scalacOptions += "-deprecation"
 )
 
 lazy val concurrent = (project in file("synapse-grid-concurrent")).settings(

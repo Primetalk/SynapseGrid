@@ -25,8 +25,8 @@ trait RuntimeSystemApi
                            unhandledExceptionHandler: UnhandledProcessingExceptionHandler
                            = defaultUnhandledExceptionHandler
                             ) {
-    lazy val contacts = signalProcessors.keySet
-    lazy val isTrellisContactUsed = contacts.contains(TrellisContact)
+    lazy val contacts: Set[Contact[_]] = signalProcessors.keySet
+    lazy val isTrellisContactUsed: Boolean = contacts.contains(TrellisContact)
   }
 
   /** Dynamic system. The state is kept inside the system. All complex logic
@@ -48,10 +48,10 @@ trait RuntimeSystemApi
 
   implicit class RichDynamicSystem(system: DynamicSystem) {
 
-    def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+    def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]): TInput => SignalCollection[TOutput] =
       new RichSimpleSignalProcessor(system.receive).toTransducer(input, output)
 
-    def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]) =
+    def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]): TInput => TOutput =
       new RichSimpleSignalProcessor(system.receive).toMapTransducer(input, output)
 
     def toBuffered = new DynamicSystemBuffered(system)
@@ -64,7 +64,7 @@ trait RuntimeSystemApi
     */
   class DynamicSystemBuffered(dynamicSystem:DynamicSystem) {
     private val outputBuffer = scala.collection.mutable.ListBuffer[Signal[_]]()
-    def send[T](input:Contact[T])(data:T) = {
+    def send[T](input:Contact[T])(data:T): DynamicSystemBuffered = {
       val inputSignal = Signal(input, data)
       val outputSignals = dynamicSystem.receive(inputSignal)
       outputBuffer ++= outputSignals

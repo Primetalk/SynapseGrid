@@ -68,13 +68,13 @@ trait AkkaExt {
           labelNext("to @" + actorRefState).
           zipWithState(actorRefState).
           labelNext("tell") foreach {
-          case (null, (_, _)) ⇒
+          case (null, (_, _)) =>
             throw new IllegalStateException("toActorIndirect(" + actorRefState + "): actorRef is not initialized.")
-          case (actor, (null, msg)) ⇒
+          case (actor, (null, msg)) =>
             throw new IllegalStateException("toActorIndirect(" + actorRefState + "): self is not initialized.")
-          case (actor, (selfRef: ActorRef, msg)) ⇒
+          case (actor, (selfRef: ActorRef, msg)) =>
             actor.tell(msg, selfRef)
-          //          case msg ⇒
+          //          case msg =>
           //            throw new IllegalStateException("toActorIndirect(" + actorRefState + "): Impossible case:" + msg)
         }
       }

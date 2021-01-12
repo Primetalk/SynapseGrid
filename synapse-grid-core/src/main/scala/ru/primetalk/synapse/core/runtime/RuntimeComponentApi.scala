@@ -123,36 +123,36 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
   }
 
   val linkToRuntimeComponent: PartialFunction[Component, RuntimeComponent] = {
-    case Link(from, to, name, FlatMapLink(f)) ⇒
+    case Link(from, to, name, FlatMapLink(f)) =>
       RuntimeComponentFlatMap(name, from, to, {
-        (signal) ⇒
-          val fun = f.asInstanceOf[Any ⇒ TraversableOnce[Any]]
+        (signal) =>
+          val fun = f.asInstanceOf[Any => TraversableOnce[Any]]
           val res = fun(signal.data)
-          res.map(new Signal(to, _)).toList
+          res.iterator.map(new Signal(to, _)).toList
       })
-    case Link(from, to, name, NopLink()) ⇒
+    case Link(from, to, name, NopLink()) =>
       RuntimeComponentFlatMap(name, from, to,
-        (signal) ⇒ List(new Signal(to, signal.data))
+        (signal) => List(new Signal(to, signal.data))
       )
-    case Link(from, to, name, StatefulFlatMapLink(f, pe)) ⇒
+    case Link(from, to, name, StatefulFlatMapLink(f, pe)) =>
       RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe, {
-        (value, signal) ⇒
-          val fun = f.asInstanceOf[(Any, Any) ⇒ (Any, Seq[Any])]
+        (value, signal) =>
+          val fun = f.asInstanceOf[(Any, Any) => (Any, Seq[Any])]
           val (nState, nDataSeq) = fun(value, signal.data)
           (nState, nDataSeq.toList.map(new Signal(to, _)))
       })
-    case Link(from, to, name, StateZipLink(pe)) ⇒
+    case Link(from, to, name, StateZipLink(pe)) =>
       RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe, {
-        (value, signal) ⇒
+        (value, signal) =>
           (value, List(new Signal(to, (value, signal.data))))
       })
-    case StateUpdate(from, pe, name, f) ⇒
+    case StateUpdate(from, pe, name, f) =>
       RuntimeComponentStateFlatMap[Any](name, List(from), List(), pe, {
-        (value, signal) ⇒
+        (value, signal) =>
           val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data)
           (result, List())
       })
-    case BlackBoxStatelessComponent(name, inputContacts, outputContacts, runtimeStatelessInterpreter) ⇒
+    case BlackBoxStatelessComponent(name, inputContacts, outputContacts, runtimeStatelessInterpreter) =>
       BlackBoxRuntimeComponent(name, inputContacts.toList, outputContacts.toList, runtimeStatelessInterpreter)
   }
 }

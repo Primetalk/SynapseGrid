@@ -24,7 +24,7 @@ object Contact {
   *
   */
 class Contact[T](name1: String = null) extends Named with Serializable {
-   val name = if (name1 == null) getClass.getSimpleName.replaceAllLiterally("$", "") else name1
+   val name: String = if (name1 == null) getClass.getSimpleName.replace("$", "") else name1
 
-   override def toString = "C(" + name + ")"
+   override def toString: String = "C(" + name + ")"
  }

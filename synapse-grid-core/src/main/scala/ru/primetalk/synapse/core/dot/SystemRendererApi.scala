@@ -13,8 +13,6 @@
  */
 package ru.primetalk.synapse.core.dot
 
-import java.io.{File, PrintWriter}
-
 import ru.primetalk.synapse.core.components.{InnerSystemComponent, StateUpdate}
 import ru.primetalk.synapse.core.ext.{DevNullExt, ContactStyleExt, AuxNumberingExt}
 
@@ -45,82 +43,86 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
     val stateLegacyModification = "shape=invhouse, fillcolor=lightpink, color=red, style=filled"
     val stateModification = "shape=octagon, color=red, style=rounded"
 
-    def quote(m: String) = "\""+m.replaceAllLiterally("\"","\\\"")+"\""
+    def quote(m: String): String = "\""+m.replace("\"","\\\"")+"\""
     protected
     def stateNodeToDot(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Any, nodeKind: NodeKind): String = (c, nodeKind) match {
-      case (StateHandle(name, _), StateNode) ⇒
+      case (StateHandle(name, _), StateNode) =>
         s"$id [label=${quote(name)}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
+      case (StateHandle(name, _), _) =>
+        s"$id [label=${quote(name)+"-weird"}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
     }
 
     protected
     def linkNodeToDot(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Link[_,_,_,_], nodeKind: NodeKind): String = c match {
-      case Link(_, _, name, NopLink()) ⇒
+      case Link(_, _, name, NopLink()) =>
         s"$id [label=${quote(if(name=="") "Δt" else name)}, shape=square]"
-      case Link(_, _, name, _: StatefulFlatMapLink[_, _, _]) ⇒
+      case Link(_, _, name, _: StatefulFlatMapLink[_, _, _]) =>
         s"$id [label=${quote(name)}, $stateLegacyModification]"
-      case Link(_, _, name, StateZipLink(_)) ⇒
+      case Link(_, _, name, StateZipLink(_)) =>
         s"$id [label=${quote(name)}, shape=none]"
-      case Link(_, c@Contact(_), name, linkInfo) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact ⇒
+      case Link(_, c@Contact(_), name, linkInfo) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact =>
         s"$id [label=${quote(name)}, shape=none, fontcolor=red]"
-      case Link(_, _, name, linkInfo) ⇒
+      case Link(_, _, name, linkInfo) =>
         s"$id [label=${quote(name)}, shape=none]"
     }
 
     protected
     def componentNodeToDot(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Component, nodeKind: NodeKind): String = c match {
-      case StateUpdate(_, st, name, _) ⇒
+      case StateUpdate(_, st, name, _) =>
         s"$id [label=${quote(name)}, $stateModification]"
-      case _ ⇒
+      case _ =>
         s"$id [label=${quote(c.name)}, shape=component]"
     }
 
     protected
     def contactNodeToDot(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Any, nodeKind: NodeKind): String = (c, nodeKind) match {
-      case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact ⇒
+      case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact =>
         s"$id [label=${quote("")}, shape=point, color=red]"
-      case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == AuxiliaryContact ⇒
+      case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == AuxiliaryContact =>
         s"$id [label=${quote("")}, shape=point]"
-      case (Contact(name), InputNode) ⇒
+      case (Contact(name), InputNode) =>
         s"$id [label=${quote(name)}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=aquamarine]"
-      case (Contact(name), InnerContact) ⇒
+      case (Contact(name), InnerContact) =>
         s"$id [label=${quote(name)}, shape=ellipse]"
-      case (Contact(name), OutputNode) ⇒
+      case (Contact(name), OutputNode) =>
         s"$id [label=${quote(name)}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
+      case (Contact(name), _) =>
+        s"$id [label=${quote(name)}, shape=ellipse]"
 
     }
 
     //parallelogram
     def nodeToString(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Any, nodeKind: NodeKind): String = (c, nodeKind) match {
-      //			case (StateHandle(name, _), StateNode) ⇒
+      //			case (StateHandle(name, _), StateNode) =>
       //				s"$id [label=${"\"" + name + "\""}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
       case (c: Link[_, _, _, _], _) =>
         linkNodeToDot(stylesExtOpt, id, c, nodeKind)
-      //			case (Link(_, _, _, NopLink()), _) ⇒
+      //			case (Link(_, _, _, NopLink()), _) =>
       //				s"$id [label=${"\"Δt\""}, shape=square]"
-      //			case (Link(_, _, name, _: StatefulFlatMapLink[_, _, _]), _) ⇒
+      //			case (Link(_, _, name, _: StatefulFlatMapLink[_, _, _]), _) =>
       //				s"$id [label=${"\"" + name + "\""}, $stateLegacyModification]"
-      //			case (Link(_, _, name, StateZipLink(_)), _) ⇒
+      //			case (Link(_, _, name, StateZipLink(_)), _) =>
       //				s"$id [label=${"\"" + name + "\""}, shape=none]"
-      //			case (Link(_, c@Contact(_), name, linkInfo), _) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact ⇒
+      //			case (Link(_, c@Contact(_), name, linkInfo), _) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact =>
       //				s"$id [label=${"\"" + name + "\""}, shape=none, fontcolor=red]"
-      //			case (Link(_, _, name, linkInfo), _) ⇒
+      //			case (Link(_, _, name, linkInfo), _) =>
       //				s"$id [label=${"\"" + name + "\""}, shape=none]"
-      //			case (StateUpdate(_, st, name, _), _) ⇒
+      //			case (StateUpdate(_, st, name, _), _) =>
       //				s"$id [label=${"\"" + name + "\""}, $stateModification]"
-      case (os: Component, _) ⇒
+      case (os: Component, _) =>
         componentNodeToDot(stylesExtOpt, id, os, nodeKind)
       //				s"$id [label=${"\"" + os.name + "\""}, shape=component]"
       case (c: Contact[_], _) =>
         contactNodeToDot(stylesExtOpt, id, c, nodeKind)
-      //			case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact ⇒
+      //			case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact =>
       //				s"$id [label=${"\"\""}, shape=point, color=red]"
-      //			case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == AuxiliaryContact ⇒
+      //			case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == AuxiliaryContact =>
       //				s"$id [label=${"\"\""}, shape=point]"
-      //			case (Contact(name), InputNode) ⇒
+      //			case (Contact(name), InputNode) =>
       //				s"$id [label=${"\"" + name + "\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=aquamarine]"
-      //			case (Contact(name), InnerContact) ⇒
+      //			case (Contact(name), InnerContact) =>
       //				s"$id [label=${"\"" + name + "\""}, shape=ellipse]"
-      //			case (Contact(name), OutputNode) ⇒
+      //			case (Contact(name), OutputNode) =>
       //				s"$id [label=${"\"" + name + "\""}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
       case _ =>
         s"$id [label=${quote("unknown")}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=red]"
@@ -143,12 +145,12 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
     class NodeCounter {
       private var _lastId = 0
 
-      def next = {
+      def next: Int = {
         _lastId += 1
         _lastId
       }
 
-      def lastId = _lastId
+      def lastId: Int = _lastId
     }
 
     protected def newNodeCounter = new NodeCounter
@@ -194,10 +196,10 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
           id
         })
       def getComponentId(component: Component): Int = {
-        //				case contact@Contact(_) if stylesExtOpt.isDefined && stylesExtOpt.get.style(contact) == DevNullContact ⇒
+        //				case contact@Contact(_) if stylesExtOpt.isDefined && stylesExtOpt.get.style(contact) == DevNullContact =>
         //					elements += nodeToString(stylesExtOpt, counter.next, c, kind)
         //					counter.lastId
-        //				case _ ⇒
+        //				case _ =>
         ids.getOrElseUpdate(component, {
           val id = counter.next
           elements += nodeToString(stylesExtOpt, id, component, ComponentNode)
@@ -206,7 +208,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
       }
       val outputIds = for (oc <- system.outputContacts)
         yield getContactId(oc, OutputNode)
-      val inputIds = for (ic ← system.inputContacts)
+      val inputIds = for (ic <- system.inputContacts)
         yield getContactId(ic, InputNode)
       for (s <- system.privateStateHandles)
         getStateId(s)
@@ -214,7 +216,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
       elements += s"{rank=same; ${inputIds.mkString(" ")} }"
       elements += s"{rank=same; ${outputIds.mkString(" ")} }"
       for {
-        c ← system.components
+        c <- system.components
       } {
         if (level > 0)
           c match {
@@ -223,23 +225,23 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
             case _ =>
           }
         val id = getComponentId(c)
-        for (i ← c.inputContacts)
+        for (i <- c.inputContacts)
           elements += linkToDot(getContactId(i, InnerContact), id, i, c)
-        for (o ← c.outputContacts)
+        for (o <- c.outputContacts)
           elements += linkToDot(id, getContactId(o, InnerContact), c, o)
 
         /** state link */
         c match {
-          case Link(_, _, _, StateZipLink(st)) ⇒
+          case Link(_, _, _, StateZipLink(st)) =>
             elements += slinkToDot(getStateId(st), id, st, c)
-          case Link(_, _, _, StatefulFlatMapLink(_, st)) ⇒
+          case Link(_, _, _, StatefulFlatMapLink(_, st)) =>
             elements += slinkToDot(getStateId(st), id, st, c)
-          case InnerSystemComponent(_, st, _) ⇒
+          case InnerSystemComponent(_, st, _) =>
             elements += slinkToDot(getStateId(st), id, st, c)
-          case StateUpdate(_, st, _, _) ⇒
+          case StateUpdate(_, st, _, _) =>
             elements += suLinkToDot(id, getStateId(st), c, st)
 
-          case _ ⇒
+          case _ =>
         }
       }
 
@@ -255,7 +257,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
   }
 
   object SystemRenderer extends SystemRenderer with ((StaticSystem) => String) {
-    def apply(s: StaticSystem) = staticSystem2ToDot(s)
+    def apply(s: StaticSystem): String = staticSystem2ToDot(s)
 
   }
 

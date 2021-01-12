@@ -1,5 +1,5 @@
-SynapseGrid
-===========
+# SynapseGrid
+
 [![Build Status](https://travis-ci.org/Primetalk/SynapseGrid.svg)](https://travis-ci.org/Primetalk/SynapseGrid)
 
 SynapseGrid is an original approach to implement functional reactive programming paradigm in Scala. The library is based 
@@ -15,8 +15,7 @@ A few words about what SynapseGrid is:
 
 [Blog about SynapseGrid](http://synapse-grid.primetalk.ru/)
 
-Feature highlights
-------------------
+## Feature highlights
 
 1. SynapseGrid allows function composition of "multifunctions" (functions with a few inputs and outputs). It is more flexible than monads composition of Kleisli Arrows.
 2. Strictly typed message handling in Akka actors (more natural than in Typed actors or Typed Channels).
@@ -25,7 +24,7 @@ Feature highlights
 5. It is possible to nest subsystems (like matreshkas) creating modular systems.
 6. Declarative composition in the form of DataFlow diagram.
 7. Easy to use DSL:
-<pre>
+```scala
   val a = contact[String]("a")
   val b = contact[String]("b")
   val c = contact[Char]("c")
@@ -33,8 +32,8 @@ Feature highlights
   a -> c flatMap (_.toCharArray)
   inputs(a)
   outputs(b,c)
-</pre>
-8. Dependency injection replacement (accompanied with Scala traits).
+```
+8. Dependency injection replacement (accompanied by Scala traits).
 9. DataFlow diagram for a system can be created easily — system.toDot():
 ![example1 system picture](docs/images/example1.png)
 ![example2 system picture](docs/images/example2.png)
@@ -42,31 +41,37 @@ Feature highlights
 
 For details see [README in English](docs/README.EN.md).
 
-Getting started
----------------
+## Getting started
+
 Add a dependency to your build:
 
  - gradle:
  
-      compile ['ru.primetalk:synapse-grid-core_2.11:1.4.7', 'ru.primetalk:synapse-grid-akka_2.11:1.4.7']
+        compile ['ru.primetalk:synapse-grid-core_2.13:1.5.0', 'ru.primetalk:synapse-grid-akka_2.13:1.5.0']
 
    or
-      compile ['ru.primetalk:synapse-grid-core_2.11:1.4.7', 'ru.primetalk:synapse-grid-akka_2.11:1.4.7']
+   
+        compile ['ru.primetalk:synapse-grid-core_2.13:1.5.0', 'ru.primetalk:synapse-grid-akka_2.13:1.5.0']
 
  - sbt:
  
-      libraryDependencies += "ru.primetalk" %% "synapse-grid-core" % "1.4.7"
-      libraryDependencies += "ru.primetalk" %% "synapse-grid-akka" % "1.4.7"
+        libraryDependencies += "ru.primetalk" %% "synapse-grid-core" % "1.5.0"
+        libraryDependencies += "ru.primetalk" %% "synapse-grid-akka" % "1.5.0"
       
-(or any other build system: group: ru.primetalk, artifactId: synapse-grid-core, version: 1.4.7)
+(or any other build system: `group: ru.primetalk, artifactId: synapse-grid-core, version: 1.5.0`)
 
-Travis build status
--------------------
+To create a png file from dot file:
+
+```shell
+dot -Tpng file.dot -o file.png
+```
+
+## Travis build status
 
 - PR status: [![Build Status](https://travis-ci.org/Primetalk/SynapseGrid.svg)](https://travis-ci.org/Primetalk/SynapseGrid)
 
-See also (English)
---------
+## See also (English)
+
 1. [Walkthrough](docs/README.EN.md).
 2. [Motivation for SynapseGrid](docs/SpeechPortalMotivation.RU.md).
 3. [License (BSD-like)](LICENSE.md).
@@ -75,8 +80,8 @@ See also (English)
 6. [Distrubuted systems](docs/Distributed.EN.md)
 7. [Typed frames](docs/Frames.EN.md).
 
-См. также (See also in Russian)
----------
+## См. также (See also in Russian)
+
 1. [README по-русски](docs/README.RU.md).
 2. [Actors support (in Russian)](docs/Actors.RU.md).
 3. [Лицензия](docs/LICENSE.RU.md).

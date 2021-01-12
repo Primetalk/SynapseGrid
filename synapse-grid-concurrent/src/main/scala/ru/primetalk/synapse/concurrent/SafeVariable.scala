@@ -27,7 +27,7 @@ class SafeVariable[T](initialValue:T) {
       body
     }
 
-  def update(u:T=>T) {
+  def update(u:T=>T): Unit = {
     locked{
       value = u(value)
     }
@@ -39,11 +39,11 @@ class SafeVariable[T](initialValue:T) {
       result
     }
 
-  def isLockAvailable =
+  def isLockAvailable: Boolean =
     lock.get()
 
-  def acquire() = lock.compareAndSet(true, false)
-  def release() = lock.compareAndSet(false, true)
+  def acquire(): Boolean = lock.compareAndSet(true, false)
+  def release(): Boolean = lock.compareAndSet(false, true)
   def get:T = locked{ value }
-  override def toString = "SV("+get+")"
+  override def toString: String = "SV("+get+")"
 }

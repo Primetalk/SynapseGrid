@@ -10,7 +10,7 @@ trait TryDsl extends SystemBuilderApi with NextLabelExt with SystemBuilderDsl {
 
     /** If map is used with a try-contact, then it will automatically encapsulate
       * function into Try. */
-    def tryMap(f: T1 ⇒ T2, name: String = ""): Contact[Try[T2]] =
+    def tryMap(f: T1 => T2, name: String = ""): Contact[Try[T2]] =
       sb.addLink(c._1, c._2, sb.nextLabel(name, "Try{" + f + "}"),
         new FlatMapLink[T1, Try[T2]](x => Seq(Try {
           f(x)
@@ -41,7 +41,7 @@ trait TryDsl extends SystemBuilderApi with NextLabelExt with SystemBuilderDsl {
       "but it is placed further down the source code and thus has not been initialized yet.")
     /** Creates another contact and links it to this one with transformation f.
       * Exceptions are caught and encapsulated in Try.*/
-    def tryMap[T2](f: T ⇒ T2, name: String = ""): Contact[Try[T2]] =
+    def tryMap[T2](f: T => T2, name: String = ""): Contact[Try[T2]] =
       c.map((t: T) => Try(f(t)), sb.nextLabel(name, "tryMap(" + f + ")"))
 
   }

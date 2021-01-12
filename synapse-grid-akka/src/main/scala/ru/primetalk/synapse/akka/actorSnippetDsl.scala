@@ -29,7 +29,7 @@ trait ActorSnippetDsl {
    * @param factory create actor using the supplied parent reference.
    */
   def childActorAdapterSnippet[TInput, TOutput](name: String,
-                                                input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor)(implicit sb:SystemBuilder): StaticSystem = {
+                                                input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef => Actor)(implicit sb:SystemBuilder): StaticSystem = {
     sb.inputs(NonSignalWithSenderInput)
     val innerSb = new SystemBuilderC(name)
     new ChildActorAdapterSnippet(name, input, outputContact)(factory)(innerSb)
@@ -51,7 +51,7 @@ trait ActorSnippetDsl {
 class ChildActorAdapterSnippet[TInput, TOutput](
                                                  name: String,
                                                  input: Contact[TInput],
-                                                 outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor)(implicit sb:SystemBuilder){
+                                                 outputContact: Contact[TOutput])(factory: ActorRef => Actor)(implicit sb:SystemBuilder){
 
 //  val sbSlf4j = sb.extend(SystemBuilderLoggingExtensionId)
 val akkaExt = sb.extend(ActorSystemBuilderExtensionId)
@@ -63,7 +63,7 @@ val akkaExt = sb.extend(ActorSystemBuilderExtensionId)
   val actorRef = state[ActorRef](name, Actor.noSender)
 
   ContextInput.debug().labelNext(s"create actor $name") map {
-    case contextRef ⇒
+    case contextRef =>
       contextRef.actorOf(Props(factory(contextRef.self)), name)
   } saveTo actorRef
 

@@ -23,22 +23,22 @@ import ru.primetalk.synapse.core.Contact
 trait ToActorUtilityT {
 
 	/** Sends the data directly. */
-	def signalToActor(actorRef: ActorRef)(signal: Signal[_]) {
+	def signalToActor(actorRef: ActorRef)(signal: Signal[_]): Unit = {
     actorRef ! signal
   }
 
 	/** Sends the data directly. */
-	def signalDataToActor(actorRef: ActorRef)(signal: Signal[_]) {
+	def signalDataToActor(actorRef: ActorRef)(signal: Signal[_]): Unit = {
     actorRef ! signal.data
   }
 
 	/** Sends a signal with data. */
-	def dataToActorContact[T](actorRef: ActorRef, contact: Contact[T])(data: T) {
+	def dataToActorContact[T](actorRef: ActorRef, contact: Contact[T])(data: T): Unit = {
     actorRef ! Signal(contact, data)
   }
 	implicit class ActorWithContact[T](ac : (ActorRef, Contact[T])) {
 		val (actorRef, contact) = ac
-		def !(data : T)(implicit sender:ActorRef = Actor.noSender) {
+		def !(data : T)(implicit sender:ActorRef = Actor.noSender): Unit = {
 			actorRef ! Signal(contact, data)
 		}
 	}

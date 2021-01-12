@@ -29,7 +29,7 @@ trait AkkaSystemBuilderApi {
      * @param factory create actor using the supplied parent reference.
      */
     def childActorAdapterSnippet[TInput, TOutput](name: String,
-                                                  input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef ⇒ Actor): StaticSystem = {
+                                                  input: Contact[TInput], outputContact: Contact[TOutput])(factory: ActorRef => Actor): StaticSystem = {
       sb.inputs(ru.primetalk.synapse.akka.SpecialActorContacts.NonSignalWithSenderInput)
       val innerSb = new SystemBuilderC(name)
       new ru.primetalk.synapse.akka.ChildActorAdapterSnippet(name, input, outputContact)(factory)(innerSb)
