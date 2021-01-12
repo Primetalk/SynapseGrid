@@ -5,9 +5,9 @@
  * issue the frame or to accumulate.
  */
 def CreateBuffer(length: Int):
-  component Buffer (in: Double) >> (out: Array[Double])
-    with (currentLength: Int = 0, currentBuffer: List[Double] = Nil) = {
-        val buf = in :: currentBuffer
+  component (in: Double) >> (out: Array[Double])
+    with (currentLength: Int = 0, currentBuffer: List[Double] = Nil) = { // BufferState(currentLength: Int = 0, currentBuffer: List[Double] = Nil)
+        val buf = in  :: currentBuffer
         if(currentLength == length - 1) {
           out := buf
           currentBuffer := Nil
@@ -18,13 +18,13 @@ def CreateBuffer(length: Int):
         }
 }
 
-def CreateDigitalFilter(frameLength: Int):
-  component DigitalFilter (in: Array[Double]) >> (out: Array[Double])
-    with (prevOutput: Array[Double] = Array.fill(frameLength)(0.0)) = {
-      // implementation of digital filter (mathematical implementation)
-}
+def CreateDigitalFilter(frameLength: Int) =
+    component  (in: Array[Double]) >> (out: Array[Double])
+        with (prevOutput: Array[Double] = Array.fill(frameLength)(0.0)) {
+          // implementation of digital filter (mathematical implementation)
+    }
 
-component Unframer (in: Array[Double]) >> (out: Double) = {
+val Unframer = component (in: Array[Double]) >> (out: Double) {
   out ::= in.toIterable
   /*
       for{ i <- in } {
@@ -35,12 +35,14 @@ component Unframer (in: Array[Double]) >> (out: Double) = {
 
 // NB: there is a delay before first output appears on output.
 // in this case the delay is 160 ticks.
-component Filter (in: Double) >> (out: Double) = {
+val Filter = component  (in: Double) >> (out: Double) with auto state {
   val frameLength = 160
-  val buf1 = CreateBuffer(frameLength)
-  val df1 = CreateDigitalFilter(frameLength)
+  val Buffer = CreateBuffer(frameLength)
+  val DigitalFilter = CreateDigitalFilter(frameLength)
   in >> buf1.in
-  buf1.out >> df1.in
-  df1.out >> Unframer.in
+  Buffer.out >> DigitalFilter.in
+  DigitalFilter.out >> Unframer.in
   Unframer.out >> out
+
+  //Parser.out.map(_ + 1) >> Shower.in
 }
