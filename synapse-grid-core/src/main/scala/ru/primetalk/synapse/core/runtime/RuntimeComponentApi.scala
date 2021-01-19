@@ -126,7 +126,7 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
     case Link(from, to, name, FlatMapLink(f)) =>
       RuntimeComponentFlatMap(name, from, to, {
         (signal) =>
-          val fun = f.asInstanceOf[Any => TraversableOnce[Any]]
+          val fun = f.asInstanceOf[Any => IterableOnce[Any]]
           val res = fun(signal.data)
           res.iterator.map(new Signal(to, _)).toList
       })

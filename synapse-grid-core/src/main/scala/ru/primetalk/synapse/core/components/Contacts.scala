@@ -1,8 +1,3 @@
-///////////////////////////////////////////////////////////////
-// СинаптическаяСеть
-// © ООО «Праймтолк», 2011-2013                              //
-// Все права принадлежат компании ООО «Праймтолк».           //
-///////////////////////////////////////////////////////////////
 /**
  * SynapseGrid
  * © Primetalk Ltd., 2013.
@@ -15,12 +10,6 @@
 package ru.primetalk.synapse.core.components
 
 import scala.language.implicitConversions
-
-
-
-
-
-
 
 ///**
 // * Contact reference with respect to path of the system where the contact resides.

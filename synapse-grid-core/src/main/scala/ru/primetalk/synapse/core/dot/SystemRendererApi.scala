@@ -50,6 +50,8 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
         s"$id [label=${quote(name)}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
       case (StateHandle(name, _), _) =>
         s"$id [label=${quote(name)+"-weird"}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
+      case (_, _) =>
+        throw new IllegalArgumentException(s"Cannot convert to Dot ${(c, nodeKind)}")
     }
 
     protected
@@ -88,7 +90,8 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
         s"$id [label=${quote(name)}, shape=rectangle, style=${"\""}rounded,filled${"\""}, fillcolor=cyan]"
       case (Contact(name), _) =>
         s"$id [label=${quote(name)}, shape=ellipse]"
-
+      case _ =>
+        throw new IllegalArgumentException(s"Cannot convert to dot ${(c, nodeKind)}")
     }
 
     //parallelogram

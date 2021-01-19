@@ -27,10 +27,10 @@ trait TryDsl extends SystemBuilderApi with NextLabelExt with SystemBuilderDsl {
       new ContactOps[Try[T]](c)(sb).flatMap(t => if (t.isSuccess) Seq(t.get) else Seq(), "success")
   }
 
-  implicit class TryFlatMapContactOps[T](val c: Contact[Try[TraversableOnce[T]]])(implicit sb: SystemBuilder) {
+  implicit class TryFlatMapContactOps[T](val c: Contact[Try[IterableOnce[T]]])(implicit sb: SystemBuilder) {
     /** Flatterns the output of a tryMap. If there was an exception, an empty list is returned */
     def flatten: Contact[T] =
-      new ContactOps[Try[TraversableOnce[T]]](c)(sb).flatMap(t => if (t.isSuccess) t.get else Seq(), "flatten")
+      new ContactOps[Try[IterableOnce[T]]](c)(sb).flatMap(t => if (t.isSuccess) t.get else Seq(), "flatten")
   }
 
   /** New methods available on contacts that construct links.

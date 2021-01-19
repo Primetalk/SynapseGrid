@@ -4,7 +4,7 @@ import ru.primetalk.synapse.core.components.StateUpdate
 import ru.primetalk.synapse.core.ext.{AuxNumberingExt, DevNullExt, NextLabelExt, SystemBuilderApi}
 
 import scala.annotation.tailrec
-import scala.collection.GenTraversableOnce
+import scala.collection.IterableOnce
 import scala.reflect.ClassTag
 
 /**
@@ -53,7 +53,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
       sb.addLink(pair._1, pair._2, sb.nextLabel(name, "=>" + value),
         new FlatMapLink[T1, T2]((t: T1) => Seq(value)))
 
-    def flatMap[TSeq](f: T1 => GenTraversableOnce[T2], name: String = ""): Contact[T2] =
+    def flatMap[TSeq](f: T1 => IterableOnce[T2], name: String = ""): Contact[T2] =
       sb.addLink(pair._1, pair._2, sb.nextLabel(name, "" + f),
         new FlatMapLink[T1, T2](f))
 
@@ -66,18 +66,18 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     //      sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
     //        new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
-    //  // this variant of flatMap is conflicting with flatMap-GenTraversableOnce.
+    //  // this variant of flatMap is conflicting with flatMap-IterableOnce.
     //  // It seems converting Option to Traversable is better.
     //  def flatMap(f: T1 => Option[T2], name: String = "") = //: FlatMapLink[T1, T2, Seq[T2]] =
     //    sb.addLink(c._1, c._2, sb.nextLabel(name, "" + f),
     //      new FlatMapLink[T1, T2](f(_).toSeq)) //.asInstanceOf[FlatMapLink[T1, T2, TSeq]] //[T1, T2, MapLink[T1,T2]]
 
     @deprecated("use #flatten", "13.04.2015")
-    def splitToElements(name: String = "")(implicit ev: T1 <:< GenTraversableOnce[T2]): Contact[T2] =
+    def splitToElements(name: String = "")(implicit ev: T1 <:< IterableOnce[T2]): Contact[T2] =
       flatten(name)
 
 
-    def flatten(name: String = "")(implicit ev: T1 <:< GenTraversableOnce[T2]): Contact[T2] =
+    def flatten(name: String = "")(implicit ev: T1 <:< IterableOnce[T2]): Contact[T2] =
       flatMap((t: T1) => ev(t), sb.nextLabel(name, "flatten"))
 
 
@@ -121,7 +121,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
             (r._1, Seq(r._2))
           }, stateHandle))
 
-    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) => (S, GenTraversableOnce[T2])): Contact[T2] =
+    def stateFlatMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) => (S, IterableOnce[T2])): Contact[T2] =
       sb.addLink(pair._1, pair._2, sb.nextLabel(name, "sfm"),
         new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
 
@@ -167,7 +167,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
             (r._1, Seq(r._2))
           }, stateHandle))
 
-    def stateFlatMap[T2](f: (S, T1) => (S, GenTraversableOnce[T2]), name: String = ""): Contact[T2] =
+    def stateFlatMap[T2](f: (S, T1) => (S, IterableOnce[T2]), name: String = ""): Contact[T2] =
       sb.addLink(c1, sb.auxContact[T2],
         sb.nextLabel(name, "sfm"),
         new StatefulFlatMapLink[S, T1, T2](f, stateHandle))
@@ -343,14 +343,14 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     def collect[T2](f: PartialFunction[T, T2], name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).collect(f, name)
 
-    def flatMap[T2](f: T => TraversableOnce[T2], name: String = ""): Contact[T2] =
+    def flatMap[T2](f: T => IterableOnce[T2], name: String = ""): Contact[T2] =
       (c, sb.auxContact[T2]).flatMap(f, sb.nextLabel(name, "fM(" + f + ")"))
 
     @deprecated("use #flatten", "13.04.2015")@inline
-    def splitToElements[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
+    def splitToElements[T2](name: String = "")(implicit ev: T <:< IterableOnce[T2]): Contact[T2] =
       flatten(name) //flatMap(t => ev(t), nextLabel(name, "split"))
 
-    def flatten[T2](name: String = "")(implicit ev: T <:< TraversableOnce[T2]): Contact[T2] =
+    def flatten[T2](name: String = "")(implicit ev: T <:< IterableOnce[T2]): Contact[T2] =
       (c, sb.auxContact[T2]).flatten(name) //flatMap(t => ev(t), nextLabel(name, "split"))
 
     /** Converts data to pair with current state value. */
@@ -555,7 +555,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
             (r._1, Seq(r._2))
           }, p._1.stateHandle))
 
-    def stateFlatMap(f: (S, T1) => (S, GenTraversableOnce[T2]), name: String = ""): Contact[T2] =
+    def stateFlatMap(f: (S, T1) => (S, IterableOnce[T2]), name: String = ""): Contact[T2] =
       sb.addLink(p._1.c1, p._2, sb.nextLabel(name, "sfm"),
         new StatefulFlatMapLink[S, T1, T2](f, p._1.stateHandle))
   }

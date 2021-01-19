@@ -125,7 +125,7 @@ with ContactsIndexExt with ExceptionHandlingExt with ComponentNavigationApi{
       converters += cvt
     }
 
-    def ++=(cvts: TraversableOnce[ComponentDescriptorConverter]): Unit = {
+    def ++=(cvts: IterableOnce[ComponentDescriptorConverter]): Unit = {
       assertWritable(cvts)
       converters ++= cvts
     }

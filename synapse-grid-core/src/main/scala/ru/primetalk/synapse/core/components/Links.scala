@@ -1,7 +1,3 @@
-///////////////////////////////////////////////////////////////
-// © ООО «Праймтолк», 2011-2013                              //
-// Все права принадлежат компании ООО «Праймтолк».           //
-///////////////////////////////////////////////////////////////
 /**
  * SynapseGrid
  * © Primetalk Ltd., 2013.
@@ -9,11 +5,14 @@
  * Authors: A.Zhizhelev, A.Nehaev, P. Popov
  * (2-clause BSD license) See LICENSE
  *
+ * © ООО «Праймтолк», 2011-2013
+ * Все права принадлежат компании ООО «Праймтолк».
+ *
  * Created: 28.06.13, zhizhelev
  */
 package ru.primetalk.synapse.core.components
 
-import scala.collection.GenTraversableOnce
+import scala.collection.IterableOnce
 
 /**
  * The Link is represented with a triple of two contacts and a linkInfo
@@ -36,7 +35,7 @@ sealed trait LinkInfo[-T1, +T2]
 /**
  * The kind of link that does sequential transformation of data.
  */
-case class FlatMapLink[-T1, +T2](f: T1 => GenTraversableOnce[T2])
+case class FlatMapLink[-T1, +T2](f: T1 => IterableOnce[T2])
   extends LinkInfo[T1, T2]
 
 /**
@@ -45,7 +44,7 @@ case class FlatMapLink[-T1, +T2](f: T1 => GenTraversableOnce[T2])
  * Prefer to use StateZipLink (?)
  */
 case class StatefulFlatMapLink[S, -T1, +T2](
-	f: (S, T1) => (S, GenTraversableOnce[T2]),
+	f: (S, T1) => (S, IterableOnce[T2]),
   stateHolder: StateHandle[S])
   extends LinkInfo[T1, T2]
 
