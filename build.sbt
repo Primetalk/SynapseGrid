@@ -3,7 +3,7 @@
 // to publish for 2.11.8 a couple of lines should be uncommented. In particular, specs2 should be of different version.
 lazy val commonSettings = Seq(
   organization := "ru.primetalk",
-  version := "1.5.0-SNAPSHOT", //
+  version := "1.5.1-SNAPSHOT", //
 //  scalaVersion := "2.11.8",
 //  libraryDependencies += "org.specs2" %% "specs2" % "3.7" % Test,
 //  scalaVersion := "2.12.9",
@@ -13,6 +13,7 @@ lazy val commonSettings = Seq(
   publishArtifact in Test := false,
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test,
   scalacOptions += "-deprecation",
+  isSnapshot := true,
 )
 
 
@@ -58,11 +59,12 @@ lazy val akka = (project in file("synapse-grid-akka")).settings(
 //  publishArtifact := false
 //).dependsOn(akka, rx)
 
-lazy val root = (project in file(".")).
+lazy val SynapseGrid = (project in file(".")).
   aggregate(core, concurrent, slf4j, akka).//, rx, examples).
   settings(
     aggregate in update := false,
-    publishArtifact := false
+    publishArtifact := false,
+    name := "SynapseGrid",
   )
 
 //publishTo := Some("Sonatype Snapshots Nexus" at "https://oss.sonatype.org/content/repositories/snapshots")
@@ -79,34 +81,34 @@ lazy val root = (project in file(".")).
 
 // sonatypeProfileName := "ru.primetalk" default - organization.
 
-pomExtra in Global := {
-    <url>https://github.com/Primetalk/SynapseGrid</url>
-    <licenses>
-      <license>
-        <name>BSD Software License, 2-clause version</name>
-        <url>https://github.com/Primetalk/SynapseGrid/blob/master/LICENSE.md</url>
-      </license>
-    </licenses>
-    <scm>
-      <connection>scm:git:github.com/Primetalk/SynapseGrid</connection>
-      <developerConnection>scm:git:git@github.com:Primetalk/SynapseGrid</developerConnection>
-      <url>github.com/Primetalk/SynapseGrid</url>
-    </scm>
-    <developers>
-      <developer>
-        <id>zhizhelev</id>
-        <name>Arseniy Zhizhelev</name>
-        <url>zhizhelev@primetalk.ru</url>
-      </developer>
-      <developer>
-        <id>nehaev</id>
-        <name>Anton Nehaev</name>
-        <url>nehaev@primetalk.ru</url>
-      </developer>
-      <developer>
-        <id>popov</id>
-        <name>Pavel Popov</name>
-        <url>popov@primetalk.ru</url>
-      </developer>
-    </developers>
-}
+//pomExtra in Global := {
+//    <url>https://github.com/Primetalk/SynapseGrid</url>
+//    <licenses>
+//      <license>
+//        <name>BSD Software License, 2-clause version</name>
+//        <url>https://github.com/Primetalk/SynapseGrid/blob/master/LICENSE.md</url>
+//      </license>
+//    </licenses>
+//    <scm>
+//      <connection>scm:git:github.com/Primetalk/SynapseGrid</connection>
+//      <developerConnection>scm:git:git@github.com:Primetalk/SynapseGrid</developerConnection>
+//      <url>github.com/Primetalk/SynapseGrid</url>
+//    </scm>
+//    <developers>
+//      <developer>
+//        <id>zhizhelev</id>
+//        <name>Arseniy Zhizhelev</name>
+//        <url>zhizhelev@primetalk.ru</url>
+//      </developer>
+//      <developer>
+//        <id>nehaev</id>
+//        <name>Anton Nehaev</name>
+//        <url>nehaev@primetalk.ru</url>
+//      </developer>
+//      <developer>
+//        <id>popov</id>
+//        <name>Pavel Popov</name>
+//        <url>popov@primetalk.ru</url>
+//      </developer>
+//    </developers>
+//}
