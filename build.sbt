@@ -1,29 +1,28 @@
-// Publish SynapseGrid 1.4.7 (with Scala 2.12 support)
+// Publish SynapseGrid 1.6.0 (with Scala 3.0 support)
 // sbt publishSigned
-// to publish for 2.11.8 a couple of lines should be uncommented. In particular, specs2 should be of different version.
+val scala3Version = "3.0.0-M3"
+
+ThisBuild / scalaVersion := scala3Version
+Compile / scalacOptions ++= Seq("-new-syntax", "-rewrite")
+
 lazy val commonSettings = Seq(
   organization := "ru.primetalk",
-  version := "1.5.1-SNAPSHOT", //
-//  scalaVersion := "2.11.8",
-//  libraryDependencies += "org.specs2" %% "specs2" % "3.7" % Test,
-//  scalaVersion := "2.12.9",
-//  libraryDependencies += "org.specs2" %% "specs2" % "2.4.17" % Test,
-  scalaVersion := "2.13.4",
-  libraryDependencies += "org.specs2" %% "specs2-core" % "4.7.0" % Test,
+  version := "1.6.0-SNAPSHOT", //
+  scalaVersion := scala3Version,
+  libraryDependencies += ("org.specs2" %% "specs2-core" % "4.7.0" % Test).withDottyCompat(scalaVersion.value),
   publishArtifact in Test := false,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test,
-  scalacOptions += "-deprecation",
+  libraryDependencies += ("org.scalatest" %% "scalatest" % "3.0.8" % Test).withDottyCompat(scalaVersion.value),
+  libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % Test,
+  scalacOptions ++= Seq("-deprecation", "-new-syntax", "-rewrite"),
   isSnapshot := true,
 )
 
-
-
-
-lazy val core = (project in file("synapse-grid-core")).settings(
-  commonSettings,
-  name := "synapse-grid-core",
-  libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.19.0",
-  scalacOptions += "-Ymacro-annotations",// required for simulacrum starting from Scala 2.13+
+lazy val core = (project in file("synapse-grid-core"))
+  .settings(commonSettings :_*)
+  .settings(
+    name := "synapse-grid-core",
+//  libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.19.0",
+//  scalacOptions += "-Ymacro-annotations",// required for simulacrum starting from Scala 2.13+
 )
 
 lazy val concurrent = (project in file("synapse-grid-concurrent")).settings(
@@ -42,9 +41,9 @@ lazy val akkaVersion = "2.5.24"
 lazy val akka = (project in file("synapse-grid-akka")).settings(
   commonSettings,
   name := "synapse-grid-akka",
-  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-  libraryDependencies += "com.typesafe.akka" %% "akka-remote" % akkaVersion,
-  libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
+  libraryDependencies += ("com.typesafe.akka" %% "akka-actor"  % akkaVersion).withDottyCompat(scalaVersion.value),
+  libraryDependencies += ("com.typesafe.akka" %% "akka-remote" % akkaVersion).withDottyCompat(scalaVersion.value),
+  libraryDependencies += ("com.typesafe.akka" %% "akka-slf4j"  % akkaVersion).withDottyCompat(scalaVersion.value),
 ).dependsOn(slf4j)
 
 //lazy val rx = (project in file("synapse-grid-rx")).settings(
@@ -60,7 +59,7 @@ lazy val akka = (project in file("synapse-grid-akka")).settings(
 //).dependsOn(akka, rx)
 
 lazy val SynapseGrid = (project in file(".")).
-  aggregate(core, concurrent, slf4j, akka).//, rx, examples).
+  aggregate(core).//, concurrent, slf4j, akka).//, rx, examples).
   settings(
     aggregate in update := false,
     publishArtifact := false,
