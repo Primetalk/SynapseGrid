@@ -83,7 +83,7 @@ trait AccumulationDsl extends BaseTypedSystemDsl with SystemBuilderDsl {
       val seqOut = contact[(T,TTrigger)](name + ".last")
       (trigger.withState(collection) -> seqOut).stateFlatMap{
         case (stateOpt, t2) =>
-          (if(autoClear) None else stateOpt, stateOpt.map(v => (v,t2)).toSeq)
+          (if autoClear then None else stateOpt, stateOpt.map(v => (v,t2)).toSeq)
       }
       seqOut
     }

@@ -15,6 +15,7 @@
 package ru.primetalk.synapse.core.runtime
 
 import ru.primetalk.synapse.core.components.{Signal, _}
+import ru.primetalk.synapse.core.dsl.SignalsApi
 
 import scala.language.existentials
 
@@ -38,8 +39,8 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
     *                           However if it is a "lost trace" (the one that didn't produce output), then the last processor
     *                           is added but the signal is not added. Thus the lengths are the same.
     */
-  case class Trace(signalsReversed: List[Signal[_]], processorsReversed: List[RuntimeComponent] = Nil) {
-    def this(signal: Signal[_]) = this(List(signal))
+  case class Trace(signalsReversed: List[Signal0], processorsReversed: List[RuntimeComponent] = Nil) {
+    def this(signal: Signal0) = this(List(signal))
 
     def signal = signalsReversed.head
   }
@@ -48,18 +49,18 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
     /**
      * the list of contacts that trigger processing of the component
      */
-    val inputContacts: List[Contact[_]]
+    val inputContacts: List[Contact0]
     /**
      * outputContacts - the list of contacts that can be influenced by this component.
      */
-    val outputContacts: List[Contact[_]]
+    val outputContacts: List[Contact0]
   }
 
   case class BlackBoxRuntimeComponent(
     name: String,
-    inputContacts: List[Contact[_]],
-    outputContacts: List[Contact[_]],
-    runtimeStatelessInterpreter: Signal[_] => Iterable[Signal[_]]
+    inputContacts: List[Contact0],
+    outputContacts: List[Contact0],
+    runtimeStatelessInterpreter: SimpleSignalProcessor
   ) extends RuntimeComponentTransparent {
     def isStateful: Boolean = false
 
@@ -72,13 +73,12 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
    * @param f - the actual transformation
    */
   case class RuntimeComponentFlatMap(
-                                      name: String,
-                                      input: Contact[_],
-                                      output: Contact[_],
-                                      f: Signal[_] =>
-                                        SignalCollection[Signal[_]]) extends RuntimeComponentTransparent {
-    val inputContacts = List[Contact[_]](input)
-    val outputContacts = List[Contact[_]](output)
+      name: String,
+      input: Contact0,
+      output: Contact0,
+      f: SimpleSignalProcessor) extends RuntimeComponentTransparent {
+    val inputContacts = List[Contact0](input)
+    val outputContacts = List[Contact0](output)
 
     def isStateful: Boolean = false
 
@@ -92,17 +92,17 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
    */
   case class RuntimeComponentStateFlatMap[S](
                                               name: String,
-                                              inputContacts: List[Contact[_]],
-                                              outputContacts: List[Contact[_]],
+                                              inputContacts: List[Contact0],
+                                              outputContacts: List[Contact0],
                                               stateHandle: Contact[S],
-                                              f: (S, Signal[_]) //(state, signal)
+                                              f: (S, Signal0) //(state, signal)
                                                 =>
-                                                (S, SignalCollection[Signal[_]]) //(state, signals)
+                                                (S, SignalCollection[Signal0]) //(state, signals)
                                               ) extends RuntimeComponentTransparent {
     def isStateful: Boolean = true
 
     lazy val toTotalTrellisProducer: TotalTrellisProducer = {
-      val fun = f.asInstanceOf[(Any, Signal[_]) => (Any, SignalCollection[Signal[_]])]
+      val fun = f.asInstanceOf[(Any, Signal0) => (Any, SignalCollection[Signal0])]
       (context, signal) => {
         val r = fun(context(stateHandle), signal)
         (context.updated(stateHandle, r._1), r._2)
@@ -115,7 +115,7 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
    */
   case class RuntimeComponentMultiState(
                                          name: String,
-                                         stateHandles: List[Contact[_]],
+                                         stateHandles: List[Contact0],
                                          f: TotalTrellisProducer) extends RuntimeComponent {
     def isStateful: Boolean = true
 
@@ -127,29 +127,32 @@ trait RuntimeComponentApi extends SignalsApi with TrellisApi {
       RuntimeComponentFlatMap(name, from, to, {
         (signal) =>
           val fun = f.asInstanceOf[Any => IterableOnce[Any]]
-          val res = fun(signal.data)
+          val res = fun(signal.data0)
           res.iterator.map(new Signal(to, _)).toList
       })
     case Link(from, to, name, NopLink()) =>
       RuntimeComponentFlatMap(name, from, to,
-        (signal) => List(new Signal(to, signal.data))
+        (signal) => List(new Signal(to, signal.data0))
       )
     case Link(from, to, name, StatefulFlatMapLink(f, pe)) =>
-      RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe, {
+      val peAny: Contact[Any] = pe.asInstanceOf[Contact[Any]]
+      RuntimeComponentStateFlatMap[Any](name, List(from), List(to), peAny, {
         (value, signal) =>
           val fun = f.asInstanceOf[(Any, Any) => (Any, Seq[Any])]
-          val (nState, nDataSeq) = fun(value, signal.data)
+          val (nState, nDataSeq) = fun(value, signal.data0)
           (nState, nDataSeq.toList.map(new Signal(to, _)))
       })
     case Link(from, to, name, StateZipLink(pe)) =>
-      RuntimeComponentStateFlatMap[Any](name, List(from), List(to), pe, {
+      val peAny: Contact[Any] = pe.asInstanceOf[Contact[Any]]
+      RuntimeComponentStateFlatMap[Any](name, List(from), List(to), peAny, {
         (value, signal) =>
-          (value, List(new Signal(to, (value, signal.data))))
+          (value, List(new Signal(to, (value, signal.data0))))
       })
     case StateUpdate(from, pe, name, f) =>
-      RuntimeComponentStateFlatMap[Any](name, List(from), List(), pe, {
+      val peAny: Contact[Any] = pe.asInstanceOf[Contact[Any]]
+      RuntimeComponentStateFlatMap[Any](name, List(from), List(), peAny, {
         (value, signal) =>
-          val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data)
+          val result = f.asInstanceOf[(Any, Any) => Any](value, signal.data0)
           (result, List())
       })
     case BlackBoxStatelessComponent(name, inputContacts, outputContacts, runtimeStatelessInterpreter) =>

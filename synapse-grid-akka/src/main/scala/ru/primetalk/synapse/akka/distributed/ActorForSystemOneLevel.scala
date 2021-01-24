@@ -16,9 +16,9 @@ import akka.actor._
 import akka.util.Timeout
 import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.akka.impl.AbstractStaticSystemActor
-import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core._
-
+//import ru.primetalk.synapse.core.components.StaticSystem
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -37,7 +37,7 @@ class ActorForSystemOneLevel(override val systemPath: SystemPath,
 
   log.info("ActorForSystemOneLevel: " + self.path)
   lazy val parentSystemRef: Option[ActorRef] =
-    if (systemPath.isEmpty) // for the root system.
+    if systemPath.isEmpty then // for the root system.
       None
     else {
       implicit val timeout: Timeout = Timeout(5.seconds)
@@ -82,7 +82,7 @@ class ActorForSystemOneLevel(override val systemPath: SystemPath,
         val childRouterPath = realm.getRouterPath(path1 ++ List(subsystem.name))
         val childRouterSelection = actorRefFactory.actorSelection(childRouterPath)
 
-        RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal) => {
+        RuntimeComponentMultiState(subsystem.name, List(), (context: Context, signal: Signal0) => {
           val sd = subsystem.index(signal)
           //          log.info("To inner actor system: {Signal=" + signal + ", SignalDist =" + sd + "} to " + childRouterSelection)
           childRouterSelection.tell(sd, self)

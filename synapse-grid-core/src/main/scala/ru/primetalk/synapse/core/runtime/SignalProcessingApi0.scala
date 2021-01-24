@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components.SignalsApi
+import ru.primetalk.synapse.core.components.{Contact0, Signal0}
+import ru.primetalk.synapse.core.dsl.SignalsApi
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -26,11 +27,11 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
     type TrellisElement = (Context, TSignals)
     type TrellisElementTracking = (Context, TSignals)
     type TrellisProducerTracking = TotalTrellisBuilder => TSignals => TSignals
-    type TotalTrellisProducerTracking = (Context, Signal[_]) => TrellisElementTracking
+    type TotalTrellisProducerTracking = (Context, Signal0) => TrellisElementTracking
 
-    implicit def tSignalToSignal(s: TSignal): Signal[_]
+    implicit def tSignalToSignal(s: TSignal): Signal0
 
-    def signalToTSignal(s: Signal[_]): TSignal
+    def signalToTSignal(s: Signal0): TSignal
 
     def newTotalTrellisBuilder(runtimeSystem: RuntimeSystem, context: Context): TotalTrellisBuilder
 
@@ -75,7 +76,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
 
       def currentState_=(ctx: Context): Unit
 
-      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]]): Unit
+      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal0]): Unit
 
       /** Adds an exception to the trellis.
         * Usually calls runtimeSystem.unhandledExceptionHandler.
@@ -100,9 +101,9 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
       import runtimeSystem._
 
       def processSignal(trace: TSignal, trellisBuilder: TrellisBuilder): Context = {
-        val signal = trace: Signal[_]
+        val signal = trace: Signal0
         val c = signal.contact
-        for (proc <- signalProcessors(c)) {
+        for proc <- signalProcessors(c) do {
           try {
             proc match {
               case r@RuntimeComponentMultiState(_, _, f) =>
@@ -115,9 +116,10 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
                 val signals = f(signal)
                 trellisBuilder.addSignals(trace, proc, signals)
               case RuntimeComponentStateFlatMap(_, _, _, sh, f) =>
-                val s = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]](sh)
-                val (ns, signals) = f.asInstanceOf[(Any, Signal[_]) => (Any, List[Signal[_]])](s, signal)
-                trellisBuilder.currentState = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]].updated(sh, ns).asInstanceOf[Context]
+                val shAny = sh.asInstanceOf[Contact[Any]]
+                val s = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]](shAny)
+                val (ns, signals) = f.asInstanceOf[(Any, Signal0) => (Any, IterableOnce[Signal0])](s, signal)
+                trellisBuilder.currentState = trellisBuilder.currentState.asInstanceOf[Map[Contact[Any], Any]].updated(shAny, ns).asInstanceOf[Context]
                 trellisBuilder.addSignals(trace, proc, signals)
               case _ =>
                 throw new IllegalArgumentException(s"Cannot process $proc")
@@ -145,7 +147,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
        */
       def apply(totalTrellisBuilder: TotalTrellisBuilder)(traces: TSignals): TSignals = {
         val toProcess: List[TSignal] =
-          if (isTrellisContactUsed)
+          if isTrellisContactUsed then
             signalToTSignal(new Signal(TrellisContact, traces.map(tSignalToSignal))) :: traces //inners
           else
             traces
@@ -157,7 +159,7 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
           signalsToProcess match {
             case Nil =>
             case trace :: tail =>
-              if (stopContacts.contains(tSignalToSignal(trace).contact)) {
+              if stopContacts.contains(tSignalToSignal(trace).contact) then {
                 // signals on contacts from stop-list are not processed.
                 totalTrellisBuilder.saveStopSignal(trace)
               } else
@@ -180,9 +182,9 @@ trait SignalProcessingApi0 extends SignalsApi with TrellisApi with RuntimeCompon
       * Then searches within the stream for a first element that contains only signals at stop contacts.
       * */
     case class TrellisProducerLoopyTracking(trellisProducer: TrellisProducerSpeedyTracking,
-                                            stopContacts: Set[Contact[_]]) extends TotalTrellisProducerTracking {
+                                            stopContacts: Set[Contact0]) extends TotalTrellisProducerTracking {
 
-      def apply(context: Context, signal: Signal[_]): TrellisElementTracking = {
+      def apply(context: Context, signal: Signal0): TrellisElementTracking = {
         val totalTrellisBuilderTracking = newTotalTrellisBuilder(trellisProducer.runtimeSystemForTrellisProcessing.runtimeSystem, context)
         val trellisProducer1 = trellisProducer(totalTrellisBuilderTracking)(_)
         try {
@@ -239,9 +241,9 @@ trait SignalProcessingTrackingApi extends SignalProcessingApi0 {
   trait SignalProcessingTracking extends SignalProcessing0 {
     type TSignal = Trace
 
-    def tSignalToSignal(s: TSignal): Signal[_] = s.signal
+    def tSignalToSignal(s: TSignal): Signal0 = s.signal
 
-    def signalToTSignal(s: Signal[_]): TSignal = new Trace(s)
+    def signalToTSignal(s: Signal0): TSignal = new Trace(s)
 
     class TrackingTrellisBuilder(
                                   newTraces: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal](),
@@ -249,11 +251,11 @@ trait SignalProcessingTrackingApi extends SignalProcessingApi0 {
                                   ) extends TrellisBuilder {
 
 
-      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]]): Unit = {
+      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal0]): Unit = {
         val procs = proc :: trace.processorsReversed
         signals match {
           case Nil => totalTrellisBuilderTracking.saveTerminatedSignal(Trace(trace.signalsReversed, procs))
-          case _ => newTraces ++= signals.map(s => Trace(s :: trace.signalsReversed, procs))
+          case _ => newTraces ++= signals.iterator.map(s => Trace(s :: trace.signalsReversed, procs))
         }
       }
 
@@ -303,11 +305,11 @@ trait SignalProcessingTrackingApi extends SignalProcessingApi0 {
 trait SignalProcessingSimpleApi extends SignalProcessingApi0 {
   /** SignalProcessing without tracking.*/
   trait SignalProcessingSimple extends SignalProcessing0 {
-    type TSignal = Signal[_]
+    type TSignal = Signal0
 
-    def tSignalToSignal(s: TSignal): Signal[_] = s
+    def tSignalToSignal(s: TSignal): Signal0 = s
 
-    def signalToTSignal(s: Signal[_]): TSignal = s
+    def signalToTSignal(s: Signal0): TSignal = s
 
     class TrackingTrellisBuilder(
                                   newTraces: mutable.ListBuffer[TSignal] = mutable.ListBuffer[TSignal](),
@@ -315,10 +317,10 @@ trait SignalProcessingSimpleApi extends SignalProcessingApi0 {
                                   ) extends TrellisBuilder {
 
 
-      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal[_]]): Unit = {
+      def addSignals(trace: TSignal, proc: RuntimeComponent, signals: SignalCollection[Signal0]): Unit = {
         signals match {
           case Nil => totalTrellisBuilderTracking.saveTerminatedSignal(trace)
-          case _ => newTraces ++= signals.map(signalToTSignal)
+          case _ => newTraces ++= signals.iterator.map(signalToTSignal)
         }
       }
 
@@ -375,7 +377,4 @@ trait SignalProcessingSimpleApi extends SignalProcessingApi0 {
 trait SignalProcessingDsl
   extends TrellisApi
   with SignalProcessingApi0
-  with SignalProcessingSimpleApi {
-
-
-}
+  with SignalProcessingSimpleApi

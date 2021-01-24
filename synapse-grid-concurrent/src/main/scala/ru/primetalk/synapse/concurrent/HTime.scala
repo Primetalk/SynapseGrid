@@ -12,7 +12,7 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import ru.primetalk.synapse.core.SignalCollection
+import ru.primetalk.synapse.core.syntax.SignalCollection
 /**
  * The sequence from some initial time.
  */
@@ -23,10 +23,10 @@ case class HTime(previous:Option[HTime], index:Int) {
 
 
 object HTime {
-  implicit val timeOrderingInstance = new Ordering[HTime] {
+  implicit val timeOrderingInstance: Ordering[HTime] = new Ordering[HTime] {
     def compare(x: HTime, y: HTime): Int = {
       val tc = x.trellisTime - y.trellisTime
-      if (tc != 0)
+      if tc != 0 then
         tc
       else (x,y) match {
         case (HTime(None,ix),HTime(None,iy)) =>
@@ -35,7 +35,7 @@ object HTime {
           ix-iy
         case (HTime(Some(px),ix),HTime(Some(py),iy)) =>
           val pc = compare(px, py)
-          if(pc != 0)
+          if pc != 0 then
             pc
           else
             throw new IllegalStateException("Impossible case")
@@ -61,9 +61,9 @@ object AtTime {
   }
 
   /** Lexicographical ordering. */
-  implicit def timeOrdering[T] = timeOrderingInstance.asInstanceOf[Ordering[AtTime[T]]]
+  implicit def timeOrdering[T]: Ordering[AtTime[T]] = timeOrderingInstance.asInstanceOf[Ordering[AtTime[T]]]
   def placeAfter[T](time:HTime, list:SignalCollection[T]):SignalCollection[AtTime[T]] =
-    list.zipWithIndex.map{ case (s, i) =>
+    list.iterator.zipWithIndex.map{ case (s, i) =>
       AtTime(time.next(i), s)
     }
 }

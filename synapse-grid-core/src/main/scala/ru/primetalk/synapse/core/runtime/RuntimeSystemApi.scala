@@ -1,7 +1,8 @@
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components.SignalsApi
-import ru.primetalk.synapse.core.ext.{ExceptionHandlingExt, ContactsIndexExt}
+import ru.primetalk.synapse.core.components.{Contact0, Signal0}
+import ru.primetalk.synapse.core.dsl.SignalsApi
+import ru.primetalk.synapse.core.ext.{ContactsIndexExt, ExceptionHandlingExt}
 
 /**
  * @author zhizhelev, 05.04.15.
@@ -12,20 +13,20 @@ trait RuntimeSystemApi
   with RuntimeComponentApi with TrellisApi with ContactsIndexExt {
 
   /** A dictionary of handlers for signals that appear on contacts.*/
-  type ContactToSubscribersMap = Map[Contact[_], List[RuntimeComponent]]
+  type ContactToSubscribersMap = Map[Contact0, List[RuntimeComponent]]
   /** This contact is used to enable special simultaneous processing of signals.
     * For instance the contact can be used for debug purposes.
     * */
-  object TrellisContact extends Contact[SignalCollection[Signal[_]]]
+  object TrellisContact extends Contact[SignalCollection[Signal0]]
   /** A runtime system is a representation of the system that is
     * reorganized by Contacts and is ready for direct processing of TrellisElement. */
   case class RuntimeSystem(name: String,
                            signalProcessors: ContactToSubscribersMap,
-                           stopContacts: Set[Contact[_]],
+                           stopContacts: Set[Contact0],
                            unhandledExceptionHandler: UnhandledProcessingExceptionHandler
                            = defaultUnhandledExceptionHandler
                             ) {
-    lazy val contacts: Set[Contact[_]] = signalProcessors.keySet
+    lazy val contacts: Set[Contact0] = signalProcessors.keySet
     lazy val isTrellisContactUsed: Boolean = contacts.contains(TrellisContact)
   }
 
@@ -36,12 +37,12 @@ trait RuntimeSystemApi
     * the outer system processor.
     */
   case class DynamicSystem(
-                            inputContacts: Set[Contact[_]],
-                            outputContacts: Set[Contact[_]],
+                            inputContacts: Set[Contact0],
+                            outputContacts: Set[Contact0],
                             name: String,
                             receive: SimpleSignalProcessor,
                             index: ContactsIndex) extends Named with Component with SimpleSignalProcessor{
-    def apply(s:Signal[_]): SignalCollection[Signal[_]] = receive(s)
+    def apply(s: Signal0): IterableOnce[Signal0] = receive(s)
   }
 
   type RuntimeSystemToTotalTrellisProducerConverter = RuntimeSystem => TotalTrellisProducer
@@ -63,14 +64,14 @@ trait RuntimeSystemApi
     * Occasionally one may read output signals (clearing them out if neccessary).
     */
   class DynamicSystemBuffered(dynamicSystem:DynamicSystem) {
-    private val outputBuffer = scala.collection.mutable.ListBuffer[Signal[_]]()
+    private val outputBuffer = scala.collection.mutable.ListBuffer[Signal0]()
     def send[T](input:Contact[T])(data:T): DynamicSystemBuffered = {
       val inputSignal = Signal(input, data)
       val outputSignals = dynamicSystem.receive(inputSignal)
       outputBuffer ++= outputSignals
       this
     }
-    def clear():Seq[Signal[_]] = {
+    def clear():Seq[Signal0] = {
       val result = outputBuffer.toSeq
       outputBuffer.clear()
       result
@@ -80,11 +81,11 @@ trait RuntimeSystemApi
 
     /** Removes signals that corresponds to the given contact
       * @return data from removed signals */
-    def remove[T](output:Contact[T]):Seq[T] = {
+    def remove[T](output: Contact[T]):Seq[T] = {
       val (res, rest) = outputBuffer.toSeq.partition(output)
       outputBuffer.clear()
       outputBuffer ++= rest
-      res.map(_.data)
+      res.map(_.data0).asInstanceOf[Seq[T]]
     }
 
   }

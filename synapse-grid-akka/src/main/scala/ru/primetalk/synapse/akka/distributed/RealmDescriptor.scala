@@ -12,11 +12,12 @@
  */
 package ru.primetalk.synapse.akka.distributed
 
-import ru.primetalk.synapse.core
 import akka.actor.{ActorPath, ActorRef, ActorRefFactory, Props, SupervisorStrategy}
 import ru.primetalk.synapse.akka._
 import ru.primetalk.synapse.akka.ActorComponent
-import ru.primetalk.synapse.core.components.{Component, ComponentWithInternalStructure}
+import ru.primetalk.synapse.core.syntax
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 
 /**
 Deployment of a system over a cluster of nodes
@@ -24,31 +25,31 @@ Deployment of a system over a cluster of nodes
  The realm knows about other hosts and
  the deployment of systems over all the hosts.
   */
-case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deployment: Vector[(List[core.SystemPath], ActorPath)]) {
+case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deployment: Vector[(List[syntax.SystemPath], ActorPath)]) {
   /** Looks up for the systemPath in the deployment descriptor
     * and constructs an appropriate ActorPath for it. */
-  def getRouterPath(systemPath: core.SystemPath): ActorPath = {
+  def getRouterPath(systemPath: syntax.SystemPath): ActorPath = {
     val hosts = deployment.filter(_._1.contains(systemPath)).map(_._2)
-    if (hosts.size != 1)
+    if hosts.size != 1 then
       throw new IllegalStateException(s"For path=$systemPath found != 1 hosts.")
     hosts.head / systemPathToActorName(systemPath)
   }
 
   /** Looks up for the systemPath in the deployment descriptor
     * and constructs an appropriate ActorPath for it. */
-  def getSystemImplPath(systemPath: core.SystemPath): ActorPath = {
+  def getSystemImplPath(systemPath: syntax.SystemPath): ActorPath = {
     val hosts = deployment.filter(_._1.contains(systemPath)).map(_._2)
-    if (hosts.size != 1)
+    if hosts.size != 1 then
       throw new IllegalStateException(s"For path=$systemPath found != 1 hosts.")
     hosts.head / ("subsystem_" + systemPathToActorName(systemPath))
   }
 
   /** List paths of systems that should be created at this host. */
-  def pathsForHost(host: ActorPath): Set[_root_.ru.primetalk.synapse.core.SystemPath] =
+  def pathsForHost(host: ActorPath): Set[SystemPath] =
     deployment.filter(_._2 == host).flatMap(_._1).toSet
 
   private
-  def systemPathToActorName(path: core.SystemPath) =
+  def systemPathToActorName(path: syntax.SystemPath) =
     path.mkString("_")
 
   /**
@@ -56,7 +57,7 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
    * @param s the system to create routers
    * @return collection of SystemPath -> ActorRef - routers for every InnerActorSubsystem.
    */
-  def createRouters(s: Component)(context: ActorRefFactory): List[(_root_.ru.primetalk.synapse.core.SystemPath, ActorRef)] =
+  def createRouters(s: Component)(context: ActorRefFactory): List[(syntax.SystemPath, ActorRef)] =
     actorInnerSubsystems2(s).map(_._1).map {
       path =>
         val actorName = systemPathToActorName(path)
@@ -65,10 +66,10 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
     }
 
   /** Recursively finds all subsystems of the system. */
-  def actorInnerSubsystems(component: Component): List[(core.SystemPathReversed, ActorComponent)] =
-    core.subcomponents(component).collect { case (pathRev, actorInnerSubsystem: ActorComponent) => (pathRev, actorInnerSubsystem)}
+  def actorInnerSubsystems(component: Component): List[(syntax.SystemPathReversed, ActorComponent)] =
+    syntax.subcomponents(component).collect { case (pathRev, actorInnerSubsystem: ActorComponent) => (pathRev, actorInnerSubsystem)}
 
-  def actorInnerSubsystems2(component: Component): List[(core.SystemPath, ActorComponent)] =
+  def actorInnerSubsystems2(component: Component): List[(syntax.SystemPath, ActorComponent)] =
     actorInnerSubsystems(component).map(p => (p._1.reverse, p._2))
 
 
@@ -78,16 +79,16 @@ case class RealmDescriptor(topLevelSystem: ComponentWithInternalStructure, deplo
     * The subsystems send signals to other actors via router actors that should have been
     * created. */
   def createSubsystems(s: Component,
-                       pathsForThisHost: Set[core.SystemPath])(context: ActorRefFactory,
+                       pathsForThisHost: Set[syntax.SystemPath])(context: ActorRefFactory,
                                                                supervisorStrategy: SupervisorStrategy =
                                                                defaultSupervisorStrategy,
                                                                outputFun: Option[InternalSignalsDist => Any] = None, realm: RealmDescriptor): List[ActorRef] = {
-    for {
+    for
       (path, actorSubsystem) <- actorInnerSubsystems2(s)
       if pathsForThisHost.contains(path) // we construct only those subsystems that should be instantiated at this host
       subsystem = actorSubsystem.subsystem
       actorName = "subsystem_" + systemPathToActorName(path)
-    } yield
+    yield
       context.actorOf(Props(new ActorForSystemOneLevel(path, subsystem, supervisorStrategy, realm)), actorName)
   }
 

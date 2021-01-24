@@ -12,16 +12,18 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import org.scalatest.FunSuite
+import org.junit.Test
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
+
 import ru.primetalk.synapse.concurrent.ComputationState._
-import ru.primetalk.synapse.core._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class TwoStateTest extends FunSuite{
+class TwoStateTest {
 
   class TwoStates extends BaseTypedSystem{
     import sb._
-    implicit val sb1 = sb
+    implicit val sb1: SystemBuilder = sb
     setSystemName("Two states ordered")
     val i1 = input[Int]("i1")
     val integral1 = state[Int]("integral1", 0)
@@ -57,17 +59,17 @@ class TwoStateTest extends FunSuite{
     val n = 50
     val m = f(n)
     //    println(list)
-    assert(m === 0)
+    assert(m == 0)
     //    val set = list.toSet
     //    assert(set.contains(0))
     //      "With proper order of signals plus and minus should come to integralSum in order.")
-    //    assert(set === Set(0))
+    //    assert(set == Set(0))
     val g = d.toStaticSystem.toDynamicSystem.toMapTransducer(d.i1, d.o1)
-    assert(m === g(n))
+    assert(m == g(n))
 
   }
-  test("Two states ordered"){
-    for(i <- 0 until 10)
+  @Test def `Two states ordered`(): Unit =
+    (0 until 10).foreach{ _ =>
       performTest()
-  }
+    }
 }

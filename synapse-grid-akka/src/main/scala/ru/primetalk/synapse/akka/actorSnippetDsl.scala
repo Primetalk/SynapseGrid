@@ -13,7 +13,8 @@
  */
 package ru.primetalk.synapse.akka
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import akka.actor._
 import ru.primetalk.synapse.akka.SpecialActorContacts.{NonSignalWithSenderInput, ContextInput, SenderInput}
 
@@ -62,7 +63,7 @@ val akkaExt = sb.extend(ActorSystemBuilderExtensionId)
 
   val actorRef = state[ActorRef](name, Actor.noSender)
 
-  ContextInput.debug().labelNext(s"create actor $name") map {
+  ContextInput.labelNext(s"create actor $name") map {
     case contextRef =>
       contextRef.actorOf(Props(factory(contextRef.self)), name)
   } saveTo actorRef
@@ -72,7 +73,7 @@ val akkaExt = sb.extend(ActorSystemBuilderExtensionId)
   NonSignalWithSenderInput delay 2 zipWithState
     actorRef labelNext "sender == actor?" flatMap {
     case (actor, (senderRef, msg)) =>
-      if (actor == senderRef)
+      if actor == senderRef then
         Seq(msg.asInstanceOf[TOutput])
       else
         Seq()

@@ -11,4 +11,3 @@ trait ContactsDsl extends ComponentsApi {
   def contact[T](name: String) = new Contact[T](name)
 
 }
-

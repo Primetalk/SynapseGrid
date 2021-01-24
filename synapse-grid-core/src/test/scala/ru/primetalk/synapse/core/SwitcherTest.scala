@@ -1,11 +1,13 @@
 package ru.primetalk.synapse.core
 
-import org.scalatest.FunSuite
+import org.junit.Test
+import syntax._
+import syntax.given
 
 /**
  * @author zhizhelev, 24.08.15.
  */
-class SwitcherTest extends FunSuite{
+class SwitcherTest {
   object SwitcherSystem extends BaseTypedSystem {
     val level = input[Int]("level")
     val highLevel = output[Int]("highLevel")
@@ -21,7 +23,7 @@ class SwitcherTest extends FunSuite{
 
     }
   }
-  test("switcher test"){
+
+  @Test def switcher(): Unit =
     SwitcherSystem.toStaticSystem.toDot().saveTo("SwitcherSystem.dot")
-  }
 }

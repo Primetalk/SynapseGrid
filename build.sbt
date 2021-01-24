@@ -9,9 +9,7 @@ lazy val commonSettings = Seq(
   organization := "ru.primetalk",
   version := "1.6.0-SNAPSHOT", //
   scalaVersion := scala3Version,
-  libraryDependencies += ("org.specs2" %% "specs2-core" % "4.7.0" % Test).withDottyCompat(scalaVersion.value),
   publishArtifact in Test := false,
-  libraryDependencies += ("org.scalatest" %% "scalatest" % "3.0.8" % Test).withDottyCompat(scalaVersion.value),
   libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % Test,
   scalacOptions ++= Seq("-deprecation", "-new-syntax", "-rewrite"),
   isSnapshot := true,
@@ -59,7 +57,7 @@ lazy val akka = (project in file("synapse-grid-akka")).settings(
 //).dependsOn(akka, rx)
 
 lazy val SynapseGrid = (project in file(".")).
-  aggregate(core).//, concurrent, slf4j, akka).//, rx, examples).
+  aggregate(core, concurrent, slf4j, akka).//, rx, examples).
   settings(
     aggregate in update := false,
     publishArtifact := false,

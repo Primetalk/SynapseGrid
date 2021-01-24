@@ -1,5 +1,6 @@
 package ru.primetalk.synapse.core.subsystems
 
+import ru.primetalk.synapse.core.components.Contact0
 import ru.primetalk.synapse.core.dot.SystemRendererApi
 import ru.primetalk.synapse.core.dsl.SystemBuilderDsl
 import ru.primetalk.synapse.core.ext.DevNullExt
@@ -30,16 +31,16 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRender
     def encapsulateComponent(name: String = ""): StaticSystem = {
       val s = cvt(t)
 
-      val aName = if (name == "") s.name else name
+      val aName = if name == "" then s.name else name
 
-      implicit val sb = new SystemBuilderC(aName)
+      implicit val sb: SystemBuilderC = new SystemBuilderC(aName)
       def naming(n: String) = aName + "." + n
 
       s.inputContacts.map { c =>
-        sb.input(naming(c.name)) >> c
+        sb.input(naming(c.name)) >> c.asInstanceOf[Contact[?]]
       }
       s.outputContacts.map { c =>
-        c >> sb.output(naming(c.name))
+        c.asInstanceOf[Contact[?]] >> sb.output(naming(c.name))
       }
       sb.addComponent(s)
       sb.toStaticSystem
@@ -48,21 +49,21 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRender
 
   }
 
-  /** Enriches arbitrary type with implicit converter to StaticSystem. Adds a few useful methods. */
-  implicit class RichStaticSystemType[T](t: T)(implicit cvt: T => StaticSystem) {
-
-    @inline private def system = t: StaticSystem
-
+  extension [T](t: T)(using Conversion[T, StaticSystem])
     /** Converts a StaticSystem to graph in dot-format.
       * Note: if you get a "missed argument ..." error, just add empty parentheses.
       * @param level how deep to dig into subsystems. Default level=0 - which means not to plot subsystem details at all.
       */
-    def toDot(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
+    def toDot(level: Int = 0): String = SystemRenderer.staticSystem2ToDot(t, level = level)
+
+  class RichStaticSystemType[T](t: T)(using Conversion[T, StaticSystem]) {
+
+    @inline private def system: StaticSystem = t
 
     @deprecated("use toDot", "20.04.2015")
-    def toDotAtLevel(level: Int = 0) = SystemRenderer.staticSystem2ToDot(system, level = level)
+    def toDotAtLevel(level: Int = 0): String = SystemRenderer.staticSystem2ToDot(system, level = level)
 
-
+    given Conversion[StaticSystem, StaticSystem] = identity
     /**
      * Constructs a system around another one.
      * It's inputs and outputs are renamed to name+"."+input.name and it's name is anew.
@@ -73,16 +74,16 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRender
     @deprecated("use encapsulateSubsystem or encapsulateComponent", "25.08.2015")
     def encapsulate(name: String = ""): StaticSystem = encapsulateSubsystem(name)
     def encapsulateSubsystem(name: String = ""): StaticSystem = {
-      val s = cvt(t)
-      val aName = if (name == "") s.name else name
-      implicit val sb = new SystemBuilderC(aName)
+      val s = system
+      val aName = if name == "" then s.name else name
+      implicit val sb: SystemBuilderC = new SystemBuilderC(aName)
       def naming(n: String) = aName + "." + n
 
       s.inputs.map { c =>
-        sb.input(naming(c.name)) >> c
+        sb.input(naming(c.name)) >> c.asInstanceOf[Contact[_]]
       }
       s.outputs.map { c =>
-        c >> sb.output(naming(c.name))
+        c.asInstanceOf[Contact[_]] >> sb.output(naming(c.name))
       }
       sb.addSubsystem(s, s.privateStateHandles: _*)
       sb.toStaticSystem
@@ -101,29 +102,29 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRender
    */
   implicit class OrphanContactsAnalysis(system: StaticSystem) {
 
-    val allInputContacts =
+    val allInputContacts: Set[Contact0] =
       system.components.flatMap(_.inputContacts).toSet ++ system.outputContacts
 
-    val allOutputContacts =
+    val allOutputContacts: Set[Contact0] =
       system.components.
         flatMap(_.outputContacts).toSet ++
         system.inputContacts
 
     /** Special "/dev/null" contacts that are intentionally ignore incoming data */
-    val nullContacts = {
+    val nullContacts: SignalCollection[Contact0] = {
       val extOpt = system.extensionOpt[ContactStyleStaticExtension]
       extOpt.map(_.styledWith(DevNullContact)).getOrElse(Iterable.empty)
     } // allOutputContacts.filter(_.contactStyle == DevNullContact)
 
     /** Component inputs that do not get data from anywhere. */
-    val orphanComponentInputs = allInputContacts -- allOutputContacts
+    val orphanComponentInputs: Set[Contact0] = allInputContacts -- allOutputContacts
 
     /** Component outputs that are not connected anywhere. */
-    val orphanComponentOutputs = allOutputContacts -- allInputContacts -- nullContacts
+    val orphanComponentOutputs: Set[Contact0] = allOutputContacts -- allInputContacts -- nullContacts
 
 
     /** Contacts that has only one connection either in or out. */
-    val orphanContacts: Set[Contact[_]] =
+    val orphanContacts: Set[Contact0] =
       orphanComponentInputs ++
         orphanComponentOutputs
   }
@@ -143,7 +144,7 @@ trait StaticSystemApi extends DevNullExt with SystemBuilderDsl with SystemRender
    * Recursively finds unconnected contacts
    * within the subsystems of the system.
    */
-  def orphanContactsRec(system: StaticSystem): List[(String, Set[Contact[_]])] =
+  def orphanContactsRec(system: StaticSystem): List[(String, Set[Contact0])] =
     collectSubsystems(system).
       map(p => (p._1, p._2.orphanContacts)).
       filterNot(_._2.isEmpty)

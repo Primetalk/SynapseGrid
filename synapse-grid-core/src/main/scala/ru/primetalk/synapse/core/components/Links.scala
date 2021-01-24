@@ -44,7 +44,7 @@ case class FlatMapLink[-T1, +T2](f: T1 => IterableOnce[T2])
  * Prefer to use StateZipLink (?)
  */
 case class StatefulFlatMapLink[S, -T1, +T2](
-	f: (S, T1) => (S, IterableOnce[T2]),
+  f: (S, T1) => (S, IterableOnce[T2]),
   stateHolder: StateHandle[S])
   extends LinkInfo[T1, T2]
 
@@ -63,5 +63,5 @@ case class NopLink[-T1, +T2 >: T1]()
   * "Fires" starting from the initial contact until "firewall" contacts.
   * TODO: move to Components.
   */
-case class RedMapLink[-T1, +T2](stopContacts: Set[Contact[_]]) extends LinkInfo[T1, T2]
+case class RedMapLink[-T1, +T2](stopContacts: Set[Contact0]) extends LinkInfo[T1, T2]
 

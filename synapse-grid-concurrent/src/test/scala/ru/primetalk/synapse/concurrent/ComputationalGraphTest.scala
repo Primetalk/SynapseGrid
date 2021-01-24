@@ -12,32 +12,34 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import org.scalatest.FunSuite
+import org.junit.Test
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
+
 import ru.primetalk.synapse.concurrent.ComputationState._
-import ru.primetalk.synapse.core._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ComputationalGraphTest extends FunSuite{
+class ComputationalGraphTest {
   class SimpleFunctional extends BaseTypedSystem{
-    implicit val sb1 = sb
+    implicit val sb1: SystemBuilder = sb
     val i1 = input[Int]("i1")
     val o1 = output[Int]("o1")
     i1.flatMap(t=>0 until t).map((i:Int) => i*i) >> o1
   }
-  test("pure functional system"){
+  @Test def `pure functional system`(): Unit = {
     val d = new SimpleFunctional
     val f = d.toStaticSystem.toParallelDynamicSystem.toTransducer(d.i1, d.o1)
     val n = 5
     val list = f(n)
-    assert(list.size === n)
-    val set = list.toSet
+    assert(list.iterator.size == n)
+    val set = list.iterator.toSet
     assert(set.contains((n-1)*(n-1)))
     assert(set.contains(0))
     val g = d.toStaticSystem.toDynamicSystem.toTransducer(d.i1, d.o1)
-    assert(list === g(n))
+    assert(list == g(n))
   }
   class SimpleStateful extends BaseTypedSystem{
-    implicit val sb1 = sb
+    implicit val sb1: SystemBuilder = sb
     import sb._
     setSystemName("Ordered integration")
     val i1 = input[Int]("i1")
@@ -49,16 +51,16 @@ class ComputationalGraphTest extends FunSuite{
           (s+i, s+i)
       } >> o1
   }
-  test("stateful system"){
+  @Test def `stateful system`(): Unit = {
 
     val d = new SimpleStateful
     val f = d.toStaticSystem.toParallelDynamicSystem.toTransducer(d.i1, d.o1)
     val n = 5
     val list = f(n)
-    assert(list.size === n)
-    val set = list.toSet
+    assert(list.iterator.size == n)
+    val set = list.iterator.toSet
     assert(set.contains(0))
     val g = d.toStaticSystem.toDynamicSystem.toTransducer(d.i1, d.o1)
-    assert(list === g(n))
+    assert(list == g(n))
   }
 }

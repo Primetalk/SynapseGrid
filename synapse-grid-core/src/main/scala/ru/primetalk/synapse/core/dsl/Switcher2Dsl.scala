@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.BlackBoxStatelessComponent
+import ru.primetalk.synapse.core.components.{BlackBoxStatelessComponent, Contact0}
 
 /**
   * A newer version of API for creating "switcher". A switcher is a component with one input with pair of
@@ -13,7 +13,7 @@ trait Switcher2Dsl extends SystemBuilderDsl{
 
   class Switcher2Builder[T](c: Contact[Signal[T]], name: String = "")(implicit sb: SystemBuilder) {
     def fanOut(contacts: Contact[T]*): Unit = {
-      val outputContacts: Set[Contact[_]] = contacts.toSet
+      val outputContacts: Set[Contact0] = contacts.toSet
       sb.addComponent(BlackBoxStatelessComponent(name, Set(c), outputContacts,
         {
           case Signal(_, s@Signal(contact, _)) if outputContacts.contains(contact) =>

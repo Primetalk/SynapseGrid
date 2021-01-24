@@ -1,19 +1,14 @@
 package ru.primetalk.synapse.core
 
-import org.specs2._
-import scala.language.implicitConversions
+import org.junit.Test
+import syntax._
+import syntax.given
 
 /**
  * @author zhizhelev, 19.04.15.
  */
-class DotSpec extends Specification { def is = s2"""
-
-  StaticSystem.toDot should
-    produce some output     ${s1dot mustNotEqual ""}
-    contain system's name   ${s1dot must contain("S1")}
-    contain link label >>   ${s1dot must contain(">>")}
-            """
-
+class DotTest { 
+  
   implicit class S1(oib:OuterInterfaceBuilder) {
     import oib._
     val i1 = input[Int]("i1")
@@ -27,5 +22,9 @@ class DotSpec extends Specification { def is = s2"""
   val s1 = createTypedSystem[S1]("S1")
 
   val s1dot = s1.toDot()///new RichStaticSystemType(s1)(withStaticSystemToStaticSystem).toDot()
+  @Test def `contain system's name`(): Unit =
+    assert(s1dot.contains("S1"))
+  @Test def `contain link label >>`(): Unit =
+    assert(s1dot.contains(">>"))
 
 }

@@ -13,31 +13,33 @@
  */
 package ru.primetalk.synapse.core.dsl
 
+import ru.primetalk.synapse.core.components.Contact0
+
 trait AutomataDsl extends SystemBuilderDsl {
 
 	/** The builder creates a state machine with `State` type of state. */
 	//trait AutomataBuilder[State] {//extends SystemBuilder {
 	class AutomataBuilder[State](initialState: State, name:String = "automaton")(implicit sb: SystemBuilder) { ab =>
 
-		protected def stateName = name+"State"
+		protected def stateName: String = name+"State"
 
 		/** All operations with automatonState should be done via DSL */
 		private val automatonState = sb.state[State](stateName, initialState)
 
 		/** Cache with contacts that are zipped with automaton state.
 			* To avoid duplicates.*/
-		private val zippedCache = scala.collection.mutable.Map[Contact[_], Contact[_]]()
+		private val zippedCache = scala.collection.mutable.Map[Contact0, Contact0]()
 
 		private def zipped[T](c: Contact[T]): Contact[(State, T)] = {
 			zippedCache.getOrElseUpdate(c, c zipWithState(automatonState, "(State,_)")).asInstanceOf[Contact[(State, T)]]
 		}
 
 		/** Cache of contacts that are mapped in a particular state.*/
-		private val zippedFilteredCache = scala.collection.mutable.Map[(Contact[_], State), Contact[_]]()
+		private val zippedFilteredCache = scala.collection.mutable.Map[(Contact0, State), Contact0]()
 
 		private def zippedFiltered[T](c: Contact[T], s: State): Contact[T] = {
 			zippedFilteredCache.getOrElseUpdate((c, s), zipped(c) flatMap(p => {
-				if (p._1 == s)
+				if p._1 == s then
 					Seq(p._2)
 				else
 					Seq()
@@ -46,15 +48,15 @@ trait AutomataDsl extends SystemBuilderDsl {
 		}
 
 		/** The only way to change automaton state is to save new state value into saveToState. */
-		lazy val saveToState = contact[State]("saveToState")
+		lazy val saveToState: Contact[State] = contact[State]("saveToState")
 
-		lazy val onTransition = {
+		lazy val onTransition: Contact[(State, State)] = {
 			val c1 = contact[(State, State)]("onTransition")
 			(saveToState -> c1).stateMap(automatonState) { (oldState, newState) => (newState, (oldState, newState)) }
 			c1
 		}
 
-		lazy val onAutomatonStateChanged = {
+		lazy val onAutomatonStateChanged: Contact[(State, State)] = {
 			val c2 = contact[(State, State)]("onStateChanged")
 			onTransition.labelNext("hasChanged?") -> c2 filter { case (oldState, newState) => newState != oldState }
 			c2
@@ -62,10 +64,11 @@ trait AutomataDsl extends SystemBuilderDsl {
 
 		private val switchToStateCache = scala.collection.mutable.Map[State, Contact[Any]]()
 
+
 		def switchToState(s: State): Contact[Any] =
 			switchToStateCache.getOrElseUpdate(s, {
 				val c = auxContact[Any](sb)
-				c -> saveToState map(t => s, nextLabel("", "" + s + "!"))
+				LinkBuilderOps(c -> saveToState).map(constF(s), nextLabel("", "" + s + "!"))
 				c
 			})
 
@@ -73,7 +76,7 @@ trait AutomataDsl extends SystemBuilderDsl {
 			def when(s: State, name: String = ""):Unit = {
 
 			}
-			def zip = ab.zipped(c1)
+			def zip: Contact[(State, T1)] = ab.zipped(c1)
 		}
 		implicit class StateContact[T](c: Contact[T]) {
 
@@ -94,7 +97,7 @@ trait AutomataDsl extends SystemBuilderDsl {
 			 */
 			def toState(s: State, name: String = ""): Contact[T] = {
 				//			c.updateState(automatonState, nextLabel(name, ""+s+"!"))((s1,t) => s) //.updateState(automatonState, ""+s+"!")((old, t)=>s)
-				c -> saveToState map(t => s, nextLabel(name, "" + s + "!"))
+				LinkBuilderOps(c -> saveToState).map(constF(s), nextLabel(name, "" + s + "!"))
 				c
 			}
 
@@ -102,15 +105,13 @@ trait AutomataDsl extends SystemBuilderDsl {
 				toState(s, name)
 
 			/** Switches to state and do some work along the way */
-			def moveToState(s: State, name: String = "")(fun: T => Any) = {
-				c -> saveToState map(t => {
-					fun(t)
-					s
-				}, nextLabel(name, "" + s + "!"))
+			def moveToState(s: State, name: String = "")(fun: T => Any): Contact[T] = {
+				LinkBuilderOps(c -> saveToState).map(fun andThen constF(s),
+					nextLabel(name, "" + s + "!"))
 				c
 			}
 
-			def update(fun: (State, T) => State, name: String = "") = {
+			def update(fun: (State, T) => State, name: String = ""): Contact[T] = {
 				c.updateState(automatonState, nextLabel(name, "update automaton"))(fun)
 				c
 			}
@@ -125,7 +126,7 @@ trait AutomataDsl extends SystemBuilderDsl {
 		//Methods that deal with VAR currentConstructingState
 		private var currentConstructingState: State = initialState
 
-		def startBuildingState(s: State) = {
+		def startBuildingState(s: State): State = {
 			currentConstructingState = s
 			s
 		}
@@ -146,11 +147,11 @@ trait AutomataDsl extends SystemBuilderDsl {
 		implicit class WhenState(val s: State) {
 			def on[T](c: Contact[T]): Contact[T] = new StateContact(c).when(s)
 
-			def onEntered =
+			def onEntered: Contact[(State, State)] =
 				onTransition.filter { case (oldState, newState) => newState == s && oldState != s }
 
 			/** a contact will */
-			def ofExited =
+			def ofExited: Contact[(State, State)] =
 				onTransition.filter { case (oldState, newState) => oldState == s && newState != s }
 		}
 

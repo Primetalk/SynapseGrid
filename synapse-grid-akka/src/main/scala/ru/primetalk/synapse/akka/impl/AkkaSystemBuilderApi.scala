@@ -1,7 +1,8 @@
 package ru.primetalk.synapse.akka.impl
 
 import akka.actor.{AllForOneStrategy, Actor, ActorRef, SupervisorStrategy}
-import ru.primetalk.synapse.core.{SystemBuilderC, SystemBuilder, Contact, StaticSystem}
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import scala.language.implicitConversions
 
 /**
@@ -19,7 +20,7 @@ trait AkkaSystemBuilderApi {
                              defaultSupervisorStrategy
                               )(implicit
                                 ev: T => StaticSystem): T = {
-      sb.addComponent(new ru.primetalk.synapse.akka.ActorComponent(subsystem, supervisorStrategy))
+      sb.addComponent(new ru.primetalk.synapse.akka.ActorComponent(ev(subsystem), supervisorStrategy))
       subsystem
     }
 

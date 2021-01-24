@@ -18,7 +18,9 @@ import akka.event.{Logging, LoggingAdapter, LoggingReceive}
 import org.slf4j.MDC
 import ru.primetalk.synapse.akka.SpecialActorContacts.{InitCompleted, _}
 import ru.primetalk.synapse.akka._
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.components.Contact0
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import ru.primetalk.synapse.core.components.SignalDist
 
 /** Escalates all exceptions to upper level. This actor is an appropriate default for
@@ -35,10 +37,10 @@ trait AbstractStaticSystemActor extends Actor {
   val system: StaticSystem
   val outputFun: Option[InternalSignalsDist => Any]
   /** None for top level system */
-  val parentSystemRef: Option[ActorRef]
+  def parentSystemRef: Option[ActorRef]
 
   protected val log: LoggingAdapter = Logging(context.system, this)
-  var systemState: Map[Contact[_], Any] = system.s0
+  var systemState: Map[Contact0, Any] = system.s0
   val processor: TotalTrellisProducer = createSelfTrellisProducer
 
   //  def getSubsystemIndex(path:core.SystemPath):Indexed = {
@@ -58,25 +60,25 @@ trait AbstractStaticSystemActor extends Actor {
   protected
   def createSelfTrellisProducer: TotalTrellisProducer
 
-  val processSignals: List[Signal[_]] => Unit = createSignalProcessor
+  val processSignals: List[Signal0] => Unit = createSignalProcessor
 
-  protected def createSignalProcessor: List[Signal[_]] => Unit = {
-    if (system.inputContacts.contains(SenderInput)) // the check is done at the beginning.
-      (ls: List[Signal[_]]) =>
+  protected def createSignalProcessor: List[Signal0] => Unit = {
+    if system.inputContacts.contains(SenderInput) then // the check is done at the beginning.
+      (ls: List[Signal0]) =>
         innerProcessSignals(Signal(SenderInput, sender()) :: ls)
     else
       ls => innerProcessSignals(ls)
   }
 
-  protected def innerProcessSignals(ls: List[Signal[_]]): Unit = {
+  protected def innerProcessSignals(ls: List[Signal0]): Unit = {
     MDC.put("akkaSource", "" + self.path)
-    val results: List[Signal[_]] = ls.flatMap {
-      signal: Signal[_] =>
+    val results: List[Signal0] = ls.flatMap {
+      (signal: Signal0) =>
         val res = processor(systemState, signal)
         systemState = systemState ++ res._1
         res._2
     }
-    if (results.nonEmpty) {
+    if results.nonEmpty then {
       log.info("inner results:" + results)
       val sigs = InternalSignalsDist(systemPath, results.map(system.index.convertSignalToSignalDist))
       outputFun.foreach(_(sigs))
@@ -84,7 +86,7 @@ trait AbstractStaticSystemActor extends Actor {
     }
   }
 
-  def convertInternalSignalsDist(relPath: List[String], signalsDist: List[SignalDist]): List[Signal[_]] = {
+  def convertInternalSignalsDist(relPath: List[String], signalsDist: List[SignalDist]): List[Signal0] = {
     val signals =
       relPath.reverse match {
         case Nil =>
@@ -119,8 +121,8 @@ trait AbstractStaticSystemActor extends Actor {
     case msg: InternalSignalsDist =>
       val InternalSignalsDist(path, signalsDist) = msg
       log.info(getClass.getSimpleName + " received " + msg)
-      val relPath = if (path.startsWith(systemPath)) path.drop(systemPath.size) else throw new IllegalArgumentException("Cannot process path " + path + " at systemPath=" + systemPath)
-      if (relPath.isEmpty) {
+      val relPath = if path.startsWith(systemPath) then path.drop(systemPath.size) else throw new IllegalArgumentException("Cannot process path " + path + " at systemPath=" + systemPath)
+      if relPath.isEmpty then {
         throw new IllegalArgumentException("Obtained signals without system name: " + msg + ". sender = " + sender())
         //        log.info(getClass.getSimpleName + " received " + msg)
         //        val innerSignals = signalsDist.map(sd => system.index(sd))
@@ -139,15 +141,15 @@ trait AbstractStaticSystemActor extends Actor {
   }
 
   override def preStart(): Unit = {
-    if (system.inputContacts.contains(ContextInput))
+    if system.inputContacts.contains(ContextInput) then
       processSignals(Signal(ContextInput, context) :: Nil)
-    if (system.inputContacts.contains(PreStartInput))
+    if system.inputContacts.contains(PreStartInput) then
       processSignals(Signal(PreStartInput, context) :: Nil)
     parentSystemRef.foreach(_ ! InitCompleted(self))
   }
 
   override def postStop(): Unit = {
-    if (system.inputContacts.contains(PostStopInput))
+    if system.inputContacts.contains(PostStopInput) then
       processSignals(Signal(PostStopInput, PostStop) :: Nil)
   }
 

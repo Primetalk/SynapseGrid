@@ -1,7 +1,7 @@
 package ru.primetalk.synapse.slf4j.impl
 
 import org.slf4j.LoggerFactory
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.syntax._
 import ru.primetalk.synapse.slf4j.LoggingContact
 import scala.language.implicitConversions
 
@@ -15,7 +15,7 @@ trait Slf4jApi {
   implicit def contactToLoggingContact[T](c:Contact[T])(implicit sb:SystemBuilder): LoggingContact[T] =
     new LoggingContact(c, sb.extend(SystemBuilderLoggingExtensionId).loggerNamePrefix)(sb)
 
-  implicit val SystemBuilderLoggingExtensionId = new SystemBuilderExtensionId[SystemBuilderLoggingExtension](new SystemBuilderLoggingExtension(_))
+  implicit val SystemBuilderLoggingExtensionId: SystemBuilderExtensionId[SystemBuilderLoggingExtension] = new SystemBuilderExtensionId[SystemBuilderLoggingExtension](new SystemBuilderLoggingExtension(_))
 
   implicit class LoggingContactThrowable[T<:Throwable](c:Contact[T])(implicit sb:SystemBuilder){
 

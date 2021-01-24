@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.akka
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import akka.actor._
 /**
  * ActorComponent is a component that can be added to any system. When

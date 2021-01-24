@@ -12,9 +12,12 @@
  */
 package ru.primetalk.synapse.core
 
-import org.scalatest.FunSuite
+import org.junit.Test
+import syntax._
+import syntax.given
+import scala.language.implicitConversions
 
-class OrphanTest extends FunSuite {
+class OrphanTest {
 
   class DisconnectedSystemBuilder extends BaseTypedSystem("DisconnectedSystem"){
     val i1 = input[Int]("i1")
@@ -28,10 +31,9 @@ class OrphanTest extends FunSuite {
     }
   }
 
-  test("orphan contacts"){
+  @Test def `orphan contacts`(): Unit =
     val s = new DisconnectedSystemBuilder
-    assert(orphanContactsRec(s:StaticSystem) === List((".DisconnectedSystem", Set(s.c1, s.c2))))
-  }
+    assert(orphanContactsRec(s:StaticSystem) == List((".DisconnectedSystem", Set(s.c1, s.c2))))
 
   class SuperSystem extends BaseTypedSystem("DisconnectedSuperSystem"){
     val pi1 = input[Int]("pi1")
@@ -45,11 +47,11 @@ class OrphanTest extends FunSuite {
     }
   }
 
-  test("orphan contacts in subsystem"){
+  @Test def `orphan contacts in subsystem`(): Unit =
     val s = new SuperSystem
-    assert(collectSubsystems(s).size === 2)
-    assert(orphanContactsRec(s) ===
+    assert(collectSubsystems(s).size == 2)
+    assert(orphanContactsRec(s) ==
       List((".DisconnectedSuperSystem.DisconnectedSystem",
         Set(s.subsystem1.c1, s.subsystem1.c2))))
-  }
+  
 }

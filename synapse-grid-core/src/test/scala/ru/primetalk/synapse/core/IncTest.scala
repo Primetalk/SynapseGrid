@@ -12,9 +12,10 @@
  */
 package ru.primetalk.synapse.core
 
-import org.scalatest.FunSuite
+import ru.primetalk.synapse.core.syntax._
+import org.junit.Test
 
-class IncTest extends FunSuite {
+class IncTest {
 
   class SimpleSystemWithStateBuilder extends BaseTypedSystem{
     setSystemName("SimpleSystemWithState")
@@ -37,15 +38,15 @@ class IncTest extends FunSuite {
 
   val s = new SimpleSystemWithStateBuilder
 
-  test("inc"){
+  @Test def inc(): Unit = {
     val tr = new RichDynamicSystem(s.toStaticSystem.toDynamicSystem).toTransducer(s.i1, s.o1)
-    for(i<-0 until 10)
-      assert(tr(i) === List())
-    assert(tr(0) === List(11))
+    for i<-0 until 10 do
+      assert(tr(i) == List())
+    assert(tr(0) == List(11))
   }
 
-  test("addTo"){
+  @Test def addTo(): Unit = {
     val tr = new RichDynamicSystem(s.toStaticSystem.toDynamicSystem).toTransducer(s.i1, s.o2)
-    assert((0 until 10).flatMap(tr) === List(45))
+    assert((0 until 10).flatMap(tr) == List(45))
   }
 }

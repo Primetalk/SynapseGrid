@@ -12,16 +12,17 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import org.scalatest.FunSuite
-import ru.primetalk.synapse.core._
+import org.junit.Test
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 
 import ComputationState._
 
-class PerformanceTest extends FunSuite {
+class PerformanceTest {
 
   class HardWorker(innerLoop:Int) extends BaseTypedSystem{
     import sb._
-    implicit val sb1 = sb
+    implicit val sb1: SystemBuilder = sb
     setSystemName("HardWorker")
     val i1 = input[Int]("i1")
     val m1 = contact[Int]("m1")
@@ -35,7 +36,7 @@ class PerformanceTest extends FunSuite {
     inputs.map(longWay) >> o1
 
   }
-  test("Two states ordered"){
+  @Test def `Two states ordered`(): Unit = {
     import scala.concurrent.ExecutionContext.Implicits.global
     val k = 400
     val n = 16
@@ -48,9 +49,9 @@ class PerformanceTest extends FunSuite {
     val start = System.currentTimeMillis()
     val list = f(n)
     val delta = System.currentTimeMillis() - start
-    assert(list.size === n)
+    assert(list.iterator.size == n)
     val start2 = System.currentTimeMillis()
-    assert(list === g(n))
+    assert(list == g(n))
     val delta2 = System.currentTimeMillis() - start2
     println(s"k=$k, n=$n\npar: $delta\nseq: $delta2\nxRt: ${1.0*delta2/delta}\n")
     /*

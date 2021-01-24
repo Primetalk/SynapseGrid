@@ -12,9 +12,11 @@
  */
 package ru.primetalk.synapse.akka.distributed
 
-import akka.actor.{Extension, ExtensionId, ExtendedActorSystem}
+import akka.actor.{ExtendedActorSystem, Extension, ExtensionId}
 import akka.serialization._
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.components.Contact0
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import ru.primetalk.synapse.akka.SpecialActorContacts._
 
 
@@ -50,7 +52,7 @@ class ContactsSerializer(system: ExtendedActorSystem) extends Serializer {
         val dataArr = serializer.toBinary(data)
         val res = contactArr ++ dataArr
         res
-      case c: Contact[_] =>
+      case c: Contact0 =>
         val id = contactsExtension.getContactId(c)
         Array[Byte](id.toByte, (id >> 8).toByte, (id >> 16).toByte, (id >> 24).toByte)
       case msg =>
@@ -78,7 +80,7 @@ case class ContactsIndexSer(system: StaticSystem) {
     val arr = (Set(NonSignalWithSenderInput, SubsystemSpecialContact, CurrentTimeMsInput) ++
       system.allInputContacts).toArray
     val cn = arr.toSeq.zipWithIndex
-    (arr, cn.toMap[Contact[_], Int])
+    (arr, cn.toMap[Contact0, Int])
   }
 }
 
@@ -90,7 +92,7 @@ class ContactsMapExtensionImpl extends Extension {
     index = Some(ContactsIndexSer(system))
   }
 
-  def getContactId(c: Contact[_]): Int =
+  def getContactId(c: Contact0): Int =
     index.get.contactToN(c)
 
   def getContact[T](id: Int): Contact[T] =

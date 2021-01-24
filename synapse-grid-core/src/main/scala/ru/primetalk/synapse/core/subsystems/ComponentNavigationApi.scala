@@ -22,12 +22,12 @@ trait ComponentNavigationApi extends ContactsDsl {
       (component.name :: path, component) :: (
         component match {
           case c: ComponentWithInternalStructure =>
-            val s = c.toStaticSystem
+            val s: StaticSystem = c.toStaticSystem
             val name = c match {
               case n: Named => n.name;
-              case _ => ""
+              case null => ""
             } //if (c.isInstanceOf[Named]) c.asInstanceOf[Named].name else ""
-          val path2 = name :: path
+            val path2 = name :: path
             s.components.flatMap(c => components0(c, path2))
           case _ =>
             Nil

@@ -13,14 +13,11 @@
  */
 package ru.primetalk.synapse
 
-import ru.primetalk.synapse.core.components.SignalsApi
-import ru.primetalk.synapse.core.dot.{SystemRendererApi, FilesApi}
+import ru.primetalk.synapse.core.dot.{FilesApi, SystemRendererApi}
 import ru.primetalk.synapse.core.dsl._
 import ru.primetalk.synapse.core.ext._
-import ru.primetalk.synapse.core.runtime.{SystemConvertingApi, SignalProcessingDsl}
+import ru.primetalk.synapse.core.runtime.{SignalProcessingDsl, SystemConvertingApi}
 import ru.primetalk.synapse.core.subsystems._
-
-import scala.language.implicitConversions
 
 package object core
   extends SystemBuilderApi

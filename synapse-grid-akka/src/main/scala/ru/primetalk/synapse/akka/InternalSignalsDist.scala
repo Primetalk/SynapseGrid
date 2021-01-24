@@ -13,7 +13,8 @@
  */
 package ru.primetalk.synapse.akka
 
-import ru.primetalk.synapse.core.components.SignalDist
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 
 import scala.language.postfixOps
 

@@ -1,5 +1,7 @@
 package ru.primetalk.synapse.core.ext
 
+import ru.primetalk.synapse.core.components.Contact0
+
 import scala.collection.immutable.Iterable
 
 /**
@@ -15,13 +17,13 @@ trait ContactStyleExt extends SystemBuilderApi {
 //
 //  case object StateContact extends ContactStyle
 
-  implicit val ContactStyleExtId = new SystemBuilderExtensionId[ContactStyleExtension](new ContactStyleExtension(_))
+  implicit val ContactStyleExtId: SystemBuilderExtensionId[ContactStyleExtension] = new SystemBuilderExtensionId[ContactStyleExtension](new ContactStyleExtension(_))
 
   implicit object ContactStyleStaticExtId extends StaticSystemExtensionId[ContactStyleStaticExtension]
 
   class ContactStyleExtension(val sb: SystemBuilder) extends SystemBuilderExtension{
     private[ContactStyleExt]
-    var styles = List[(Contact[_], ContactStyle)]()
+    var styles = List[(Contact0, ContactStyle)]()
 
     /** Opportunity for extension to hook into method
       * SystemBuilder#toStaticSystem".
@@ -31,24 +33,24 @@ trait ContactStyleExt extends SystemBuilderApi {
 
   }
 
-  case class ContactStyleStaticExtension(styles:Map[Contact[_], ContactStyle]) {
-    lazy val reversed = styles.groupBy(_._2).map(grp => (grp._1, grp._2.map(_._1)))
-    def style(c:Contact[_]):ContactStyle =
+  case class ContactStyleStaticExtension(styles:Map[Contact0, ContactStyle]) {
+    lazy val reversed: Map[ContactStyle, Iterable[Contact0]] = styles.groupBy(_._2).map(grp => (grp._1, grp._2.map(_._1)))
+    def style(c:Contact0):ContactStyle =
       styles.getOrElse(c, NormalContact)
 
-    def styledWith(s:ContactStyle): Iterable[Contact[_]] = reversed.getOrElse(s,Iterable.empty)
+    def styledWith(s:ContactStyle): Iterable[Contact0] = reversed.getOrElse(s,Iterable.empty)
 
   }
 
   implicit class StyleableContact[T](c:Contact[T]){
-    def styled(s:ContactStyle)(implicit sb:SystemBuilder) = {
+    def styled(s:ContactStyle)(implicit sb:SystemBuilder): Contact[T] = {
       val ext = sb.extend(ContactStyleExtId)
       ext.styles = (c,s) :: ext.styles
       c
     }
   }
 //  implicit class StyledSystem(s:StaticSystem){
-//    def styles:Map[Contact[_], ContactStyle] = s.extensionOpt[ContactStyleStaticExtension].
+//    def styles:Map[Contact0, ContactStyle] = s.extensionOpt[ContactStyleStaticExtension].
 //      map(_.styles).getOrElse(Map())
 //  }
 }

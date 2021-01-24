@@ -1,6 +1,6 @@
 package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.components.StateUpdate
+import ru.primetalk.synapse.core.components.{Contact0, StateUpdate}
 import ru.primetalk.synapse.core.ext.{AuxNumberingExt, DevNullExt, NextLabelExt, SystemBuilderApi}
 
 import scala.annotation.tailrec
@@ -88,7 +88,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
       sb.addLink(pair._1, pair._2,
         sb.nextLabel(name, "cast[" + t2Class.getSimpleName + "]"),
         new FlatMapLink[T1, T2](
-          d => if (t2Class.isInstance(d))
+          d => if t2Class.isInstance(d) then
             Seq(d.asInstanceOf[T2])
           else
             Seq()))
@@ -109,7 +109,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     def collect(f: PartialFunction[T1, T2], name: String = ""): Contact[T2] =
       flatMap((t: T1) => {
-        if (f.isDefinedAt(t)) Seq(f(t)) else Seq()
+        if f.isDefinedAt(t) then Seq(f(t)) else Seq()
       }, name)
 
     def stateMap[S](stateHandle: StateHandle[S], name: String = "")(f: (S, T1) => (S, T2)): Contact[T2] =
@@ -134,10 +134,10 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     def filter(predicate: T1 => Boolean, name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
       sb.addLink(p._1, p._2,
-        sb.nextLabel(name, if (name endsWith "?") name else name + "?"),
+        sb.nextLabel(name, if name endsWith "?" then name else name + "?"),
         new FlatMapLink[T1, T2]({
           x =>
-            if (predicate(x))
+            if predicate(x) then
               Seq(x: T2)
             else
               Seq[T2]()
@@ -146,10 +146,10 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     //.asInstanceOf[FlatMapLink[T1, T2, Seq[T2]]] //[T1, T2, MapLink[T1,T2]]
     def filterNot(predicateInv: T1 => Boolean, name: String = ""): Contact[T2] = //: FlatMapLink[T1, T2, Seq[T2]] =
       sb.addLink(p._1, p._2,
-        sb.nextLabel(name, if (name endsWith "?") name else name + "?"),
+        sb.nextLabel(name, if name endsWith "?" then name else name + "?"),
         new FlatMapLink[T1, T2]({
           x =>
-            if (!predicateInv(x))
+            if !predicateInv(x) then
               Seq(x: T2)
             else
               Seq[T2]()
@@ -207,7 +207,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     def countDown(step: Int = -1, name: String = "")(implicit num: Numeric[Key]): Contact[(Key, T)] = {
       (c -> c).flatMap({ case (s, t) =>
 
-        if (num.zero == s)
+        if num.zero == s then
           Seq()
         else
           Seq((num.plus(s, num.fromInt(step)), t))
@@ -325,14 +325,14 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     /** Creates another contact and links it to this one with transformation f. */
     def map[T2](f: T => T2, name: String = ""): Contact[T2] =
-      (c, sb.auxContact[T2]).map(f, sb.nextLabel(name, "map(" + f + ")"))
+      LinkBuilderOps(c, sb.auxContact[T2]).map(f, sb.nextLabel(name, "map(" + f + ")"))
 
     def mapTo[T2](f: T => T2, auxContact1: Contact[T2] = sb.auxContact[T2]): Contact[T2] =
-      (c, auxContact1).map(f, sb.nextLabel("", "mapTo(" + f + ")"))
+      LinkBuilderOps(c, auxContact1).map(f, sb.nextLabel("", "mapTo(" + f + ")"))
 
     /** Replaces every input item with the provided constant. */
     def const[T2](value: T2, name: String = ""): Contact[T2] =
-      (c, sb.auxContact[T2]).map(t => value, sb.nextLabel(name, "=>" + value))
+      LinkBuilderOps(c, sb.auxContact[T2]).map(constF(value), sb.nextLabel(name, "=>" + value))
 
     def castFilter2[T3 <: T](implicit t3Class: ClassTag[T3]): Contact[T3] =
       (c, sb.auxContact[T3]).castFilter2(t3Class)//.runtimeClass.asInstanceOf[Class[T3]])
@@ -417,14 +417,14 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     def passByStateCondition[S](stateHandle: StateHandle[S], name: String = "")(condition: S => Boolean): Contact[T] = {
       val res = sb.auxContact[T]
-      (c -> res).stateFlatMap(stateHandle, sb.nextLabel(name, "pass if condition on " + stateHandle.name))((s, t) => if (condition(s)) (s, Seq(t)) else (s, Seq()))
+      (c -> res).stateFlatMap(stateHandle, sb.nextLabel(name, "pass if condition on " + stateHandle.name))((s, t) => if condition(s) then (s, Seq(t)) else (s, Seq()))
       res
     }
 
     def passByStateConditionAndUpdateState[S](stateHandle: StateHandle[S], name: String = "")(condition: (S, T) => Option[S]): Contact[T] = {
       val res = sb.auxContact[T]
       (c -> res).stateFlatMap(stateHandle, sb.nextLabel(name, "pass if condition on " + stateHandle.name)) {
-        (s, t) => val v = condition(s, t); if (v.isDefined) (v.get, Seq(t)) else (s, Seq())
+        (s, t) => val v = condition(s, t); if v.isDefined then (v.get, Seq(t)) else (s, Seq())
       }
       res
     }
@@ -434,7 +434,8 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     def activate(stateHolder: StateHandle[Boolean], isActive: Boolean = true): Contact[T] = {
       labelNext("=>" + isActive)
-      val c2 = (c, sb.auxContact[Boolean]).map(_ => isActive)
+      def ff(i: T): Boolean = isActive
+      val c2 = LinkBuilderOps(c, sb.auxContact[Boolean]).map(constF(isActive))
       new ContactOps(c2)(sb).saveTo(stateHolder)
       c
     }
@@ -446,7 +447,7 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
 
     /** Extracts current state value. */
     def getStateOld[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
-      (zipWithState(stateHolder) -> sb.auxContact[S]).map(_._1, sb.nextLabel(name, "_._1"))
+      LinkBuilderOps(zipWithState(stateHolder) -> sb.auxContact[S]).map(_._1, sb.nextLabel(name, "_._1"))
     def getState[S](stateHolder: StateHandle[S], name: String = ""): Contact[S] =
       c.withState(stateHolder).stateMap({case (s, _) => (s,s)}, sb.nextLabel(name,s"$stateHolder.get"))
 
@@ -467,27 +468,27 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
      */
     def clearLatch[S](stateHolder: StateHandle[Option[S]]): Unit = {
       val c2 = sb.auxContact[Option[S]]
-      (new ContactOps(c)(sb).labelNext("=>None"), c2).map(_ => None)
-      new ContactOps(c2)(sb).saveTo(stateHolder)
+      LinkBuilderOps(ContactOps(c)(sb).labelNext("=>None"), c2).map(_ => None)
+      ContactOps(c2)(sb).saveTo(stateHolder)
     }
 
     /** Sets latch value it it has not been set yet */
     def latchValue[S >: T](stateHolder: StateHandle[Option[S]], f: T => S = locally[T](_)): Contact[Any] = {
       new LinkBuilderOps(c, devNull)(sb).stateFlatMap(stateHolder, sb.nextLabel("", "" + stateHolder + "<?=Some")) {
-        (s: Option[S], t: T) => (if (s.isEmpty) Some(f(t)) else s, Seq())
+        (s: Option[S], t: T) => (if s.isEmpty then Some(f(t)) else s, Seq())
       }
 
     }
 
 
     /** fires fast execution until the given finishContacts. Be careful. */
-    def fireUntilSet[T2 <: T](start: Contact[T2], finishContacts: Set[Contact[_]], name: String = ""): Unit = {
+    def fireUntilSet[T2 <: T](start: Contact[T2], finishContacts: Set[Contact0], name: String = ""): Unit = {
       sb.addLink[T, T2](c, start, sb.nextLabel(name, "fire"),
         RedMapLink[T, T2](finishContacts + start))
     }
 
     /** fires fast execution until the given finishContacts. Be careful. */
-    def fire[T2 <: T](start: Contact[T2], finishContacts: Contact[_]*): Unit = {
+    def fire[T2 <: T](start: Contact[T2], finishContacts: Contact0*): Unit = {
       sb.addLink[T, T2](c, start, sb.nextLabel("", "fire"),
         RedMapLink[T, T2](finishContacts.toSet + start))
     }
@@ -505,12 +506,12 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     def delay(count: Int): Contact[T] = {
       @tailrec
       def delay0(c: Contact[T], count: Int): Contact[T] = {
-        if (count == 0)
+        if count == 0 then
           c
         else
           delay0(new ContactOps(c)(sb).delayOne, count - 1)
       }
-      if (count < 0)
+      if count < 0 then
         throw new IllegalArgumentException("Cannot delay signal by negative number of ticks.")
       else
         delay0(c, count)
@@ -524,9 +525,9 @@ trait SystemBuilderDsl extends SystemBuilderApi with NextLabelExt with AuxNumber
     /** Calculates trellis positions of the given contacts using available links
       * and creates a delayed contact that will get the data from this contact `c` simultaneously
       * with the contact `c2`.*/
-    def delayCorrelated(c2: Contact[_]): Contact[T] = {
+    def delayCorrelated(c2: Contact0): Contact[T] = {
       val distance = sb.minDistance(c, c2)
-      if (distance == -1)
+      if distance == -1 then
         throw new IllegalArgumentException(s"Contacts $c and $c2 are uncorrelated.")
       else
         delay(distance)

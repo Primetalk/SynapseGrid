@@ -14,7 +14,8 @@
 package ru.primetalk.synapse.akka
 
 import akka.actor.{ActorContext, ActorRef}
-import ru.primetalk.synapse.core.Contact
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 
 object SpecialActorContacts {
 

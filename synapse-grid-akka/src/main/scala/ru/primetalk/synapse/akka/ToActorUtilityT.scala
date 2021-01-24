@@ -14,8 +14,9 @@
 package ru.primetalk.synapse.akka
 
 import akka.actor.{Actor, ActorRef}
-import ru.primetalk.synapse.core.Signal
-import ru.primetalk.synapse.core.Contact
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
+import akka.actor.actorRef2Scala
 
 /**
  * Helper method that sends signal to the given actor
@@ -23,13 +24,13 @@ import ru.primetalk.synapse.core.Contact
 trait ToActorUtilityT {
 
 	/** Sends the data directly. */
-	def signalToActor(actorRef: ActorRef)(signal: Signal[_]): Unit = {
+	def signalToActor(actorRef: ActorRef)(signal: Signal0): Unit = {
     actorRef ! signal
   }
 
 	/** Sends the data directly. */
-	def signalDataToActor(actorRef: ActorRef)(signal: Signal[_]): Unit = {
-    actorRef ! signal.data
+	def signalDataToActor(actorRef: ActorRef)(signal: Signal0): Unit = {
+    actorRef ! signal.data0
   }
 
 	/** Sends a signal with data. */

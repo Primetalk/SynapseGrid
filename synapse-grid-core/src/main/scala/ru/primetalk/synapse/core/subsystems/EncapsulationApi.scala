@@ -14,14 +14,14 @@ import ru.primetalk.synapse.core.ext.SystemBuilderApi
 trait EncapsulationApi extends SystemBuilderApi {
 
   object SimpleOuterInterfaceBuilder extends OuterInterfaceBuilder {
-    override def setSystemName(name: String) = {}
+    override def setSystemName(name: String): Unit = {}
     override def input[T](internalName: String): Contact[T] = contact[T](internalName)
 
     override def output[T](internalName: String): Contact[T] = contact[T](internalName)
   }
 
   class EmbeddedOuterInterfaceBuilder(name:String)(implicit sb:SystemBuilder) extends OuterInterfaceBuilder{
-    override def setSystemName(name1: String) = sb.setSystemName(name + "." + name1)
+    override def setSystemName(name1: String): Unit = sb.setSystemName(name + "." + name1)
 
     override def input[T](internalName: String): Contact[T] = sb.input(name + "." + internalName)
 
@@ -30,14 +30,18 @@ trait EncapsulationApi extends SystemBuilderApi {
   /** Usage: see defineEncapsulation*/
   abstract class EncapsulationBuilder[Outer](name:String)(outerDefinition:OuterInterfaceBuilder=>Outer) {
     protected
-    implicit val sb = new SystemBuilderC(name)
+    implicit val sb: SystemBuilderC = new SystemBuilderC(name)
 
-    val outer = outerDefinition(new EmbeddedOuterInterfaceBuilder(name)(sb))
+    val outer: Outer = outerDefinition(new EmbeddedOuterInterfaceBuilder(name)(sb))
 
-    def toStaticSystem = sb.toStaticSystem
+    def toStaticSystem: StaticSystem = sb.toStaticSystem
 
 //    def toComponent:Component = sb.toStaticSystem
   }
+  object EncapsulationBuilder:
+    given conversion[T]: Conversion[EncapsulationBuilder[T], StaticSystem] with
+      def apply(t: EncapsulationBuilder[T]): StaticSystem = t.toStaticSystem
+  end EncapsulationBuilder
   /** Usage:
     * class OuterInterface(b:OuterInterfaceBuilder){
     *   def in1 = b.input[Int]("in1")
@@ -48,8 +52,9 @@ trait EncapsulationApi extends SystemBuilderApi {
     * }
     * defineEncapsulation(new OuterImplementation("mySystem1"))
     * */
-  def defineEncapsulation[Outer](en:EncapsulationBuilder[Outer])(implicit sb:SystemBuilder):Outer = {
-    sb.addSubsystem(en.toStaticSystem)
+  def defineEncapsulation[Outer](en: EncapsulationBuilder[Outer])(using SystemBuilder):Outer = {
+    import EncapsulationBuilder._
+    summon[SystemBuilder].addSubsystem(en)
     en.outer
   }
 //  implicit class EncapsulationBuilderE(sb: BasicSystemBuilder) {

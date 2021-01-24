@@ -3,9 +3,11 @@ package ru.primetalk.synapse.core.components
 /**
  * @author zhizhelev, 13.04.15.
  */
-object Contact {
-   def unapply(contact: Contact[_]): Option[String] = Some(contact.name)
- }
+object Contact:
+  def unapply(contact: Contact0): Option[String] =
+    Some(contact.name)
+
+sealed abstract class Contact0 extends Named with Serializable
 
 /**
   * Basis point of connection of other elements.
@@ -23,8 +25,35 @@ object Contact {
   * @see ru.primetalk.synapse.akka.ContactSerializer.
   *
   */
-class Contact[T](name1: String = null) extends Named with Serializable {
-   val name: String = if (name1 == null) getClass.getSimpleName.replace("$", "") else name1
+class Contact[T](name1: String | Null = null) extends Contact0:
+  val name: String =
+    if name1.eq(null) then
+      getClass.getSimpleName.replace("$", "")
+    else
+      name1
 
-   override def toString: String = "C(" + name + ")"
- }
+  override def toString: String = 
+    "C(" + name + ")"
+end Contact
+
+trait StateHandle0 extends Contact0:
+  def init: Any
+
+/**
+ * Permanent contacts store shared state that can be updated with stateful
+ * links.
+ */
+class StateHandle[S](name: String, val s0: S) extends Contact[S](name) with Stateful[S] with StateHandle0:
+  override def toString = "S(" + name + ")"
+  def init = s0
+end StateHandle
+
+/**
+ * @author zhizhelev, 13.04.15.
+ */
+object StateHandle:
+   def unapply(s: Any): Option[(String, _)] =
+     s match {
+       case stateHandle: StateHandle[_] => Some(stateHandle.name, stateHandle.s0)
+       case _ => None
+     }

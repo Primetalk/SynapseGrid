@@ -13,8 +13,8 @@
  */
 package ru.primetalk.synapse.core.dot
 
-import ru.primetalk.synapse.core.components.{InnerSystemComponent, StateUpdate}
-import ru.primetalk.synapse.core.ext.{DevNullExt, ContactStyleExt, AuxNumberingExt}
+import ru.primetalk.synapse.core.components.{Contact0, InnerSystemComponent, StateUpdate, StateHandle0}
+import ru.primetalk.synapse.core.ext.{AuxNumberingExt, ContactStyleExt, DevNullExt}
 
 import scala.collection.mutable
 
@@ -57,7 +57,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
     protected
     def linkNodeToDot(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Link[_,_,_,_], nodeKind: NodeKind): String = c match {
       case Link(_, _, name, NopLink()) =>
-        s"$id [label=${quote(if(name=="") "Δt" else name)}, shape=square]"
+        s"$id [label=${quote(if name=="" then "Δt" else name)}, shape=square]"
       case Link(_, _, name, _: StatefulFlatMapLink[_, _, _]) =>
         s"$id [label=${quote(name)}, $stateLegacyModification]"
       case Link(_, _, name, StateZipLink(_)) =>
@@ -98,7 +98,9 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
     def nodeToString(stylesExtOpt: Option[ContactStyleStaticExtension], id: Int, c: Any, nodeKind: NodeKind): String = (c, nodeKind) match {
       //			case (StateHandle(name, _), StateNode) =>
       //				s"$id [label=${"\"" + name + "\""}, shape=tab, fillcolor=mistyrose, color=violetred, style=filled]"
-      case (c: Link[_, _, _, _], _) =>
+//      case (c: Link[_, _, _, _], _) => -- this version makes Scala3 compiler to fail
+//        linkNodeToDot(stylesExtOpt, id, c, nodeKind)
+      case (c@ Link(_, _, _, _), _) =>
         linkNodeToDot(stylesExtOpt, id, c, nodeKind)
       //			case (Link(_, _, _, NopLink()), _) =>
       //				s"$id [label=${"\"Δt\""}, shape=square]"
@@ -115,7 +117,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
       case (os: Component, _) =>
         componentNodeToDot(stylesExtOpt, id, os, nodeKind)
       //				s"$id [label=${"\"" + os.name + "\""}, shape=component]"
-      case (c: Contact[_], _) =>
+      case (c: Contact0, _) =>
         contactNodeToDot(stylesExtOpt, id, c, nodeKind)
       //			case (c@Contact(_), InnerContact) if stylesExtOpt.isDefined && stylesExtOpt.get.style(c) == DevNullContact =>
       //				s"$id [label=${"\"\""}, shape=point, color=red]"
@@ -175,13 +177,13 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
       val elements = mutable.ListBuffer[String]()
       elements += "label=" + quote(system.name)
       elements += "rankdir = LR"
-      if (graphKind == "subgraph")
+      if graphKind == "subgraph" then
         elements ++= List("fillcolor=azure", "style=filled")
 
 
       val ids = mutable.Map[Any, Int]()
-      def getContactId(contact: Contact[_], kind: NodeKind): Int = {
-        if (stylesExtOpt.isDefined && stylesExtOpt.get.style(contact) == DevNullContact) {
+      def getContactId(contact: Contact0, kind: NodeKind): Int = {
+        if stylesExtOpt.isDefined && stylesExtOpt.get.style(contact) == DevNullContact then {
           val id = counter.next
           elements += nodeToString(stylesExtOpt, id, contact, kind)
           id
@@ -192,7 +194,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
             id
           })
       }
-      def getStateId(stateHandle: StateHandle[_]) =
+      def getStateId(stateHandle: StateHandle0) =
         ids.getOrElseUpdate(stateHandle, {
           val id = counter.next
           elements += stateNodeToDot(stylesExtOpt, id, stateHandle, StateNode)
@@ -209,28 +211,28 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
           id
         })
       }
-      val outputIds = for (oc <- system.outputContacts)
+      val outputIds = for oc <- system.outputContacts
         yield getContactId(oc, OutputNode)
-      val inputIds = for (ic <- system.inputContacts)
+      val inputIds = for ic <- system.inputContacts
         yield getContactId(ic, InputNode)
-      for (s <- system.privateStateHandles)
+      for s <- system.privateStateHandles do
         getStateId(s)
 
       elements += s"{rank=same; ${inputIds.mkString(" ")} }"
       elements += s"{rank=same; ${outputIds.mkString(" ")} }"
-      for {
+      for
         c <- system.components
-      } {
-        if (level > 0)
+      do {
+        if level > 0 then
           c match {
             case comp: ComponentWithInternalStructure => //InnerSystem(s:StaticSystem, _, _) =>
               elements += staticSystem2ToDot(comp.toStaticSystem, "subgraph", level - 1, counter)
             case _ =>
           }
         val id = getComponentId(c)
-        for (i <- c.inputContacts)
+        for i <- c.inputContacts do
           elements += linkToDot(getContactId(i, InnerContact), id, i, c)
-        for (o <- c.outputContacts)
+        for o <- c.outputContacts do
           elements += linkToDot(id, getContactId(o, InnerContact), c, o)
 
         /** state link */
@@ -249,7 +251,7 @@ trait SystemRendererApi extends ContactStyleExt with DevNullExt with AuxNumberin
       }
 
 
-      val graphId = if (graphKind == "subgraph")
+      val graphId = if graphKind == "subgraph" then
         "cluster" + system.name
       else
         system.name

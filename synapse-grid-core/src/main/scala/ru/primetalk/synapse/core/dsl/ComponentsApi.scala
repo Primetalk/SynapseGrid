@@ -18,7 +18,7 @@ trait ComponentsApi {
   type WithStaticSystem = ru.primetalk.synapse.core.components.WithStaticSystem
   val WithStaticSystem = ru.primetalk.synapse.core.components.WithStaticSystem
 
-  type Component = ru.primetalk.synapse.core.components.Component
+  type Component = ru.primetalk.synapse.core.components.Component0
 
   type ComponentWithInternalStructure = ru.primetalk.synapse.core.components.ComponentWithInternalStructure
 
@@ -28,6 +28,8 @@ trait ComponentsApi {
 
   type Signal[T] = ru.primetalk.synapse.core.components.Signal[T]
   val Signal = ru.primetalk.synapse.core.components.Signal
+
+  type Signal0 = ru.primetalk.synapse.core.components.Signal0
 
   type SignalDist = ru.primetalk.synapse.core.components.SignalDist
   val SignalDist = ru.primetalk.synapse.core.components.SignalDist
@@ -52,8 +54,7 @@ trait ComponentsApi {
   type RedMapLink[-T1, +T2] = ru.primetalk.synapse.core.components.RedMapLink[T1, T2]
   val RedMapLink = ru.primetalk.synapse.core.components.RedMapLink
 
-  type SignalCollection[+T] = Iterable[T]
+  type SignalCollection[+T] = IterableOnce[T]
   val SignalCollection = Iterable
-
 
 }

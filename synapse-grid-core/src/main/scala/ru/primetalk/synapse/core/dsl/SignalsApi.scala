@@ -1,6 +1,5 @@
-package ru.primetalk.synapse.core.components
+package ru.primetalk.synapse.core.dsl
 
-import ru.primetalk.synapse.core.dsl.ContactsDsl
 
 import scala.language.implicitConversions
 /**
@@ -28,18 +27,18 @@ trait SignalsApi extends ContactsDsl {
       }
     }
 
-    def filterFunction = (signals: SignalCollection[Signal[_]]) => signals.filter(_._1 == c).map(_.asInstanceOf[Signal[T]])
+    def filterFunction = (signals: IterableOnce[Signal0]) => signals.iterator.filter(_._1 == c).map(_.asInstanceOf[Signal[T]])
 
-    def filterNotFunction = (signals: SignalCollection[Signal[_]]) => signals.filterNot(_._1 == c)
+    def filterNotFunction = (signals: IterableOnce[Signal0]) => signals.iterator.filter(_._1 != c)
   }
 
-  implicit class RichSignalList(signals: Seq[Signal[_]]) {
+  implicit class RichSignalList(signals: Seq[Signal0]) {
     /** Divides the list of signals. The first part will contain signals on the given contact.
       * the second — the rest signals. */
-    def partition[T](c: Contact[T]): (Seq[Signal[T]], Seq[Signal[_]]) =
+    def partition[T](c: Contact[T]): (Seq[Signal[T]], Seq[Signal0]) =
       signals.
         partition(_.contact == c).
-        asInstanceOf[(Seq[Signal[T]], Seq[Signal[_]])]
+        asInstanceOf[(Seq[Signal[T]], Seq[Signal0])]
 
     def get[T](`c`: Contact[T]): Seq[T] =
       signals.

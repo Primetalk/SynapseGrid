@@ -22,33 +22,35 @@ import scala.language.implicitConversions
  * styles - ContactsStyles
  */
 case class StaticSystem( /** A subset of contacts */
-                         inputs: List[Contact[_]],
-                         outputs: List[Contact[_]],
-                         privateStateHandles: List[StateHandle[_]],
-                         components: List[Component],
-                         name: String,
-                         //                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
-                         //                         = defaultUnhandledExceptionHandler,
-                         extensions:Map[StaticSystemExtensionId[_], Any] = Map()
-                         ) extends Component
-with Named
-with Stateful[Map[Contact[_], Any]]
-with ComponentWithInternalStructure {
+  inputs: List[Contact0],
+  outputs: List[Contact0],
+  privateStateHandles: List[StateHandle0],
+  components: List[Component0],
+  name: String,
+  //                         unhandledExceptionHandler:UnhandledProcessingExceptionHandler
+  //                         = defaultUnhandledExceptionHandler,
+  extensions:Map[StaticSystemExtensionId0, Any] = Map()
+) extends Component0
+  with Named
+  with Stateful[Map[Contact0, Any]]
+  with ComponentWithInternalStructure {
   lazy val inputContacts = inputs.toSet
   lazy val outputContacts = outputs.toSet
   /** Contacts that should be processed by SignalsProcessor. */
   //  lazy val processedContacts = inputContacts ++ components.flatMap(_.inputContacts)
 
-  def isOutputContact(c: Contact[_]) = outputContacts.contains(c)
+  def isOutputContact(c: Contact0) = outputContacts.contains(c)
 
   /** Initial state of the system.*/
-  lazy val s0 = (for {
-    stateHandle <- privateStateHandles
-  } yield (stateHandle, stateHandle.s0)).toMap[Contact[_], Any]
+  lazy val s0 = 
+    privateStateHandles
+      .map{ stateHandle => (stateHandle, stateHandle.init)}
+      .toMap[Contact0, Any]
 
   lazy val staticSubsystems =
     components.collect {
-      case component: ComponentWithInternalStructure => component.toStaticSystem
+      case component: ComponentWithInternalStructure => 
+        component.toStaticSystem
     }
 
   def toStaticSystem =
@@ -57,7 +59,8 @@ with ComponentWithInternalStructure {
   /** All contacts, available at this system's level.
     * This is a stable sequence of contacts.
     * */
-  def allContacts: Seq[Contact[_]] = (inputs.toSeq ++
+  def allContacts: Seq[Contact0] = (
+    inputs.toSeq ++
     components.flatMap(_.inputContacts).toSeq ++
     components.flatMap(_.outputContacts).toSeq ++
     outputContacts.toSeq).toArray.toSeq.distinct
@@ -74,23 +77,22 @@ with ComponentWithInternalStructure {
  * @author zhizhelev, 13.04.15.
  */
 object StaticSystem {
-  type State = Map[Contact[_], Any]
-
+  type State = Map[Contact0, Any]
 }
-trait WithStaticSystem {
+
+trait WithStaticSystem:
   def toStaticSystem: StaticSystem
-}
-object WithStaticSystem{
-  implicit def withStaticSystemToStaticSystem(ws:WithStaticSystem): StaticSystem = ws.toStaticSystem
 
+object WithStaticSystem:
+  given Conversion[WithStaticSystem, StaticSystem] =_.toStaticSystem
 
-}
-
-/** ExtensionId for a StaticSystem extension. Every extension can be
+trait StaticSystemExtensionId0
+/** 
+ * ExtensionId for a StaticSystem extension. Every extension can be
   * installed only once on the same StaticSystem.
   *
   * The extension can contain some additional state for system processing.
   *
   * However, it is not recommended to add mutable state to otherwise immutable StaticSystem.
   */
-trait StaticSystemExtensionId[+T]
+trait StaticSystemExtensionId[+T] extends StaticSystemExtensionId0

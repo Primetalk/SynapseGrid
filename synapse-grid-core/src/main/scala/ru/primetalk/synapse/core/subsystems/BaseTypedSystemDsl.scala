@@ -1,5 +1,6 @@
 package ru.primetalk.synapse.core.subsystems
 
+import ru.primetalk.synapse.core.components.Contact0
 import ru.primetalk.synapse.core.ext.SystemBuilderApi
 
 import scala.language.implicitConversions
@@ -10,7 +11,7 @@ import scala.language.implicitConversions
 trait BaseTypedSystemDsl extends SystemBuilderApi {
   /** A system builder with inputs and outputs given in advance.
     * */
-  def systemBuilderTyped(name:String)(_inputs:Contact[_]*)(_outputs:Contact[_]*):SystemBuilder = {
+  def systemBuilderTyped(name:String)(_inputs: Contact0*)(_outputs: Contact0*):SystemBuilder = {
     val res = new SystemBuilderC(name)
     res.inputs(_inputs:_*)
     res.outputs(_outputs:_*)
@@ -41,6 +42,9 @@ trait BaseTypedSystemDsl extends SystemBuilderApi {
   trait TypedSystemConstructor[T] extends (T => StaticSystem) {
     def apply(outer: T): StaticSystem
   }
+  
+  given [T](using TypedSystemConstructor[T]): Conversion[T, StaticSystem] with 
+    def apply(t: T) = summon[TypedSystemConstructor[T]].apply(t)
   /** */
   case class TypedSystem[T](outer:T, staticSystem: StaticSystem) extends WithStaticSystem {
     override def toStaticSystem: StaticSystem = staticSystem

@@ -12,22 +12,24 @@
  */
 package ru.primetalk.synapse.concurrent
 
-import org.scalatest.FunSuite
-import ru.primetalk.synapse.core._
+import org.junit.Test
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
+
 import ru.primetalk.synapse.concurrent.ComputationState._
 
-class SubsystemTest extends FunSuite{
+class SubsystemTest {
 
   class TwoStatesInnerSubsystem(name:String) extends BaseTypedSystem(name) {
     import sb._
-    implicit val sb1: _root_.ru.primetalk.synapse.core.SystemBuilder = sb
+    implicit val sb1: SystemBuilder = sb
     setSystemName("TwoStatesInnerSubsystem")
     val i1: Contact[Int] = input[Int]("i1")
-    val integral1: _root_.ru.primetalk.synapse.core.StateHandle[Int] = state[Int]("integral1", 0)
-    val integral2: _root_.ru.primetalk.synapse.core.StateHandle[Int] = state[Int]("integral2", 0)
+    val integral1: StateHandle[Int] = state[Int]("integral1", 0)
+    val integral2: StateHandle[Int] = state[Int]("integral2", 0)
     val m1: Contact[Int] = contact[Int]("m1")
     val m2: Contact[Int] = contact[Int]("m2")
-    val integralSum: _root_.ru.primetalk.synapse.core.StateHandle[Int] = state[Int]("integralSum", 0)
+    val integralSum: StateHandle[Int] = state[Int]("integralSum", 0)
     val o1: Contact[Int] = output[Int]("o1")
 //    val inputs = i1.flatMap(0.until)
 
@@ -66,11 +68,11 @@ class SubsystemTest extends FunSuite{
     val n = 50
     val m = f(n)
     val g = d.toStaticSystem.toDynamicSystem.toMapTransducer(d.outerInput1, d.outerOutput1)
-    assert(m === g(n))
+    assert(m == g(n))
 
   }
-  test("Two states ordered"){
-    for(_ <- 0 until 10)
+  @Test def `Two states ordered (subsystem)`(): Unit =
+    (0 until 10).foreach{ _ =>
       performTest()
-  }
+    }
 }

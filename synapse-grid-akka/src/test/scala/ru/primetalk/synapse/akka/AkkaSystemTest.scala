@@ -3,17 +3,19 @@ package ru.primetalk.synapse.akka
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import akka.actor.{ActorDSL, ActorSystem}
 import akka.actor.ActorDSL._
-import org.scalatest.FunSuite
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import ru.primetalk.synapse.slf4j._
+import akka.actor.actorRef2Scala
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+import org.junit.Test
 /**
  * @author zhizhelev, 24.08.15.
  */
-class AkkaSystemTest extends FunSuite {
+class AkkaSystemTest {
 
   case class Ping(isPing:Boolean = true){
     def invert: Ping = Ping(!isPing)
@@ -22,17 +24,17 @@ class AkkaSystemTest extends FunSuite {
     val ping: Contact[Ping] = input[Ping]("ping")
     val pong: Contact[Ping] = output[Ping]("pong")
     override protected def defineSystem(implicit sb: SystemBuilder): Unit = {
-      (ping -> pong).map(_.invert, "invert")
+      LinkBuilderOps(ping -> pong).map(_.invert, "invert")
     }
   }
-  class DecSubsystemInterface(b:OuterInterfaceBuilder){
-    val in: _root_.ru.primetalk.synapse.core.Contact[Int] = b.input[Int]("in")
-    val out: _root_.ru.primetalk.synapse.core.Contact[Int] = b.output[Int]("out")
+  class DecSubsystemInterface(b: OuterInterfaceBuilder){
+    val in: Contact[Int] = b.input[Int]("in")
+    val out: Contact[Int] = b.output[Int]("out")
   }
-  def decSubsystemImplementation(name:String): EncapsulationBuilder[DecSubsystemInterface] = new EncapsulationBuilder(name)(new DecSubsystemInterface(_)){
-    val akkaExt: _root_.ru.primetalk.synapse.akka.ActorSystemBuilderExtension = sb.extend[ActorSystemBuilderExtension](ActorSystemBuilderExtensionId)
-    (outer.in -> outer.out).map(_ -1, "_ - 1")
-    outer.in.getState(akkaExt.self).info(s"$name.self="+_)
+  def decSubsystemImplementation(name: String): EncapsulationBuilder[DecSubsystemInterface] = new EncapsulationBuilder(name)(new DecSubsystemInterface(_)){
+    val akkaExt: ActorSystemBuilderExtension = sb.extend[ActorSystemBuilderExtension](ActorSystemBuilderExtensionId)
+    LinkBuilderOps(outer.in -> outer.out).map(_ -1, "_ - 1")
+    outer.in.getState(akkaExt.self)//.info(s"$name.self="+_)
   }
 //  /** Subsystem that decrements the counter*/
 //  class DecSubsystem(name:String) extends BaseTypedSystem(name) {
@@ -68,7 +70,7 @@ class AkkaSystemTest extends FunSuite {
     }
   }
 
-  test("decrementing subsystems"){
+  @Test def `decrementing subsystems`(): Unit = {
     val s = new CounterSystem
     s.toDot(2).saveTo("decrementing.dot")
     implicit val as: ActorSystem = ActorSystem()

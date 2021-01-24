@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.core.ext
 
-import ru.primetalk.synapse.core.components.SignalsApi
+import ru.primetalk.synapse.core.dsl.SignalsApi
+import ru.primetalk.synapse.core.components.Signal0
 import ru.primetalk.synapse.core.runtime.TrellisApi
 
 /**
@@ -14,7 +15,7 @@ trait ExceptionHandlingExt extends SignalsApi with TrellisApi {
     * for further processing.
     * If not recoverable - throw some exception (or rethrow the original one).
     * */
-  type UnhandledProcessingExceptionHandler = (Throwable, String, Signal[_], Context) => Context
+  type UnhandledProcessingExceptionHandler = (Throwable, String, Signal0, Context) => Context
 
   val defaultUnhandledExceptionHandler : UnhandledProcessingExceptionHandler = (e, name, signal, context) => e match {
     case e:Exception =>

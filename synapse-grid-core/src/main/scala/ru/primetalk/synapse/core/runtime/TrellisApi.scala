@@ -1,22 +1,23 @@
 package ru.primetalk.synapse.core.runtime
 
-import ru.primetalk.synapse.core.components.SignalsApi
+import ru.primetalk.synapse.core.components.{Contact0, Signal0}
+import ru.primetalk.synapse.core.dsl.SignalsApi
 
 /** Basic definitions for trellis processing*/
 trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
 
   /** The simplest signal processor. Corresponds to FlatMap. */
-  type SimpleSignalProcessor = Signal[_] => SignalCollection[Signal[_]]
+  type SimpleSignalProcessor = ru.primetalk.synapse.core.components.SimpleSignalProcessor// Signal[_] => SignalCollection[Signal[_]]
 
   /** The context for system is a map from state handles to values. */
-  type Context = Map[Contact[_], _]
+  type Context = Map[Contact0, _]
 
   /**
    * A snapshot of a running system at some discrete time moment.
    */
-  type TrellisElement = (Context, SignalCollection[Signal[_]])
+  type TrellisElement = (Context, SignalCollection[Signal0])
 
-//  type ContextUpdater = List[(Contact[_], _)]
+//  type ContextUpdater = List[(Contact0, _)]
 //
 //  type TrellisElementUpdater = (ContextUpdater, List[Signal[_]])
 //
@@ -27,7 +28,7 @@ trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
   type TrellisProducer = TrellisElement => TrellisElement
   /** A function that takes a single signal on input and returns the last trellis element.
     * This producer does not store managed state in it.*/
-  type TotalTrellisProducer = (Context, Signal[_]) => TrellisElement
+  type TotalTrellisProducer = (Context, Signal0) => TrellisElement
 
   implicit class RichTotalTrellisProducer(ttp: TotalTrellisProducer) {
     /** Creates hidden state that will be maintained between different signals.
@@ -36,8 +37,8 @@ trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
       * */
     def toSimpleSignalProcessor(s0: Context): SimpleSignalProcessor = {
       @volatile
-      var state: Map[Contact[_], _] = s0
-      (signal: Signal[_]) => {
+      var state: Map[Contact0, _] = s0
+      (signal: Signal0) => {
         val r = ttp(state, signal)
         state = r._1
         r._2
@@ -47,25 +48,25 @@ trait TrellisApi extends SignalsApi {//with RuntimeSystemApi {
 
   implicit class RichSimpleSignalProcessor(sp: SimpleSignalProcessor) {
     def toTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]): TInput => SignalCollection[TOutput] = {
-      data: TInput =>
+      (data: TInput) =>
         val inputSignal = Signal(input, data)
         val outputSignals = sp(inputSignal)
-        outputSignals.collect {
+        outputSignals.iterator.to(Iterable).collect {
           case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
         }
     }
 
     def toMapTransducer[TInput, TOutput](input: Contact[TInput], output: Contact[TOutput]): TInput => TOutput = {
-      data: TInput =>
+      (data: TInput) =>
         val inputSignal = Signal(input, data)
         val outputSignals = sp(inputSignal)
-        val outputs = outputSignals.collect {
+        val outputs = outputSignals.iterator.to(Iterable).collect {
           case Signal(`output`, outputData) => outputData.asInstanceOf[TOutput]
         }
-        if (outputs.isEmpty)
+        if outputs.isEmpty then
           throw new IllegalStateException(s"Cannot convert empty output results $outputs from $output to List(data).")
         val result = outputs.head
-        if (outputs.tail.nonEmpty)
+        if outputs.tail.nonEmpty then
           throw new IllegalStateException(s"Cannot convert multiple output results $outputs from $output to List(data).")
         result
     }

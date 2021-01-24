@@ -3,16 +3,15 @@
  */
 package ru.primetalk.synapse.core.managed
 
-import org.scalatest.FunSuite
-import ru.primetalk.synapse.core._
-
-import scala.language.implicitConversions
+import org.junit.Test
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 
 /**
  * @author nehaev
  *
  */
-class ManagedStateTest extends FunSuite {
+class ManagedStateTest {
 	
 	object AInput extends Contact[Int]("AInput")
 	object BInput extends Contact[Int]("BInput")
@@ -102,20 +101,20 @@ class ManagedStateTest extends FunSuite {
 	
 	
 	
-	test("a+b") {
+	@Test def `a+b`(): Unit = {
 		val abcCalc = abcSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
 		val outSigs1 = abcCalc.receive(aSig)
-		assert(outSigs1.size === 0, s"outSigs1 === $outSigs1")
+		assert(outSigs1.iterator.isEmpty, s"outSigs1 === $outSigs1")
 		
 		val bSig = BInput.createSignal(3)
 		val outSigs2 = abcCalc.receive(bSig)
-		assert(outSigs2.size === 1, s"outSigs2 === $outSigs2")
-		assert(ABOutput.filterFunction(outSigs2).head.data === 7)
+		assert(outSigs2.iterator.size == 1, s"outSigs2 === $outSigs2")
+		assert(ABOutput.filterFunction(outSigs2).toList.head.data == 7)
 	}
-	
-	
-	test("a+b *c") {
+
+
+	@Test def `a+b*c`(): Unit = {
 		val abcCalc = abcSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
 		abcCalc.receive(aSig)
@@ -125,11 +124,11 @@ class ManagedStateTest extends FunSuite {
 		
 		val cSig = CInput.createSignal(5)
 		val outSigs3 = abcCalc.receive(cSig)
-		assert(outSigs3.size === 1)
-		assert(ABCOutput.filterFunction(outSigs3).head.data === 35)
+		assert(outSigs3.iterator.size == 1)
+		assert(ABCOutput.filterFunction(outSigs3).toList.head.data == 35)
 	}
-	
-	test("a+b *c recalc") {
+
+	@Test def `a+b*c recals`(): Unit = {
 		val abcCalc = abcSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
 		abcCalc.receive(aSig)
@@ -143,31 +142,29 @@ class ManagedStateTest extends FunSuite {
 		
 		val bSig2 = BInput.createSignal(6)
 		val outSigs4 = abcCalc.receive(bSig2)
-		assert(outSigs4.size === 2, s"outSigs4 === $outSigs4")
-		assert(ABOutput.filterFunction(outSigs4).head.data === 10)
-		assert(ABCOutput.filterFunction(outSigs4).head.data === 50)
+		assert(outSigs4.iterator.size == 2, s"outSigs4 === $outSigs4")
+		assert(ABOutput.filterFunction(outSigs4).toList.head.data == 10)
+		assert(ABCOutput.filterFunction(outSigs4).toList.head.data == 50)
 		
 		val cSig2 = CInput.createSignal(2)
 		val outSigs5 = abcCalc.receive(cSig2)
-		assert(outSigs5.size === 1, s"outSigs5 === $outSigs5")
-		assert(ABCOutput.filterFunction(outSigs5).head.data === 20)
+		assert(outSigs5.iterator.size == 1, s"outSigs5 === $outSigs5")
+		assert(ABCOutput.filterFunction(outSigs5).toList.head.data == 20)
 	}
-	
-	
-	test("short a+b") {
+
+	@Test def `short a+b`(): Unit = {
 		val abcCalc = abcShortSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
 		val outSigs1 = abcCalc.receive(aSig)
-		assert(outSigs1.size === 0)
+		assert(outSigs1.iterator.size == 0)
 		
 		val bSig = BInput.createSignal(3)
 		val outSigs2 = abcCalc.receive(bSig)
-		assert(outSigs2.size === 1)
-		assert(ABOutput.filterFunction(outSigs2).head.data === 7)
+		assert(outSigs2.iterator.size == 1)
+		assert(ABOutput.filterFunction(outSigs2).toList.head.data == 7)
 	}
-	
-	
-	test("short a+b *c") {
+
+	@Test def `short a+b*c`(): Unit = {
 		val abcCalc = abcShortSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
 		abcCalc.receive(aSig)
@@ -177,11 +174,11 @@ class ManagedStateTest extends FunSuite {
 		
 		val cSig = CInput.createSignal(5)
 		val outSigs3 = abcCalc.receive(cSig)
-		assert(outSigs3.size === 1)
-		assert(ABCOutput.filterFunction(outSigs3).head.data === 35)
+		assert(outSigs3.iterator.size == 1)
+		assert(ABCOutput.filterFunction(outSigs3).toList.head.data == 35)
 	}
-	
-	test("short a+b *c recalc") {
+
+	@Test def `short a+b *c recalc`(): Unit = {
 		val abcCalc = abcShortSystem.toDynamicSystem
 		val aSig = AInput.createSignal(4)
 		abcCalc.receive(aSig)
@@ -195,17 +192,17 @@ class ManagedStateTest extends FunSuite {
 		
 		val bSig2 = BInput.createSignal(6)
 		val outSigs4 = abcCalc.receive(bSig2)
-		assert(outSigs4.size === 2)
-		assert(ABOutput.filterFunction(outSigs4).head.data === 10)
-		assert(ABCOutput.filterFunction(outSigs4).head.data === 50)
+		assert(outSigs4.iterator.size == 2)
+		assert(ABOutput.filterFunction(outSigs4).toList.head.data == 10)
+		assert(ABCOutput.filterFunction(outSigs4).toList.head.data == 50)
 		
 		val cSig2 = CInput.createSignal(2)
 		val outSigs5 = abcCalc.receive(cSig2)
-		assert(outSigs5.size === 1)
-		assert(ABCOutput.filterFunction(outSigs5).head.data === 20)
+		assert(outSigs5.iterator.size == 1)
+		assert(ABCOutput.filterFunction(outSigs5).toList.head.data == 20)
 	}
-  test("no orphans"){
-    assert(orphanContactsRec(abcShortSystem)===List())
+	@Test def `no orphans`(): Unit = {
+    assert(orphanContactsRec(abcShortSystem)==List())
   }
 	
 }

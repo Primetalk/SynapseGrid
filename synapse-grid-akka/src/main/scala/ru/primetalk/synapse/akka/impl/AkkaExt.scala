@@ -2,7 +2,8 @@ package ru.primetalk.synapse.akka.impl
 
 import akka.actor.{ActorContext, ActorRef}
 import ru.primetalk.synapse.akka.SpecialActorContacts.{ContextInput, SenderInput}
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 
 import scala.language.implicitConversions
 /**
@@ -43,7 +44,7 @@ trait AkkaExt {
       val SelfInput1 = contact[ActorRef]("SelfInput")
 
       sb.inputs(ContextInput)
-      ContextInput -> SelfInput1 map(_.self, "_.self")
+      LinkBuilderOps(ContextInput -> SelfInput1).map(_.self, "_.self")
       SelfInput1
     }
 
@@ -83,7 +84,7 @@ trait AkkaExt {
 
   }
 
-  implicit val akkaExtensionId = new SystemBuilderExtensionId[AkkaSystemBuilderExtension](new AkkaSystemBuilderExtension(_))
+  implicit val akkaExtensionId: SystemBuilderExtensionId[AkkaSystemBuilderExtension] = new SystemBuilderExtensionId[AkkaSystemBuilderExtension](new AkkaSystemBuilderExtension(_))
 
 //  implicit def akkaExtension(implicit sb:BasicSystemBuilder):AkkaSystemBuilderExtension = sb.extend(akkaExtensionId)
 }

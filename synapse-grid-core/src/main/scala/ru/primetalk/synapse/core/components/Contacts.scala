@@ -9,8 +9,6 @@
  */
 package ru.primetalk.synapse.core.components
 
-import scala.language.implicitConversions
-
 ///**
 // * Contact reference with respect to path of the system where the contact resides.
 // * @param path path to a system with the contact

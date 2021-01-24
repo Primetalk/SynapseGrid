@@ -13,7 +13,7 @@
  */
 package ru.primetalk.synapse.slf4j
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.syntax._
 
 import scala.language.implicitConversions
 

@@ -2,15 +2,15 @@ package ru.primetalk.synapse.akka.impl
 
 import akka.actor.{SupervisorStrategy, ActorRef, ActorRefFactory}
 import ru.primetalk.synapse.akka._
-import ru.primetalk.synapse.core.components.StaticSystem
-import ru.primetalk.synapse.core.EncapsulationBuilder
-import ru.primetalk.synapse.core.SystemBuilder
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
+import scala.language.implicitConversions
 
 /**
  * @author zhizhelev, 25.03.15.
  */
 trait StaticSystemAkkaApi {
-  implicit class RichStaticSystemSystem[T](s: T)(implicit ev:T => StaticSystem) {
+  implicit class RichStaticSystemSystem[T](s: T)(using Conversion[T, StaticSystem]) {
     /**
      * The main DSL function to convert a StaticSystem to an actor tree.
      * Returns top level actor.

@@ -1,6 +1,7 @@
 package ru.primetalk.synapse.akka
 
-import ru.primetalk.synapse.core._
+import ru.primetalk.synapse.core.syntax._
+import ru.primetalk.synapse.core.syntax.given
 import akka.actor._
 import ru.primetalk.synapse.akka.SpecialActorContacts.{ContextInput, SenderInput}
 /**
@@ -10,12 +11,13 @@ import ru.primetalk.synapse.akka.SpecialActorContacts.{ContextInput, SenderInput
  * @author zhizhelev, 20.07.15.
  */
 trait ActorSystemBuilderExt {
-  implicit val ActorSystemBuilderExtensionId = new SystemBuilderExtensionId[ActorSystemBuilderExtension](new ActorSystemBuilderExtension(_))
+  implicit val ActorSystemBuilderExtensionId: SystemBuilderExtensionId[ActorSystemBuilderExtension] = 
+    new SystemBuilderExtensionId[ActorSystemBuilderExtension](new ActorSystemBuilderExtension(_))
 
 
   /** Basic builder that defines a few helpers for constructing actor-held systems. */
   class ActorSystemBuilderExtension(val sb: SystemBuilder) extends SystemBuilderExtension {
-    implicit val sb1 = sb
+    implicit val sb1: SystemBuilder = sb
     lazy val sender = {
       val sender1 = state[ActorRef]("sender", akka.actor.Actor.noSender)
 
@@ -42,7 +44,7 @@ trait ActorSystemBuilderExt {
       val SelfInput1 = contact[ActorRef]("SelfInput")
 
       sb.inputs(ContextInput)
-      ContextInput -> SelfInput1 map(_.self, "_.self")
+      LinkBuilderOps(ContextInput -> SelfInput1).map(_.self, "_.self")
       SelfInput1
     }
 
