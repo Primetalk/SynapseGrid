@@ -2,8 +2,9 @@
 
 [![Build Status](https://travis-ci.org/Primetalk/SynapseGrid.svg)](https://travis-ci.org/Primetalk/SynapseGrid)
 
-SynapseGrid is an original approach to implement functional reactive programming paradigm in Scala. The library is based 
-on a solid foundation of Petri nets.
+SynapseGrid is an original approach to implement stream processing
+using directed graphs of functions. 
+The framework is based on a solid foundation of Petri nets.
 
 A few words about what SynapseGrid is:
 
@@ -25,6 +26,7 @@ A few words about what SynapseGrid is:
 6. Declarative composition in the form of DataFlow diagram.
 7. Easy to use DSL:
 ```scala
+  import ru.primetalk.synapse.core.syntax._
   val a = contact[String]("a")
   val b = contact[String]("b")
   val c = contact[Char]("c")

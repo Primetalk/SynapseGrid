@@ -1,16 +1,15 @@
-SynapseGrid contact system
-==========================
+# SynapseGrid contact system
 
-Key features
-------------
+## Key features
+
 1. SynapseGrid provides better opportunity for function composition, which goes far beyond monad capabilities.
 2. Mutual usage with Akka-actors allows strictly typed data processing, that significantly excels Typed actors.
 3. Composite functions, that have multiple inputs and outputs.
 
 (Reasons, that led us to create SynapseGrid could be found here: [Потребности систем ведения диалога](docs/SpeechPortalMotivation.RU.md). )
 
-Breadboard concept
-------------------
+## Breadboard concept
+
 Contact System is based on some principles, that are lightened here.
 
 Imagine a breadboard for assembling an electronic circuit.
@@ -26,15 +25,15 @@ For instance, some output voltages in a power supply may be unused. Or some inpu
 
 Breadboard is a good metaphor that illustrates SynapseGrid contact system.
 
-Contacts and links
-------------------
+## Contacts and links
+
 The Contact is an instance of <code>Contact[T]</code> type that has a name, that usually matches the variable name.
 (In future it is planned to implement a macro that will ensure this property.)
 It's very easy to create a simple instance of Contact:
 
-<pre>
+```scala
 	val myContact = contact[String]("myContact")
-</pre>
+```
 (All examples are written in Scala. However, the same things can usually be done in Java.)
 
 Contact doesn't contain any data. It designates a point on the breadboard. You may consider it as an assigned name on the breadboard.
@@ -44,30 +43,29 @@ The component that has one input and one output is called an arrow or a link.
 
 An ordinary Scala function is already a component/(a link) that can be connected to contacts:
 
-<pre>
+```scala
 	def getLength(s:String) = s.length
-</pre>
+```
 
 Let's write a code, that calculates length of an incoming string.
 
-<pre>
+```scala
 	val len = contact[Int]( "len" )
 	myContact -> len map getLength
-</pre>
+```
 
 or, briefly
 
-<pre>
+```scala
 	val len = myContact.map( _.length )
-</pre>
+```
 (In the latter case, the `len` contact of inferred type <code>Contact[Int]</code> is created automatically.)
 
 The system picture is shown below (to make testing possible, additional contacts have been connected: `input`, `output`).
 
 ![example1 system picture](images/example1.png)
 
-Data processing
----------------
+## Data processing
 
 ### Signals
 
@@ -78,16 +76,16 @@ In order to actually process some data we need a way to associate the data with 
 "external binding". A dedicated object is created that holds the contact and the data bound to it.
 In Contact System terminology this object is called a Signal:
 
-<pre>
+```scala
 	case class Signal[T](contact:Contact[T], data:T)
-</pre>
+```
 
 (This object is often referred to as Event, Data, Frame or Message.)
 System transient state is represented as a list of signals:
 
-<pre>
+```scala
 	type Signals = List[Signal[_]]
-</pre>
+```
 
 The list represents all data attached to corresponding contacts in one discrete time moment.
 
@@ -107,29 +105,29 @@ When the trellis building stops?
 If the process does not stop, then all data will reach the outer contacts and, as far as there are no connected components,
 all data will be lost. To avoid this, output contacts are specified in system description:
 
-<pre>
+```scala
 	outputs(len) // outputs(output1, output2, output3)
-</pre>
+```
 
 therefore, processing will stop, when all signals in the current list belong to output contacts.
 
-Arrow types
------------
+## Arrow types
+
 
 The most common situation in signal processing is when 0 or more output elements are generated per one input element.
 Such situation is traditionally handled in Scala via high-order function called flatMap.
 That's why an arrows, annotated by functions, that return 0..n elements has a FlatMap type.
 
-<pre>
+```scala
 	val wordsContact = someStringContact.flatMap(_.split("\\s+".r))
-</pre>
+```
 
 For a string "hello bye" two elements are produced - "hello", "bye". In terms of signals:
 
-<pre>
+```scala
  val inputSignals = List(Signal(someStringContact, "hello bye"))
  val outputSignals = List(Signal(wordsContact, "hello"), Signal(wordsContact, "bye"))
-</pre>
+```
 
 System will look like this:
 
@@ -138,34 +136,34 @@ System will look like this:
 An important case of FlatMap arrows are 0..1 arrows, which either pass data or not depending on a certain condition.
 There's also a <code>filter</code> method, dedicated to create this kind of arrows:
 
-<pre>
+```scala
 	val nonEmptyString = myContact.filter( _.length > 0 )
-</pre>
+```
 
 
-For-comprehension compatibility
--------------------------------
+## For-comprehension compatibility
+
 
 An interesting feature of the Scala is the ability to use syntactic sugar for custom methods.
 Methods like map, flatMap, filter or withFilter, are already announced, so, it's possible to use a for-comprehension:
 
-<pre>
+```scala
 	val helloContact = for {
 	   s <- myContact
 	   if s.length >0
 	} yield "Hello, "+s
-</pre>
+```
 
 The same code you may find below (iе contains two arrows):
 
-<pre>
+```scala
 	val helloContact = myContact.filter(s => s.length>0).map(s=>"Hello, "+s)
-</pre>
+```
 
 In some cases, when the processing algorithm branches not too much, this syntax looks pretty good.
 
-Working with state
-------------------
+## Working with state
+
 
 Till now, all examples operated only with the data on the input contact. The result hasn't been stored inside the system.
 We have been using "pure" immutable functions without side-effects. These functions have a lot of useful characteristics.
@@ -177,10 +175,10 @@ only by input data.
 If data processing logic requires state saving - the most obvious solution is to use a variable inside 
 the function to store the state:
 
-<pre>
+```scala
 	var counter = 0
 	val helloCount = myContact.map({any => 	counter += 1;  counter})
-</pre>
+```
 
 This will work, alas we're losing all the advantages of an immutable system.
 
@@ -189,19 +187,19 @@ the state is evoked and after processing it is put back.
 
 How to work with the state, stored elsewhere? A function has to accept the current state on input and return the new state value.
 
-<pre>
+```scala
 	val helloCount = myContact.[link to variable, where counter state is stored].map({(any, counter) => (counter+1, counter + 1)})
-</pre>
+```
 
 Let's take a closer look to this function. We'll make it verbose via def:
 
-<pre>
+```scala
 	def incCounter(any:String, counter:Int) : (Int, Int) = {
 	  val newCounterValue = counter+1
 	  val resultOfThisFunction = newCounterValue
 	  return (resultOfThisFunction, newCounterValue)
 	}
-</pre>
+```
 
 The function, that process the state is pure. Q.e.d.
 It can be parallelized, once-created, zero-debugged. 
@@ -210,10 +208,10 @@ It only moment left is to determine how to store and retrieve the state easily.
 
 We will use <code>StateHandle[T]</code> (some sort of Contact), to identify the state variable
 
-<pre>
+```scala
 	val counterS = state[Int]("counterS", 0)
 	val helloCount = contact[Int]("helloCount")
-</pre>
+```
 
 This identifier contains variable type, name, and the initial value.
 
@@ -222,10 +220,10 @@ It will only be present during the signal processing in runtime.
 
 To use this state in our helloCounter function, we have to refer to it somehow:
 
-<pre>
+```scala
     (myContact.withState(counterS) -> helloCount).stateMap({(counter: Int, any:String) => (counter + 1, counter + 1)},"inc "+counterS)
 	val helloCount = myContact.stateMap(counterS, {(any, counter) => (counter+1, counter + 1)})
-</pre>
+```
 
 It looks a little bit cumbersome, but we have all the advantages of pure functions.
 
@@ -236,8 +234,7 @@ It looks a little bit cumbersome, but we have all the advantages of pure functio
 Synapse Grid DSL provides a set of other high-order functions, that simplify working with states (<code>zipWithState</code>,
 <code>getState</code>, <code>saveTo</code> and others).
 
-Drawing the system scheme
--------------------------
+## Drawing the system scheme
 
 Since it's a declarative system, there is a great chance to study and analyse it through the system's graph.
 
@@ -252,8 +249,8 @@ All pictures in the <code>images</code> folder have been obtained by the followi
 </pre>
 
 
-System construction with SystemBuilder
---------------------------------------
+## System construction with SystemBuilder
+
 The DSL for arrows/contacts creation is mostly declared in the <code>SystemBuilder</code>.
 It contains basic methods, that allows you to incrementally create contacts or different sort of arrows/links.
 SystemBuilder is a mutable class. It doesn't participate in runtime-processing.
@@ -264,23 +261,23 @@ There are some other DLS's that are stored in separate traits. To use them, simp
 
 There are two ways to get DSL in scope. The first one is to create an instance of SystemBuilder and import it's methods:
 
-<pre>
+```scala
 	val sb = new SystemBuilderC("MySystem")
 	import sb._
 	...
 	val system = toStaticSystem
-</pre>
+```
 
 The other one (the preferred one) is to extend the SystemBuilder trait:
 
-<pre>
+```scala
 	trait MySystemBuilder extends SystemBuilder {
 	  // setSystemName("MySystem") 
 	  ...
 	}
 
 	val system = new MySystemBuilder.toStaticSystem
-</pre>
+```
 
 After receiving the <code>StaticSystem</code>, it is then converted to RuntimeSystem. The runtime system can be considered 
 as a map of contacts to the handlers list. 
@@ -295,32 +292,32 @@ You can use this class as an ordinary function that processes signals and produc
 the function has the side effect of modifying the state.
 
 To further simplify the usage it is possible to convert signal-based function to data based function. 
-<pre>
-   val dynamicSystem:DynamicSystem ...
+```scala
+   val dynamicSystem:DynamicSystem = ???
    val simpleDataFunction = dynamicSystem.toTransduser(InputContact, OutputContact)
    val results = simpleDataFunction("my data for InputContact")
-</pre>
+```
 
 The results is a simple List of output data that appeared on the OutputContact.
 
-Subsystems
-----------
+## Subsystems
+
 As the program evolve the need arises to split the system into subsystem blocks (for reuse, for encapsulation, or for modularization).
 Use the <code>addSubsystem</code> method to add subsystem.
 
 Since the subsystem has state, stateHandle should also be indicated. It is a map of subsystem states to values.
 
-<pre>
+```scala
 	val subsystem = new MySubsystemBuilder.toStaticSystem
 	val s1 = state[SystemState]("s1", subsystem.s0)
 	sb.addSubsystem(subsystem, s1)
-</pre>
+```
 
 For the subsystem to be able to obtain input data, some of it's contacts should be marked as inputs:
 
-<pre>
+```scala
 	inputs(input1, input2)
-</pre>
+```
 
 in this case, all data that appears in outer system on these contacts will be processed by subsystem.
 
@@ -336,8 +333,7 @@ The signals that comes to subsystem's inputs are completely processed during sin
 
 For a better approach to subsystems see [Subsystems](Subsystems.EN.md)
 
-Concurrency
------------
+## Concurrency
 
 All systems, described above, are single-threaded. There are a few possible ways to achieve parallel execution.
 
@@ -351,14 +347,13 @@ should be serialized with the principle "happen-before". So the calculations tha
 influence the state should complete before we start. And the calculations that depend on the state
 should not start until we finish. Thus we get a dependency lattice on calculations.
 
-Akka Actors usage
------------------
+## Akka Actors usage
 
 Making a subsystem a separate Actor is easy. Just add it with <code>addActorSubsystem</code>:
 
-<pre>
+```scala
 	sb.addActorSubsystem(subsystem)
-</pre>
+```
 
 As you can see there is no need to have a separate stateHandle for storing the state of the subsystem. The state is kept inside 
 the Actor.
@@ -374,24 +369,23 @@ the second – the message itself.
 
 [Read more about Actor support](Actors.EN.md).
 
-Running a system over an ExecutionContext
------------------------------------------
+## Running a system over an ExecutionContext
 
 No changes need to be done on the system. We should only provide an instance of
 <code>ExecutionContext</code> and use a special "parrallel" converter:
 
-<pre>
+```scala
    import scala.concurrent.ExecutionContext.Implicits.global
    val f = system.toStaticSystem. toParallelSimpleSignalProcessor. toMapTransducer(input, output)
    val y = f(x)
-</pre>
+```
 
 You may compare the results with the results of running a system in a single thread:
 
-<pre>
+```scala
    val g = system.toStaticSystem. toSimpleSignalProcessor. toMapTransducer(input, output)
    val y2 = g(x)
-   assert(y === y2)
-</pre>
+   assert(y == y2)
+```
 
 As you see the only difference is using another converter.
